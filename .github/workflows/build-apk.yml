@@ -18,7 +18,7 @@ jobs:
           flutter-version: '3.35.4'
           channel: stable
 
-      - name: Create Flutter project
+      - name: Create Flutter Project
         run: |
           flutter create --project-name itarbiatbadani_app app
 
@@ -27,27 +27,7 @@ jobs:
         run: |
           flutter pub add webview_flutter
 
-      - name: Configure Android Internet Permission
-        working-directory: app
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          p = Path("android/app/src/main/AndroidManifest.xml")
-          text = p.read_text()
-
-          permission = '<uses-permission android:name="android.permission.INTERNET"/>'
-
-          if permission not in text:
-              text = text.replace(
-                  '<manifest xmlns:android="http://schemas.android.com/apk/res/android">',
-                  '<manifest xmlns:android="http://schemas.android.com/apk/res/android">\n    ' + permission
-              )
-
-          p.write_text(text)
-          PY
-
-      - name: Create Main App
+      - name: Create Website App
         working-directory: app
         run: |
           cat > lib/main.dart <<'EOF'
@@ -55,7 +35,6 @@ jobs:
           import 'package:webview_flutter/webview_flutter.dart';
 
           void main() {
-            WidgetsFlutterBinding.ensureInitialized();
             runApp(const MyApp());
           }
 
@@ -67,9 +46,6 @@ jobs:
               return MaterialApp(
                 debugShowCheckedModeBanner: false,
                 title: 'تربیت بدنی و علوم ورزشی',
-                theme: ThemeData(
-                  useMaterial3: true,
-                ),
                 home: const WebsitePage(),
               );
             }
@@ -91,12 +67,6 @@ jobs:
 
               controller = WebViewController()
                 ..setJavaScriptMode(JavaScriptMode.unrestricted)
-                ..setNavigationDelegate(
-                  NavigationDelegate(
-                    onPageStarted: (url) {},
-                    onPageFinished: (url) {},
-                  ),
-                )
                 ..loadRequest(
                   Uri.parse('https://itarbiatbadani.ir'),
                 );
@@ -115,39 +85,39 @@ jobs:
           }
           EOF
 
+      - name: Verify Website Code
+        working-directory: app
+        run: |
+          echo "===== CHECKING MAIN.DART ====="
+          grep -n "itarbiatbadani.ir" lib/main.dart
+          grep -n "WebViewWidget" lib/main.dart
+          echo "===== CHECK COMPLETE ====="
+
+      - name: Add Internet Permission
+        working-directory: app
+        run: |
+          sed -i '/<manifest/a\    <uses-permission android:name="android.permission.INTERNET"/>' \
+          android/app/src/main/AndroidManifest.xml
+
       - name: Set App Name
         working-directory: app
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          p = Path("android/app/src/main/AndroidManifest.xml")
-          text = p.read_text()
-
-          text = text.replace(
-              'android:label="itarbiatbadani_app"',
-              'android:label="تربیت بدنی و علوم ورزشی"'
-          )
-
-          text = text.replace(
-              'android:label="${applicationName}"',
-              'android:label="تربیت بدنی و علوم ورزشی"'
-          )
-
-          p.write_text(text)
-          PY
+          sed -i 's/android:label="\${applicationName}"/android:label="تربیت بدنی و علوم ورزشی"/' \
+          android/app/src/main/AndroidManifest.xml
 
       - name: Get Dependencies
         working-directory: app
-        run: flutter pub get
+        run: |
+          flutter pub get
 
       - name: Build APK
         working-directory: app
-        run: flutter build apk --release
+        run: |
+          flutter build apk --release
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: itarbiatbadani-apk
+          name: itarbiatbadani-website-apk
           path: app/build/app/outputs/flutter-apk/app-release.apk
 ```
