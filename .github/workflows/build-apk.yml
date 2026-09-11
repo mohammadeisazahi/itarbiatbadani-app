@@ -1,3 +1,4 @@
+```yaml
 name: Build Android APK
 
 on:
@@ -24,18 +25,15 @@ jobs:
         working-directory: app
         run: |
           flutter pub add webview_flutter
-          flutter pub add webview_flutter_android
           flutter pub add url_launcher
+          flutter pub add http
           flutter pub add flutter_launcher_icons --dev
 
-      - name: Download Website Logo
+      - name: Download Logo
         working-directory: app
         run: |
           mkdir -p assets
-          curl -L --fail \
-            "https://itarbiatbadani.ir/wp-content/uploads/2025/07/1000073463.png" \
-            -o assets/icon.png
-          file assets/icon.png
+          curl -L "https://itarbiatbadani.ir/wp-content/uploads/2025/07/1000073463.png" -o assets/logo.png
 
       - name: Configure App Icon
         working-directory: app
@@ -44,26 +42,34 @@ jobs:
           flutter_launcher_icons:
             android: true
             ios: false
-            image_path: "assets/icon.png"
-            adaptive_icon_background: "#0a3d62"
-            min_sdk_android: 24
+            image_path: "assets/logo.png"
+            min_sdk_android: 21
           EOF
 
-      - name: Create Professional App
+          dart run flutter_launcher_icons
+
+      - name: Create Main App
         working-directory: app
         run: |
           cat > lib/main.dart <<'EOF'
+          import 'dart:convert';
           import 'package:flutter/material.dart';
-          import 'package:webview_flutter/webview_flutter.dart';
+          import 'package:http/http.dart' as http;
           import 'package:url_launcher/url_launcher.dart';
+          import 'package:webview_flutter/webview_flutter.dart';
+
+          const String siteUrl = 'https://itarbiatbadani.ir';
+
+          const Color primaryColor = Color(0xFF0A3D62);
+          const Color secondaryColor = Color(0xFF3C6382);
+          const Color goldColor = Color(0xFFFBC531);
 
           void main() {
-            WidgetsFlutterBinding.ensureInitialized();
-            runApp(const MyApp());
+            runApp(const SportsApp());
           }
 
-          class MyApp extends StatelessWidget {
-            const MyApp({super.key});
+          class SportsApp extends StatelessWidget {
+            const SportsApp({super.key});
 
             @override
             Widget build(BuildContext context) {
@@ -73,247 +79,848 @@ jobs:
                 theme: ThemeData(
                   useMaterial3: true,
                   colorScheme: ColorScheme.fromSeed(
-                    seedColor: const Color(0xFF0A3D62),
+                    seedColor: primaryColor,
                   ),
-                  fontFamily: 'sans',
+                  scaffoldBackgroundColor: const Color(0xFFF5F7FA),
                 ),
-                home: const WebsitePage(),
+                home: const MainPage(),
+              );
+            }
+          }
+
+          class MainPage extends StatefulWidget {
+            const MainPage({super.key});
+
+            @override
+            State<MainPage> createState() => _MainPageState();
+          }
+
+          class _MainPageState extends State<MainPage> {
+            int currentIndex = 0;
+
+            final List<Widget> pages = const [
+              HomePage(),
+              ArticlesPage(),
+              CategoriesPage(),
+              ShopPage(),
+              MorePage(),
+            ];
+
+            @override
+            Widget build(BuildContext context) {
+              return Directionality(
+                textDirection: TextDirection.rtl,
+                child: Scaffold(
+                  body: IndexedStack(
+                    index: currentIndex,
+                    children: pages,
+                  ),
+                  bottomNavigationBar: NavigationBar(
+                    selectedIndex: currentIndex,
+                    onDestinationSelected: (index) {
+                      setState(() {
+                        currentIndex = index;
+                      });
+                    },
+                    destinations: const [
+                      NavigationDestination(
+                        icon: Icon(Icons.home_outlined),
+                        selectedIcon: Icon(Icons.home),
+                        label: 'خانه',
+                      ),
+                      NavigationDestination(
+                        icon: Icon(Icons.article_outlined),
+                        selectedIcon: Icon(Icons.article),
+                        label: 'مطالب',
+                      ),
+                      NavigationDestination(
+                        icon: Icon(Icons.category_outlined),
+                        selectedIcon: Icon(Icons.category),
+                        label: 'دسته‌ها',
+                      ),
+                      NavigationDestination(
+                        icon: Icon(Icons.shopping_cart_outlined),
+                        selectedIcon: Icon(Icons.shopping_cart),
+                        label: 'فروشگاه',
+                      ),
+                      NavigationDestination(
+                        icon: Icon(Icons.more_horiz),
+                        selectedIcon: Icon(Icons.more_horiz),
+                        label: 'بیشتر',
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+          }
+
+          class AppHeader extends StatelessWidget {
+            final String title;
+
+            const AppHeader({
+              super.key,
+              required this.title,
+            });
+
+            @override
+            Widget build(BuildContext context) {
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(20, 45, 20, 22),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      primaryColor,
+                      secondaryColor,
+                    ],
+                    begin: Alignment.topRight,
+                    end: Alignment.bottomLeft,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Image.network(
+                      'https://itarbiatbadani.ir/wp-content/uploads/2025/07/1000073463.png',
+                      width: 54,
+                      height: 54,
+                      errorBuilder: (_, __, ___) {
+                        return const Icon(
+                          Icons.sports,
+                          color: Colors.white,
+                          size: 48,
+                        );
+                      },
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 21,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+          }
+
+          class HomePage extends StatelessWidget {
+            const HomePage({super.key});
+
+            @override
+            Widget build(BuildContext context) {
+              return SafeArea(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const AppHeader(
+                        title: 'تربیت بدنی و علوم ورزشی',
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'مرجع تخصصی تربیت بدنی و علوم ورزشی',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: primaryColor,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'مقالات، منابع، طرح درس، فایل‌های آموزشی و مطالب تخصصی ورزش',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.black54,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: QuickCard(
+                                    icon: Icons.article,
+                                    title: 'مطالب',
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => const WebsitePage(
+                                            url: siteUrl,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: QuickCard(
+                                    icon: Icons.shopping_bag,
+                                    title: 'فروشگاه',
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => const WebsitePage(
+                                            url: '$siteUrl/shop/',
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: QuickCard(
+                                    icon: Icons.category,
+                                    title: 'دسته‌بندی‌ها',
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              const CategoriesPage(),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: QuickCard(
+                                    icon: Icons.language,
+                                    title: 'وب‌سایت',
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => const WebsitePage(
+                                            url: siteUrl,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 25),
+                            const Text(
+                              'فروشگاه',
+                              style: TextStyle(
+                                fontSize: 19,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            ShopBanner(
+                              title: 'طرح درس ورزشی',
+                              subtitle:
+                                  'طرح درس‌های آماده و تخصصی تربیت بدنی',
+                              icon: Icons.menu_book,
+                              url: '$siteUrl/category/طرح-درس-ورزشی/',
+                            ),
+                            ShopBanner(
+                              title: 'پی دی اف ورزشی',
+                              subtitle:
+                                  'منابع و فایل‌های PDF ورزشی',
+                              icon: Icons.picture_as_pdf,
+                              url: '$siteUrl/category/پی-دی-اف-ورزشی/',
+                            ),
+                            ShopBanner(
+                              title: 'پاورپوینت ورزشی',
+                              subtitle:
+                                  'فایل‌های ارائه و آموزشی',
+                              icon: Icons.slideshow,
+                              url: '$siteUrl/category/پاورپوینت-ورزشی/',
+                            ),
+                            ShopBanner(
+                              title: 'فایل‌های رایگان',
+                              subtitle:
+                                  'دسترسی به فایل‌های رایگان سایت',
+                              icon: Icons.download,
+                              url: '$siteUrl/category/فایل-های-رایگان/',
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+          }
+
+          class QuickCard extends StatelessWidget {
+            final IconData icon;
+            final String title;
+            final VoidCallback onTap;
+
+            const QuickCard({
+              super.key,
+              required this.icon,
+              required this.title,
+              required this.onTap,
+            });
+
+            @override
+            Widget build(BuildContext context) {
+              return InkWell(
+                onTap: onTap,
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        blurRadius: 10,
+                        color: Colors.black.withOpacity(.06),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        icon,
+                        size: 34,
+                        color: primaryColor,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+          }
+
+          class ShopBanner extends StatelessWidget {
+            final String title;
+            final String subtitle;
+            final IconData icon;
+            final String url;
+
+            const ShopBanner({
+              super.key,
+              required this.title,
+              required this.subtitle,
+              required this.icon,
+              required this.url,
+            });
+
+            @override
+            Widget build(BuildContext context) {
+              return InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => WebsitePage(url: url),
+                    ),
+                  );
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [
+                        primaryColor,
+                        secondaryColor,
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        icon,
+                        color: goldColor,
+                        size: 38,
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 17,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              subtitle,
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(
+                        Icons.arrow_forward_ios,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+          }
+
+          class CategoriesPage extends StatefulWidget {
+            const CategoriesPage({super.key});
+
+            @override
+            State<CategoriesPage> createState() =>
+                _CategoriesPageState();
+          }
+
+          class _CategoriesPageState
+              extends State<CategoriesPage> {
+            late Future<List<CategoryItem>> categories;
+
+            @override
+            void initState() {
+              super.initState();
+              categories = loadCategories();
+            }
+
+            Future<List<CategoryItem>> loadCategories() async {
+              try {
+                final response = await http.get(
+                  Uri.parse(
+                    '$siteUrl/wp-json/wp/v2/categories?per_page=100',
+                  ),
+                );
+
+                if (response.statusCode == 200) {
+                  final List data =
+                      jsonDecode(response.body);
+
+                  return data
+                      .map(
+                        (item) => CategoryItem(
+                          name: item['name'] ?? '',
+                          count: item['count'] ?? 0,
+                          link: item['link'] ?? siteUrl,
+                        ),
+                      )
+                      .where(
+                        (item) => item.name.isNotEmpty,
+                      )
+                      .toList();
+                }
+              } catch (_) {}
+
+              return [];
+            }
+
+            @override
+            Widget build(BuildContext context) {
+              return SafeArea(
+                child: Column(
+                  children: [
+                    const AppHeader(
+                      title: 'دسته‌بندی‌های سایت',
+                    ),
+                    Expanded(
+                      child: FutureBuilder<List<CategoryItem>>(
+                        future: categories,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          }
+
+                          final items = snapshot.data ?? [];
+
+                          if (items.isEmpty) {
+                            return Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.category_outlined,
+                                    size: 60,
+                                    color: primaryColor,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  const Text(
+                                    'دسته‌بندی‌ها بارگذاری نشدند.',
+                                  ),
+                                  const SizedBox(height: 12),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        categories =
+                                            loadCategories();
+                                      });
+                                    },
+                                    child:
+                                        const Text('تلاش مجدد'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+
+                          return RefreshIndicator(
+                            onRefresh: () async {
+                              setState(() {
+                                categories = loadCategories();
+                              });
+                            },
+                            child: GridView.builder(
+                              padding: const EdgeInsets.all(16),
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
+                                childAspectRatio: 1.25,
+                              ),
+                              itemCount: items.length,
+                              itemBuilder: (context, index) {
+                                final category = items[index];
+
+                                return InkWell(
+                                  borderRadius:
+                                      BorderRadius.circular(16),
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            WebsitePage(
+                                          url: category.link,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    padding:
+                                        const EdgeInsets.all(14),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius:
+                                          BorderRadius.circular(16),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          blurRadius: 10,
+                                          color: Colors.black
+                                              .withOpacity(.06),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(
+                                          Icons.category,
+                                          size: 34,
+                                          color: primaryColor,
+                                        ),
+                                        const SizedBox(height: 10),
+                                        Text(
+                                          category.name,
+                                          textAlign:
+                                              TextAlign.center,
+                                          maxLines: 2,
+                                          overflow:
+                                              TextOverflow.ellipsis,
+                                          style:
+                                              const TextStyle(
+                                            fontWeight:
+                                                FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 5),
+                                        Text(
+                                          '${category.count} مطلب',
+                                          style:
+                                              const TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+          }
+
+          class CategoryItem {
+            final String name;
+            final int count;
+            final String link;
+
+            CategoryItem({
+              required this.name,
+              required this.count,
+              required this.link,
+            });
+          }
+
+          class ArticlesPage extends StatelessWidget {
+            const ArticlesPage({super.key});
+
+            @override
+            Widget build(BuildContext context) {
+              return const WebsitePage(
+                url: siteUrl,
+              );
+            }
+          }
+
+          class ShopPage extends StatelessWidget {
+            const ShopPage({super.key});
+
+            @override
+            Widget build(BuildContext context) {
+              return Column(
+                children: [
+                  const AppHeader(
+                    title: 'فروشگاه',
+                  ),
+                  const Expanded(
+                    child: WebsitePage(
+                      url: '$siteUrl/shop/',
+                      showHeader: false,
+                    ),
+                  ),
+                ],
+              );
+            }
+          }
+
+          class MorePage extends StatelessWidget {
+            const MorePage({super.key});
+
+            Future<void> openUrl(String url) async {
+              await launchUrl(
+                Uri.parse(url),
+                mode: LaunchMode.externalApplication,
+              );
+            }
+
+            @override
+            Widget build(BuildContext context) {
+              return SafeArea(
+                child: Column(
+                  children: [
+                    const AppHeader(
+                      title: 'بیشتر',
+                    ),
+                    Expanded(
+                      child: ListView(
+                        padding: const EdgeInsets.all(16),
+                        children: [
+                          MoreButton(
+                            icon: Icons.language,
+                            title: 'وب‌سایت',
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      const WebsitePage(
+                                    url: siteUrl,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          MoreButton(
+                            icon: Icons.send,
+                            title: 'کانال تلگرام',
+                            onTap: () => openUrl(
+                              'https://t.me/itarbiatbadani',
+                            ),
+                          ),
+                          MoreButton(
+                            icon: Icons.camera_alt,
+                            title: 'اینستاگرام',
+                            onTap: () => openUrl(
+                              'https://instagram.com/itarbiatbadani',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+          }
+
+          class MoreButton extends StatelessWidget {
+            final IconData icon;
+            final String title;
+            final VoidCallback onTap;
+
+            const MoreButton({
+              super.key,
+              required this.icon,
+              required this.title,
+              required this.onTap,
+            });
+
+            @override
+            Widget build(BuildContext context) {
+              return Card(
+                margin: const EdgeInsets.only(bottom: 10),
+                child: ListTile(
+                  onTap: onTap,
+                  leading: Icon(
+                    icon,
+                    color: primaryColor,
+                  ),
+                  title: Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  trailing: const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16,
+                  ),
+                ),
               );
             }
           }
 
           class WebsitePage extends StatefulWidget {
-            const WebsitePage({super.key});
+            final String url;
+            final bool showHeader;
+
+            const WebsitePage({
+              super.key,
+              required this.url,
+              this.showHeader = true,
+            });
 
             @override
-            State<WebsitePage> createState() => _WebsitePageState();
+            State<WebsitePage> createState() =>
+                _WebsitePageState();
           }
 
-          class _WebsitePageState extends State<WebsitePage> {
+          class _WebsitePageState
+              extends State<WebsitePage> {
             late final WebViewController controller;
-
             int progress = 0;
-            bool loading = true;
 
             @override
             void initState() {
               super.initState();
 
               controller = WebViewController()
-                ..setJavaScriptMode(JavaScriptMode.unrestricted)
-                ..setBackgroundColor(Colors.white)
-                ..enableZoom(false)
+                ..setJavaScriptMode(
+                  JavaScriptMode.unrestricted,
+                )
                 ..setNavigationDelegate(
                   NavigationDelegate(
                     onProgress: (value) {
                       if (mounted) {
                         setState(() {
                           progress = value;
-                          loading = value < 100;
                         });
                       }
-                    },
-                    onPageStarted: (url) {
-                      if (mounted) {
-                        setState(() {
-                          loading = true;
-                          progress = 0;
-                        });
-                      }
-                    },
-                    onPageFinished: (url) {
-                      if (mounted) {
-                        setState(() {
-                          loading = false;
-                          progress = 100;
-                        });
-                      }
-                    },
-                    onNavigationRequest: (request) async {
-                      final url = request.url.toLowerCase();
-
-                      final isFile = url.endsWith('.pdf') ||
-                          url.endsWith('.zip') ||
-                          url.endsWith('.doc') ||
-                          url.endsWith('.docx') ||
-                          url.endsWith('.ppt') ||
-                          url.endsWith('.pptx') ||
-                          url.endsWith('.xls') ||
-                          url.endsWith('.xlsx');
-
-                      if (isFile) {
-                        final uri = Uri.parse(request.url);
-
-                        if (await canLaunchUrl(uri)) {
-                          await launchUrl(
-                            uri,
-                            mode: LaunchMode.externalApplication,
-                          );
-                        }
-
-                        return NavigationDecision.prevent;
-                      }
-
-                      return NavigationDecision.navigate;
                     },
                   ),
                 )
                 ..loadRequest(
-                  Uri.parse('https://itarbiatbadani.ir'),
+                  Uri.parse(widget.url),
                 );
-            }
-
-            Future<bool> handleBack() async {
-              if (await controller.canGoBack()) {
-                await controller.goBack();
-                return false;
-              }
-
-              return true;
             }
 
             @override
             Widget build(BuildContext context) {
-              return PopScope(
-                canPop: false,
-                onPopInvokedWithResult: (didPop, result) async {
-                  if (didPop) return;
-
-                  final shouldExit = await handleBack();
-
-                  if (shouldExit && mounted) {
-                    Navigator.of(context).pop();
-                  }
-                },
-                child: Scaffold(
-                  backgroundColor: Colors.white,
-
-                  body: SafeArea(
-                    child: Stack(
-                      children: [
-                        WebViewWidget(
-                          controller: controller,
-                        ),
-
-                        if (loading)
-                          Positioned(
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            child: LinearProgressIndicator(
-                              value: progress == 0
-                                  ? null
-                                  : progress / 100,
-                              minHeight: 3,
-                            ),
-                          ),
-
-                        if (loading && progress < 15)
-                          Positioned.fill(
-                            child: Container(
-                              color: Colors.white,
-                              child: Center(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Container(
-                                      width: 92,
-                                      height: 92,
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF0A3D62),
-                                        borderRadius:
-                                            BorderRadius.circular(24),
-                                      ),
-                                      padding: const EdgeInsets.all(14),
-                                      child: Image.asset(
-                                        'assets/icon.png',
-                                        fit: BoxFit.contain,
-                                      ),
-                                    ),
-
-                                    const SizedBox(height: 22),
-
-                                    const Text(
-                                      'تربیت بدنی و علوم ورزشی',
-                                      textDirection: TextDirection.rtl,
-                                      style: TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF0A3D62),
-                                      ),
-                                    ),
-
-                                    const SizedBox(height: 8),
-
-                                    const Text(
-                                      'مرجع تخصصی تربیت بدنی و علوم ورزشی',
-                                      textDirection: TextDirection.rtl,
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: Color(0xFF3C6382),
-                                      ),
-                                    ),
-
-                                    const SizedBox(height: 28),
-
-                                    SizedBox(
-                                      width: 150,
-                                      child: LinearProgressIndicator(
-                                        value: progress == 0
-                                            ? null
-                                            : progress / 100,
-                                        minHeight: 4,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
+              return Column(
+                children: [
+                  if (progress < 100)
+                    LinearProgressIndicator(
+                      value: progress / 100,
+                      minHeight: 2,
+                    ),
+                  Expanded(
+                    child: WebViewWidget(
+                      controller: controller,
                     ),
                   ),
-                ),
+                ],
               );
             }
           }
           EOF
 
-      - name: Generate App Icon
-        working-directory: app
-        run: |
-          flutter pub get
-          dart run flutter_launcher_icons
-
       - name: Add Internet Permission
         working-directory: app
         run: |
-          sed -i '/<manifest/a\    <uses-permission android:name="android.permission.INTERNET"/>' \
-            android/app/src/main/AndroidManifest.xml
+          sed -i '/<manifest/a\    <uses-permission android:name="android.permission.INTERNET"/>' android/app/src/main/AndroidManifest.xml
 
       - name: Set App Name
         working-directory: app
         run: |
-          sed -i 's/android:label="\${applicationName}"/android:label="تربیت بدنی و علوم ورزشی"/' \
-            android/app/src/main/AndroidManifest.xml
+          sed -i 's/android:label="\${applicationName}"/android:label="تربیت بدنی و علوم ورزشی"/' android/app/src/main/AndroidManifest.xml
 
-      - name: Verify App
+      - name: Get Dependencies
         working-directory: app
-        run: |
-          echo "===== APP CHECK ====="
-          grep -n "itarbiatbadani.ir" lib/main.dart
-          grep -n "تربیت بدنی و علوم ورزشی" lib/main.dart
-          test -f assets/icon.png
-          echo "===== CHECK COMPLETE ====="
+        run: flutter pub get
+
+      - name: Analyze
+        working-directory: app
+        run: flutter analyze
 
       - name: Build APK
         working-directory: app
-        run: |
-          flutter build apk --release
+        run: flutter build apk --release
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: itarbiatbadani-professional-apk
           path: app/build/app/outputs/flutter-apk/app-release.apk
+```
