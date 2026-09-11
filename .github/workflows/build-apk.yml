@@ -24,6 +24,11 @@ jobs:
         run: |
           flutter create --project-name itarbiatbadani_app app
 
+      - name: Remove default Flutter test
+        working-directory: app
+        run: |
+          rm -f test/widget_test.dart
+
       - name: Add packages
         working-directory: app
         run: |
@@ -55,11 +60,12 @@ jobs:
         working-directory: app
         run: |
           cat > lib/main.dart <<'EOF'
-          import 'package:flutter/material.dart';
-          import 'package:webview_flutter/webview_flutter.dart';
-          import 'package:url_launcher/url_launcher.dart';
-          import 'package:http/http.dart' as http;
           import 'dart:convert';
+
+          import 'package:flutter/material.dart';
+          import 'package:http/http.dart' as http;
+          import 'package:url_launcher/url_launcher.dart';
+          import 'package:webview_flutter/webview_flutter.dart';
 
           const String siteUrl = 'https://itarbiatbadani.ir';
 
@@ -82,7 +88,6 @@ jobs:
                 title: 'تربیت بدنی و علوم ورزشی',
                 theme: ThemeData(
                   useMaterial3: true,
-                  fontFamily: 'sans',
                   colorScheme: ColorScheme.fromSeed(
                     seedColor: primaryColor,
                   ),
@@ -107,7 +112,7 @@ jobs:
               HomePage(),
               WebsitePage(
                 title: 'مطالب ورزشی',
-                url: '$siteUrl/',
+                url: siteUrl,
               ),
               CategoriesPage(),
               WebsitePage(
@@ -133,7 +138,8 @@ jobs:
                       });
                     },
                     backgroundColor: Colors.white,
-                    indicatorColor: goldColor.withOpacity(.25),
+                    indicatorColor:
+                        goldColor.withValues(alpha: .25),
                     destinations: const [
                       NavigationDestination(
                         icon: Icon(Icons.home_outlined),
@@ -177,7 +183,12 @@ jobs:
                   children: [
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.fromLTRB(20, 28, 20, 30),
+                      padding: const EdgeInsets.fromLTRB(
+                        20,
+                        28,
+                        20,
+                        30,
+                      ),
                       decoration: const BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
@@ -196,7 +207,8 @@ jobs:
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius:
+                                  BorderRadius.circular(20),
                             ),
                             child: Image.network(
                               '$siteUrl/wp-content/uploads/2025/07/1000073463.png',
@@ -236,7 +248,8 @@ jobs:
                     const SizedBox(height: 18),
 
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 16),
                       child: Column(
                         children: [
                           Row(
@@ -245,12 +258,14 @@ jobs:
                                 child: HomeCard(
                                   icon: Icons.article,
                                   title: 'مطالب ورزشی',
-                                  subtitle: 'مقالات و مطالب تخصصی',
+                                  subtitle:
+                                      'مقالات و مطالب تخصصی',
                                   onTap: () {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (_) => const WebsitePage(
+                                        builder: (_) =>
+                                            const WebsitePage(
                                           title: 'مطالب ورزشی',
                                           url: siteUrl,
                                         ),
@@ -269,7 +284,8 @@ jobs:
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (_) => const WebsitePage(
+                                        builder: (_) =>
+                                            const WebsitePage(
                                           title: 'فروشگاه',
                                           url: '$siteUrl/shop/',
                                         ),
@@ -311,7 +327,8 @@ jobs:
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (_) => const WebsitePage(
+                                        builder: (_) =>
+                                            const WebsitePage(
                                           title: 'وب‌سایت',
                                           url: siteUrl,
                                         ),
@@ -342,25 +359,29 @@ jobs:
                           StoreCard(
                             title: 'طرح درس ورزشی',
                             icon: Icons.menu_book,
-                            url: '$siteUrl/category/طرح-درس-ورزشی/',
+                            url:
+                                '$siteUrl/category/طرح-درس-ورزشی/',
                           ),
 
                           StoreCard(
                             title: 'پی دی اف ورزشی',
                             icon: Icons.picture_as_pdf,
-                            url: '$siteUrl/category/پی-دی-اف-ورزشی/',
+                            url:
+                                '$siteUrl/category/پی-دی-اف-ورزشی/',
                           ),
 
                           StoreCard(
                             title: 'پاورپوینت ورزشی',
                             icon: Icons.slideshow,
-                            url: '$siteUrl/category/پاورپوینت-ورزشی/',
+                            url:
+                                '$siteUrl/category/پاورپوینت-ورزشی/',
                           ),
 
                           StoreCard(
                             title: 'فایل‌های رایگان',
                             icon: Icons.download,
-                            url: '$siteUrl/category/فایل-های-رایگان/',
+                            url:
+                                '$siteUrl/category/فایل-های-رایگان/',
                           ),
 
                           const SizedBox(height: 20),
@@ -409,7 +430,8 @@ jobs:
                     borderRadius: BorderRadius.circular(18),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(.06),
+                        color:
+                            Colors.black.withValues(alpha: .06),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -473,7 +495,8 @@ jobs:
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
+                  contentPadding:
+                      const EdgeInsets.symmetric(
                     horizontal: 18,
                     vertical: 5,
                   ),
@@ -482,7 +505,8 @@ jobs:
                     height: 48,
                     decoration: BoxDecoration(
                       color: goldColor,
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius:
+                          BorderRadius.circular(14),
                     ),
                     child: Icon(
                       icon,
@@ -529,7 +553,8 @@ jobs:
             });
 
             @override
-            State<WebsitePage> createState() => _WebsitePageState();
+            State<WebsitePage> createState() =>
+                _WebsitePageState();
           }
 
           class _WebsitePageState extends State<WebsitePage> {
@@ -547,9 +572,11 @@ jobs:
                 ..setNavigationDelegate(
                   NavigationDelegate(
                     onProgress: (value) {
-                      setState(() {
-                        progress = value;
-                      });
+                      if (mounted) {
+                        setState(() {
+                          progress = value;
+                        });
+                      }
                     },
                     onNavigationRequest: (request) {
                       return NavigationDecision.navigate;
@@ -567,7 +594,8 @@ jobs:
                 children: [
                   Container(
                     height: 58,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8),
                     color: primaryColor,
                     child: Row(
                       children: [
@@ -626,7 +654,8 @@ jobs:
                 _CategoriesPageState();
           }
 
-          class _CategoriesPageState extends State<CategoriesPage> {
+          class _CategoriesPageState
+              extends State<CategoriesPage> {
             List<dynamic> categories = [];
             bool loading = true;
             String? error;
@@ -653,21 +682,28 @@ jobs:
                 if (response.statusCode == 200) {
                   final data = jsonDecode(response.body);
 
-                  setState(() {
-                    categories = data;
-                    loading = false;
-                  });
+                  if (mounted) {
+                    setState(() {
+                      categories = data;
+                      loading = false;
+                    });
+                  }
                 } else {
+                  if (mounted) {
+                    setState(() {
+                      error =
+                          'خطا در دریافت دسته‌بندی‌ها';
+                      loading = false;
+                    });
+                  }
+                }
+              } catch (e) {
+                if (mounted) {
                   setState(() {
-                    error = 'خطا در دریافت دسته‌بندی‌ها';
+                    error = 'ارتباط با سایت برقرار نشد';
                     loading = false;
                   });
                 }
-              } catch (e) {
-                setState(() {
-                  error = 'ارتباط با سایت برقرار نشد';
-                  loading = false;
-                });
               }
             }
 
@@ -689,7 +725,6 @@ jobs:
                       ),
                     ),
                   ),
-
                   Expanded(
                     child: loading
                         ? const Center(
@@ -713,7 +748,8 @@ jobs:
                                     const SizedBox(height: 15),
                                     ElevatedButton(
                                       onPressed: loadCategories,
-                                      child: const Text('تلاش دوباره'),
+                                      child:
+                                          const Text('تلاش دوباره'),
                                     ),
                                   ],
                                 ),
@@ -721,9 +757,11 @@ jobs:
                             : RefreshIndicator(
                                 onRefresh: loadCategories,
                                 child: ListView.builder(
-                                  padding: const EdgeInsets.all(16),
+                                  padding:
+                                      const EdgeInsets.all(16),
                                   itemCount: categories.length,
-                                  itemBuilder: (context, index) {
+                                  itemBuilder:
+                                      (context, index) {
                                     final category =
                                         categories[index];
 
@@ -738,7 +776,8 @@ jobs:
                                           const EdgeInsets.only(
                                         bottom: 12,
                                       ),
-                                      decoration: BoxDecoration(
+                                      decoration:
+                                          BoxDecoration(
                                         color: Colors.white,
                                         borderRadius:
                                             BorderRadius.circular(
@@ -746,26 +785,36 @@ jobs:
                                         ),
                                       ),
                                       child: ListTile(
-                                        leading: const CircleAvatar(
+                                        leading:
+                                            const CircleAvatar(
                                           backgroundColor:
                                               Color(0xFFEAF1F7),
                                           child: Icon(
                                             Icons.category,
-                                            color: primaryColor,
+                                            color:
+                                                primaryColor,
                                           ),
                                         ),
                                         title: Text(
                                           name,
-                                          style: const TextStyle(
+                                          style:
+                                              const TextStyle(
                                             fontWeight:
                                                 FontWeight.bold,
                                           ),
                                         ),
-                                        trailing: const Icon(
+                                        trailing:
+                                            const Icon(
                                           Icons.arrow_back_ios,
                                           size: 17,
                                         ),
                                         onTap: () {
+                                          if (link
+                                              .toString()
+                                              .isEmpty) {
+                                            return;
+                                          }
+
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(
@@ -848,8 +897,10 @@ jobs:
                       title: const Text('وب‌سایت'),
                       subtitle:
                           const Text('itarbiatbadani.ir'),
-                      trailing:
-                          const Icon(Icons.arrow_back_ios, size: 17),
+                      trailing: const Icon(
+                        Icons.arrow_back_ios,
+                        size: 17,
+                      ),
                       onTap: () => openUrl(siteUrl),
                     ),
 
@@ -861,8 +912,10 @@ jobs:
                       title: const Text('کانال تلگرام'),
                       subtitle:
                           const Text('@itarbiatbadani'),
-                      trailing:
-                          const Icon(Icons.arrow_back_ios, size: 17),
+                      trailing: const Icon(
+                        Icons.arrow_back_ios,
+                        size: 17,
+                      ),
                       onTap: () =>
                           openUrl('https://t.me/itarbiatbadani'),
                     ),
@@ -875,8 +928,10 @@ jobs:
                       title: const Text('اینستاگرام'),
                       subtitle:
                           const Text('@itarbiatbadani'),
-                      trailing:
-                          const Icon(Icons.arrow_back_ios, size: 17),
+                      trailing: const Icon(
+                        Icons.arrow_back_ios,
+                        size: 17,
+                      ),
                       onTap: () => openUrl(
                         'https://instagram.com/itarbiatbadani',
                       ),
