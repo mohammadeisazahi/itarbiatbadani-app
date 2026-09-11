@@ -20,7 +20,67 @@ jobs:
       - name: Create Flutter project
         run: |
           flutter create --project-name itarbiatbadani_app app
+          
           cd app
+          
+          flutter pub add webview_flutter
+          
+          cat > lib/main.dart <<'EOF'
+          import 'package:flutter/material.dart';
+          import 'package:webview_flutter/webview_flutter.dart';
+
+          void main() {
+            runApp(const MyApp());
+          }
+
+          class MyApp extends StatelessWidget {
+            const MyApp({super.key});
+
+            @override
+            Widget build(BuildContext context) {
+              return MaterialApp(
+                debugShowCheckedModeBanner: false,
+                title: 'تربیت بدنی و علوم ورزشی',
+                theme: ThemeData(
+                  primarySwatch: Colors.blue,
+                ),
+                home: const WebsitePage(),
+              );
+            }
+          }
+
+          class WebsitePage extends StatefulWidget {
+            const WebsitePage({super.key});
+
+            @override
+            State<WebsitePage> createState() => _WebsitePageState();
+          }
+
+          class _WebsitePageState extends State<WebsitePage> {
+            late final WebViewController controller;
+
+            @override
+            void initState() {
+              super.initState();
+
+              controller = WebViewController()
+                ..setJavaScriptMode(JavaScriptMode.unrestricted)
+                ..loadRequest(
+                  Uri.parse('https://itarbiatbadani.ir'),
+                );
+            }
+
+            @override
+            Widget build(BuildContext context) {
+              return Scaffold(
+                body: SafeArea(
+                  child: WebViewWidget(controller: controller),
+                ),
+              );
+            }
+          }
+          EOF
+
           flutter pub get
 
       - name: Build APK
