@@ -1,3 +1,4 @@
+```yaml
 name: Build Android APK
 
 on:
@@ -20,16 +21,41 @@ jobs:
       - name: Create Flutter project
         run: |
           flutter create --project-name itarbiatbadani_app app
-          
-          cd app
-          
+
+      - name: Add WebView
+        working-directory: app
+        run: |
           flutter pub add webview_flutter
-          
+
+      - name: Configure Android Internet Permission
+        working-directory: app
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path("android/app/src/main/AndroidManifest.xml")
+          text = p.read_text()
+
+          permission = '<uses-permission android:name="android.permission.INTERNET"/>'
+
+          if permission not in text:
+              text = text.replace(
+                  '<manifest xmlns:android="http://schemas.android.com/apk/res/android">',
+                  '<manifest xmlns:android="http://schemas.android.com/apk/res/android">\n    ' + permission
+              )
+
+          p.write_text(text)
+          PY
+
+      - name: Create Main App
+        working-directory: app
+        run: |
           cat > lib/main.dart <<'EOF'
           import 'package:flutter/material.dart';
           import 'package:webview_flutter/webview_flutter.dart';
 
           void main() {
+            WidgetsFlutterBinding.ensureInitialized();
             runApp(const MyApp());
           }
 
@@ -42,7 +68,7 @@ jobs:
                 debugShowCheckedModeBanner: false,
                 title: 'تربیت بدنی و علوم ورزشی',
                 theme: ThemeData(
-                  primarySwatch: Colors.blue,
+                  useMaterial3: true,
                 ),
                 home: const WebsitePage(),
               );
@@ -65,6 +91,12 @@ jobs:
 
               controller = WebViewController()
                 ..setJavaScriptMode(JavaScriptMode.unrestricted)
+                ..setNavigationDelegate(
+                  NavigationDelegate(
+                    onPageStarted: (url) {},
+                    onPageFinished: (url) {},
+                  ),
+                )
                 ..loadRequest(
                   Uri.parse('https://itarbiatbadani.ir'),
                 );
@@ -74,14 +106,40 @@ jobs:
             Widget build(BuildContext context) {
               return Scaffold(
                 body: SafeArea(
-                  child: WebViewWidget(controller: controller),
+                  child: WebViewWidget(
+                    controller: controller,
+                  ),
                 ),
               );
             }
           }
           EOF
 
-          flutter pub get
+      - name: Set App Name
+        working-directory: app
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path("android/app/src/main/AndroidManifest.xml")
+          text = p.read_text()
+
+          text = text.replace(
+              'android:label="itarbiatbadani_app"',
+              'android:label="تربیت بدنی و علوم ورزشی"'
+          )
+
+          text = text.replace(
+              'android:label="${applicationName}"',
+              'android:label="تربیت بدنی و علوم ورزشی"'
+          )
+
+          p.write_text(text)
+          PY
+
+      - name: Get Dependencies
+        working-directory: app
+        run: flutter pub get
 
       - name: Build APK
         working-directory: app
@@ -92,3 +150,4 @@ jobs:
         with:
           name: itarbiatbadani-apk
           path: app/build/app/outputs/flutter-apk/app-release.apk
+```
