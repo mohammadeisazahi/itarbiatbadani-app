@@ -20,18 +20,45 @@ jobs:
       - name: Create Flutter Project
         run: flutter create --project-name itarbiatbadani_app app
 
-      - name: Add WebView
+      - name: Add Packages
         working-directory: app
-        run: flutter pub add webview_flutter
+        run: |
+          flutter pub add webview_flutter
+          flutter pub add webview_flutter_android
+          flutter pub add url_launcher
+          flutter pub add flutter_launcher_icons --dev
 
-      - name: Create App
+      - name: Download Website Logo
+        working-directory: app
+        run: |
+          mkdir -p assets
+          curl -L --fail \
+            "https://itarbiatbadani.ir/wp-content/uploads/2025/07/1000073463.png" \
+            -o assets/icon.png
+          file assets/icon.png
+
+      - name: Configure App Icon
+        working-directory: app
+        run: |
+          cat > flutter_launcher_icons.yaml <<'EOF'
+          flutter_launcher_icons:
+            android: true
+            ios: false
+            image_path: "assets/icon.png"
+            adaptive_icon_background: "#0a3d62"
+            min_sdk_android: 24
+          EOF
+
+      - name: Create Professional App
         working-directory: app
         run: |
           cat > lib/main.dart <<'EOF'
           import 'package:flutter/material.dart';
           import 'package:webview_flutter/webview_flutter.dart';
+          import 'package:url_launcher/url_launcher.dart';
 
           void main() {
+            WidgetsFlutterBinding.ensureInitialized();
             runApp(const MyApp());
           }
 
@@ -43,6 +70,13 @@ jobs:
               return MaterialApp(
                 debugShowCheckedModeBanner: false,
                 title: 'تربیت بدنی و علوم ورزشی',
+                theme: ThemeData(
+                  useMaterial3: true,
+                  colorScheme: ColorScheme.fromSeed(
+                    seedColor: const Color(0xFF0A3D62),
+                  ),
+                  fontFamily: 'sans',
+                ),
                 home: const WebsitePage(),
               );
             }
@@ -58,23 +92,187 @@ jobs:
           class _WebsitePageState extends State<WebsitePage> {
             late final WebViewController controller;
 
+            int progress = 0;
+            bool loading = true;
+
             @override
             void initState() {
               super.initState();
 
               controller = WebViewController()
                 ..setJavaScriptMode(JavaScriptMode.unrestricted)
+                ..setBackgroundColor(Colors.white)
+                ..enableZoom(false)
+                ..setNavigationDelegate(
+                  NavigationDelegate(
+                    onProgress: (value) {
+                      if (mounted) {
+                        setState(() {
+                          progress = value;
+                          loading = value < 100;
+                        });
+                      }
+                    },
+                    onPageStarted: (url) {
+                      if (mounted) {
+                        setState(() {
+                          loading = true;
+                          progress = 0;
+                        });
+                      }
+                    },
+                    onPageFinished: (url) {
+                      if (mounted) {
+                        setState(() {
+                          loading = false;
+                          progress = 100;
+                        });
+                      }
+                    },
+                    onNavigationRequest: (request) async {
+                      final url = request.url.toLowerCase();
+
+                      final isFile = url.endsWith('.pdf') ||
+                          url.endsWith('.zip') ||
+                          url.endsWith('.doc') ||
+                          url.endsWith('.docx') ||
+                          url.endsWith('.ppt') ||
+                          url.endsWith('.pptx') ||
+                          url.endsWith('.xls') ||
+                          url.endsWith('.xlsx');
+
+                      if (isFile) {
+                        final uri = Uri.parse(request.url);
+
+                        if (await canLaunchUrl(uri)) {
+                          await launchUrl(
+                            uri,
+                            mode: LaunchMode.externalApplication,
+                          );
+                        }
+
+                        return NavigationDecision.prevent;
+                      }
+
+                      return NavigationDecision.navigate;
+                    },
+                  ),
+                )
                 ..loadRequest(
                   Uri.parse('https://itarbiatbadani.ir'),
                 );
             }
 
+            Future<bool> handleBack() async {
+              if (await controller.canGoBack()) {
+                await controller.goBack();
+                return false;
+              }
+
+              return true;
+            }
+
             @override
             Widget build(BuildContext context) {
-              return Scaffold(
-                body: SafeArea(
-                  child: WebViewWidget(
-                    controller: controller,
+              return PopScope(
+                canPop: false,
+                onPopInvokedWithResult: (didPop, result) async {
+                  if (didPop) return;
+
+                  final shouldExit = await handleBack();
+
+                  if (shouldExit && mounted) {
+                    Navigator.of(context).pop();
+                  }
+                },
+                child: Scaffold(
+                  backgroundColor: Colors.white,
+
+                  body: SafeArea(
+                    child: Stack(
+                      children: [
+                        WebViewWidget(
+                          controller: controller,
+                        ),
+
+                        if (loading)
+                          Positioned(
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            child: LinearProgressIndicator(
+                              value: progress == 0
+                                  ? null
+                                  : progress / 100,
+                              minHeight: 3,
+                            ),
+                          ),
+
+                        if (loading && progress < 15)
+                          Positioned.fill(
+                            child: Container(
+                              color: Colors.white,
+                              child: Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      width: 92,
+                                      height: 92,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF0A3D62),
+                                        borderRadius:
+                                            BorderRadius.circular(24),
+                                      ),
+                                      padding: const EdgeInsets.all(14),
+                                      child: Image.asset(
+                                        'assets/icon.png',
+                                        fit: BoxFit.contain,
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 22),
+
+                                    const Text(
+                                      'تربیت بدنی و علوم ورزشی',
+                                      textDirection: TextDirection.rtl,
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF0A3D62),
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 8),
+
+                                    const Text(
+                                      'مرجع تخصصی تربیت بدنی و علوم ورزشی',
+                                      textDirection: TextDirection.rtl,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Color(0xFF3C6382),
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 28),
+
+                                    SizedBox(
+                                      width: 150,
+                                      child: LinearProgressIndicator(
+                                        value: progress == 0
+                                            ? null
+                                            : progress / 100,
+                                        minHeight: 4,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -82,26 +280,40 @@ jobs:
           }
           EOF
 
+      - name: Generate App Icon
+        working-directory: app
+        run: |
+          flutter pub get
+          dart run flutter_launcher_icons
+
       - name: Add Internet Permission
         working-directory: app
         run: |
-          sed -i '/<manifest/a\    <uses-permission android:name="android.permission.INTERNET"/>' android/app/src/main/AndroidManifest.xml
+          sed -i '/<manifest/a\    <uses-permission android:name="android.permission.INTERNET"/>' \
+            android/app/src/main/AndroidManifest.xml
 
       - name: Set App Name
         working-directory: app
         run: |
-          sed -i 's/android:label="\${applicationName}"/android:label="تربیت بدنی و علوم ورزشی"/' android/app/src/main/AndroidManifest.xml
+          sed -i 's/android:label="\${applicationName}"/android:label="تربیت بدنی و علوم ورزشی"/' \
+            android/app/src/main/AndroidManifest.xml
 
-      - name: Get Dependencies
+      - name: Verify App
         working-directory: app
-        run: flutter pub get
+        run: |
+          echo "===== APP CHECK ====="
+          grep -n "itarbiatbadani.ir" lib/main.dart
+          grep -n "تربیت بدنی و علوم ورزشی" lib/main.dart
+          test -f assets/icon.png
+          echo "===== CHECK COMPLETE ====="
 
       - name: Build APK
         working-directory: app
-        run: flutter build apk --release
+        run: |
+          flutter build apk --release
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: itarbiatbadani-website-apk
+          name: itarbiatbadani-professional-apk
           path: app/build/app/outputs/flutter-apk/app-release.apk
