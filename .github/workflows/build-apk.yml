@@ -1,4 +1,3 @@
-```yaml
 name: Build Android APK
 
 on:
@@ -96,14 +95,12 @@ jobs:
       - name: Add Internet Permission
         working-directory: app
         run: |
-          sed -i '/<manifest/a\    <uses-permission android:name="android.permission.INTERNET"/>' \
-          android/app/src/main/AndroidManifest.xml
+          sed -i '/<manifest/a\    <uses-permission android:name="android.permission.INTERNET"/>' android/app/src/main/AndroidManifest.xml
 
       - name: Set App Name
         working-directory: app
         run: |
-          sed -i 's/android:label="\${applicationName}"/android:label="تربیت بدنی و علوم ورزشی"/' \
-          android/app/src/main/AndroidManifest.xml
+          sed -i 's/android:label="\${applicationName}"/android:label="تربیت بدنی و علوم ورزشی"/' android/app/src/main/AndroidManifest.xml
 
       - name: Get Dependencies
         working-directory: app
@@ -120,4 +117,3 @@ jobs:
         with:
           name: itarbiatbadani-website-apk
           path: app/build/app/outputs/flutter-apk/app-release.apk
-```
