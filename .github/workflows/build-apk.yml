@@ -18,15 +18,13 @@ jobs:
           channel: stable
 
       - name: Create Flutter Project
-        run: |
-          flutter create --project-name itarbiatbadani_app app
+        run: flutter create --project-name itarbiatbadani_app app
 
       - name: Add WebView
         working-directory: app
-        run: |
-          flutter pub add webview_flutter
+        run: flutter pub add webview_flutter
 
-      - name: Create Website App
+      - name: Create App
         working-directory: app
         run: |
           cat > lib/main.dart <<'EOF'
@@ -84,14 +82,6 @@ jobs:
           }
           EOF
 
-      - name: Verify Website Code
-        working-directory: app
-        run: |
-          echo "===== CHECKING MAIN.DART ====="
-          grep -n "itarbiatbadani.ir" lib/main.dart
-          grep -n "WebViewWidget" lib/main.dart
-          echo "===== CHECK COMPLETE ====="
-
       - name: Add Internet Permission
         working-directory: app
         run: |
@@ -104,13 +94,11 @@ jobs:
 
       - name: Get Dependencies
         working-directory: app
-        run: |
-          flutter pub get
+        run: flutter pub get
 
       - name: Build APK
         working-directory: app
-        run: |
-          flutter build apk --release
+        run: flutter build apk --release
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
