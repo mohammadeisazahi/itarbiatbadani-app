@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>تربیت بدنی و علوم ورزشی</title>
+
+  <meta name="description"
+        content="مرجع تخصصی تربیت بدنی و علوم ورزشی؛ جدیدترین مقالات، اخبار، آموزش‌ها و مطالب تخصصی ورزش">
+
+  <meta name="theme-color" content="#0a3d62">
+
+  <link rel="manifest" href="manifest.webmanifest">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Tahoma, Arial, sans-serif;
+      background: #f4f6f8;
+      color: #17202a;
+      line-height: 1.8;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #0a3d62, #3c6382);
+      color: #fff;
+      padding: 16px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 3px 15px rgba(0,0,0,.15);
+    }
+
+    .header-inner {
+      max-width: 1200px;
+      margin: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand img {
+      width: 52px;
+      height: 52px;
+      object-fit: contain;
+      background: #fff;
+      border-radius: 8px;
+    }
+
+    .brand-title {
+      font-size: 19px;
+      font-weight: bold;
+    }
+
+    .brand-subtitle {
+      font-size: 12px;
+      opacity: .85;
+    }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      background: rgba(255,255,255,.14);
+      border: 1px solid rgba(255,255,255,.25);
+      border-radius: 8px;
+      overflow: hidden;
+      width: 300px;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 10px 13px;
+      border: none;
+      outline: none;
+      background: transparent;
+      color: #fff;
+      font-size: 14px;
+    }
+
+    .search-box input::placeholder {
+      color: rgba(255,255,255,.8);
+    }
+
+    .search-box button {
+      border: none;
+      background: #fbc531;
+      color: #17202a;
+      padding: 10px 15px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    /* Navigation */
+    .nav {
+      background: #fff;
+      border-bottom: 1px solid #ddd;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .nav-inner {
+      max-width: 1200px;
+      margin: auto;
+      display: flex;
+      gap: 5px;
+    }
+
+    .nav a {
+      display: inline-block;
+      padding: 12px 17px;
+      font-size: 14px;
+      font-weight: bold;
+      color: #34495e;
+    }
+
+    .nav a:hover,
+    .nav a.active {
+      color: #0a3d62;
+      border-bottom: 3px solid #fbc531;
+    }
+
+    /* Main */
+    .container {
+      max-width: 1200px;
+      margin: auto;
+      padding: 22px 15px 90px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 25px 0 15px;
+      border-right: 5px solid #fbc531;
+      padding-right: 12px;
+    }
+
+    .section-title h2 {
+      font-size: 22px;
+      color: #0a3d62;
+    }
+
+    /* Featured */
+    .featured {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 18px;
+      margin-top: 15px;
+    }
+
+    .featured-main,
+    .featured-side {
+      position: relative;
+      overflow: hidden;
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: 0 3px 15px rgba(0,0,0,.08);
+    }
+
+    .featured-main {
+      min-height: 330px;
+    }
+
+    .featured-main img {
+      width: 100%;
+      height: 330px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .featured-overlay {
+      position: absolute;
+      right: 0;
+      left: 0;
+      bottom: 0;
+      padding: 25px 20px 20px;
+      color: #fff;
+      background: linear-gradient(transparent, rgba(0,0,0,.85));
+    }
+
+    .featured-overlay h1 {
+      font-size: 23px;
+      margin-top: 8px;
+    }
+
+    .category {
+      display: inline-block;
+      background: #fbc531;
+      color: #17202a;
+      padding: 3px 9px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: bold;
+    }
+
+    .featured-side {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .side-item {
+      display: flex;
+      gap: 12px;
+      padding: 13px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .side-item:last-child {
+      border-bottom: none;
+    }
+
+    .side-item img {
+      width: 105px;
+      height: 75px;
+      object-fit: cover;
+      border-radius: 5px;
+      flex-shrink: 0;
+    }
+
+    .side-item h3 {
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    /* Posts */
+    .posts {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .post {
+      background: #fff;
+      overflow: hidden;
+      border-radius: 8px;
+      box-shadow: 0 3px 12px rgba(0,0,0,.07);
+      transition: transform .2s;
+    }
+
+    .post:hover {
+      transform: translateY(-3px);
+    }
+
+    .post img {
+      width: 100%;
+      height: 190px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .post-content {
+      padding: 15px;
+    }
+
+    .post h3 {
+      font-size: 16px;
+      line-height: 1.7;
+      margin: 9px 0;
+      color: #17202a;
+    }
+
+    .post-date {
+      font-size: 11px;
+      color: #888;
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 45px 10px;
+      color: #777;
+      font-size: 15px;
+    }
+
+    /* Error */
+    .error {
+      background: #fff;
+      padding: 25px;
+      text-align: center;
+      border-radius: 8px;
+      color: #c0392b;
+      margin-top: 20px;
+    }
+
+    /* Footer */
+    footer {
+      background: #0a3d62;
+      color: #fff;
+      padding: 30px 15px;
+      text-align: center;
+    }
+
+    footer strong {
+      color: #fbc531;
+    }
+
+    /* Mobile bottom nav */
+    .mobile-bottom {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      right: 0;
+      left: 0;
+      background: #fff;
+      border-top: 1px solid #ddd;
+      z-index: 2000;
+      box-shadow: 0 -3px 15px rgba(0,0,0,.1);
+    }
+
+    .mobile-bottom a {
+      flex: 1;
+      text-align: center;
+      padding: 8px 3px;
+      font-size: 11px;
+      color: #555;
+    }
+
+    .mobile-bottom a span {
+      display: block;
+      font-size: 19px;
+      line-height: 22px;
+    }
+
+    /* Responsive */
+    @media (max-width: 800px) {
+
+      .header {
+        padding: 12px;
+      }
+
+      .header-inner {
+        flex-wrap: wrap;
+      }
+
+      .brand {
+        width: 100%;
+      }
+
+      .search-box {
+        width: 100%;
+      }
+
+      .featured {
+        grid-template-columns: 1fr;
+      }
+
+      .featured-main,
+      .featured-main img {
+        min-height: 260px;
+        height: 260px;
+      }
+
+      .posts {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+
+      .post img {
+        height: 150px;
+      }
+
+      .post-content {
+        padding: 11px;
+      }
+
+      .post h3 {
+        font-size: 14px;
+      }
+
+      .mobile-bottom {
+        display: flex;
+      }
+
+      footer {
+        padding-bottom: 75px;
+      }
+    }
+
+    @media (max-width: 500px) {
+
+      .brand-title {
+        font-size: 16px;
+      }
+
+      .brand-subtitle {
+        font-size: 10px;
+      }
+
+      .brand img {
+        width: 45px;
+        height: 45px;
+      }
+
+      .section-title h2 {
+        font-size: 19px;
+      }
+
+      .posts {
+        grid-template-columns: 1fr;
+      }
+
+      .post img {
+        height: 200px;
+      }
+
+      .featured-overlay h1 {
+        font-size: 19px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header class="header">
+
+  <div class="header-inner">
+
+    <div class="brand">
+      <img
+        src="https://itarbiatbadani.ir/wp-content/uploads/2025/07/1000073463.png"
+        alt="تربیت بدنی و علوم ورزشی">
+
+      <div>
+        <div class="brand-title">
+          تربیت بدنی و علوم ورزشی
+        </div>
+
+        <div class="brand-subtitle">
+          مرجع تخصصی تربیت بدنی و علوم ورزشی
+        </div>
+      </div>
+    </div>
+
+    <div class="search-box">
+
+      <input
+        id="searchInput"
+        type="search"
+        placeholder="جستجو در مطالب...">
+
+      <button onclick="searchPosts()">
+        جستجو
+      </button>
+
+    </div>
+
+  </div>
+
+</header>
+
+
+<nav class="nav">
+
+  <div class="nav-inner">
+
+    <a href="#" class="active">خانه</a>
+
+    <a href="https://itarbiatbadani.ir/" target="_blank">
+      سایت
+    </a>
+
+    <a href="https://itarbiatbadani.ir/category/طرح-درس-ورزشی/" target="_blank">
+      طرح درس
+    </a>
+
+    <a href="https://itarbiatbadani.ir/category/پی-دی-اف-ورزشی/" target="_blank">
+      PDF ورزشی
+    </a>
+
+    <a href="https://itarbiatbadani.ir/category/پاورپوینت-ورزشی/" target="_blank">
+      پاورپوینت
+    </a>
+
+    <a href="https://itarbiatbadani.ir/shop/" target="_blank">
+      فروشگاه
+    </a>
+
+  </div>
+
+</nav>
+
+
+<main class="container">
+
+  <section>
+
+    <div class="section-title">
+      <h2>آخرین مطالب</h2>
+    </div>
+
+    <div id="featured" class="featured">
+
+      <div class="loading">
+        در حال دریافت مطالب...
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <section>
+
+    <div class="section-title">
+      <h2>جدیدترین نوشته‌ها</h2>
+    </div>
+
+    <div id="posts" class="posts">
+
+      <div class="loading">
+        در حال دریافت مطالب...
+      </div>
+
+    </div>
+
+  </section>
+
+</main>
+
+
+<footer>
+
+  <p>
+    <strong>تربیت بدنی و علوم ورزشی</strong>
+  </p>
+
+  <p>
+    مرجع تخصصی تربیت بدنی و علوم ورزشی
+  </p>
+
+  <p>
+    محمد عیسی زهی، کارشناسی ارشد مدیریت ورزشی
+  </p>
+
+</footer>
+
+
+<div class="mobile-bottom">
+
+  <a href="#">
+    <span>⌂</span>
+    خانه
+  </a>
+
+  <a href="https://itarbiatbadani.ir/" target="_blank">
+    <span>◉</span>
+    سایت
+  </a>
+
+  <a href="https://itarbiatbadani.ir/shop/" target="_blank">
+    <span>▣</span>
+    فروشگاه
+  </a>
+
+  <a href="https://t.me/itarbiatbadani" target="_blank">
+    <span>✈</span>
+    تلگرام
+  </a>
+
+</div>
+
+
+<script>
+
+const API =
+  "https://itarbiatbadani.ir/wp-json/wp/v2/posts?per_page=12&_embed";
+
+
+let allPosts = [];
+
+
+function stripHTML(text) {
+
+  const div = document.createElement("div");
+
+  div.innerHTML = text || "";
+
+  return div.textContent || div.innerText || "";
+
+}
+
+
+function getImage(post) {
+
+  try {
+
+    return post._embedded["wp:featuredmedia"][0].source_url;
+
+  } catch (e) {
+
+    return "https://itarbiatbadani.ir/wp-content/uploads/2025/07/1000073463.png";
+
+  }
+
+}
+
+
+function getCategory(post) {
+
+  try {
+
+    return post._embedded["wp:term"][0][0].name;
+
+  } catch (e) {
+
+    return "تربیت بدنی";
+
+  }
+
+}
+
+
+function renderPosts(posts) {
+
+  const featured =
+    document.getElementById("featured");
+
+  const container =
+    document.getElementById("posts");
+
+
+  if (!posts.length) {
+
+    featured.innerHTML =
+      '<div class="error">مطلبی پیدا نشد.</div>';
+
+    container.innerHTML = "";
+
+    return;
+
+  }
+
+
+  const first = posts[0];
+
+
+  featured.innerHTML = `
+
+    <a
+      class="featured-main"
+      href="${first.link}"
+      target="_blank">
+
+      <img
+        src="${getImage(first)}"
+        alt="${stripHTML(first.title.rendered)}">
+
+      <div class="featured-overlay">
+
+        <span class="category">
+          ${getCategory(first)}
+        </span>
+
+        <h1>
+          ${stripHTML(first.title.rendered)}
+        </h1>
+
+      </div>
+
+    </a>
+
+    <div class="featured-side">
+
+      ${posts.slice(1,5).map(post => `
+
+        <a
+          class="side-item"
+          href="${post.link}"
+          target="_blank">
+
+          <img
+            src="${getImage(post)}"
+            alt="${stripHTML(post.title.rendered)}">
+
+          <div>
+
+            <span class="category">
+              ${getCategory(post)}
+            </span>
+
+            <h3>
+              ${stripHTML(post.title.rendered)}
+            </h3>
+
+          </div>
+
+        </a>
+
+      `).join("")}
+
+    </div>
+  `;
+
+
+  container.innerHTML = posts.slice(0,12).map(post => `
+
+    <article class="post">
+
+      <a
+        href="${post.link}"
+        target="_blank">
+
+        <img
+          src="${getImage(post)}"
+          alt="${stripHTML(post.title.rendered)}">
+
+        <div class="post-content">
+
+          <span class="category">
+            ${getCategory(post)}
+          </span>
+
+          <h3>
+            ${stripHTML(post.title.rendered)}
+          </h3>
+
+          <div class="post-date">
+            ${new Date(post.date).toLocaleDateString("fa-IR")}
+          </div>
+
+        </div>
+
+      </a>
+
+    </article>
+
+  `).join("");
+
+}
+
+
+async function loadPosts() {
+
+  try {
+
+    const response =
+      await fetch(API);
+
+    if (!response.ok) {
+
+      throw new Error("API Error");
+
+    }
+
+    allPosts =
+      await response.json();
+
+    renderPosts(allPosts);
+
+  } catch (error) {
+
+    document.getElementById("featured").innerHTML = `
+      <div class="error">
+        دریافت مطالب از سایت با مشکل مواجه شد.
+        <br>
+        لطفاً اتصال اینترنت و API سایت را بررسی کنید.
+      </div>
+    `;
+
+    document.getElementById("posts").innerHTML = "";
+
+  }
+
+}
+
+
+function searchPosts() {
+
+  const query =
+    document.getElementById("searchInput").value
+      .trim()
+      .toLowerCase();
+
+
+  if (!query) {
+
+    renderPosts(allPosts);
+
+    return;
+
+  }
+
+
+  const results =
+    allPosts.filter(post =>
+      stripHTML(post.title.rendered)
+        .toLowerCase()
+        .includes(query)
+    );
+
+
+  renderPosts(results);
+
+}
+
+
+document
+  .getElementById("searchInput")
+  .addEventListener("keydown", function(event) {
+
+    if (event.key === "Enter") {
+
+      searchPosts();
+
+    }
+
+  });
+
+
+loadPosts();
+
+</script>
+
+</body>
+</html>
