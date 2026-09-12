@@ -12,15 +12,36 @@ dependencies:
     sdk: flutter
 
   cupertino_icons: ^1.0.8
-  http: ^1.2.2
+
+  # نمایش تصاویر سایت
   cached_network_image: ^3.4.1
+
+  # ارتباط با وردپرس و دریافت مطالب
+  http: ^1.2.2
+
+  # باز کردن لینک‌ها
   url_launcher: ^6.3.1
+
+  # نمایش مقالات داخل خود برنامه
+  webview_flutter: ^4.10.0
+
+  # آیکون‌های حرفه‌ای
   font_awesome_flutter: ^10.8.0
+
+  # مدیریت راست‌چین و فونت
+  google_fonts: ^6.2.1
+
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
   flutter_lints: ^5.0.0
 
+
 flutter:
+
   uses-material-design: true
+
+  assets:
+    - assets/images/
