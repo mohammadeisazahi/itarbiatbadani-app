@@ -1,0 +1,62 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build-apk:
+    name: Build Flutter Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Check Flutter
+        run: |
+          flutter --version
+          dart --version
+
+      - name: Check project
+        run: |
+          echo "Project files:"
+          ls -la
+          echo "Lib:"
+          ls -la lib || true
+          echo "Pubspec:"
+          cat pubspec.yaml
+
+      - name: Create Android platform
+        run: |
+          flutter create \
+            --platforms=android \
+            --project-name=itarbiatbadani \
+            .
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Analyze project
+        run: flutter analyze --no-fatal-infos
+
+      - name: Build Release APK
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: itarbiatbadani-android-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
