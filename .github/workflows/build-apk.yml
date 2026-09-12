@@ -1,60 +1,1932 @@
-name: Build Android APK
+import 'dart:convert';
 
-'on':
-  workflow_dispatch:
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 
-jobs:
-  build:
-    name: Build APK
-    runs-on: ubuntu-latest
+const String siteUrl = 'https://itarbiatbadani.ir';
+const String apiUrl = '$siteUrl/wp-json/wp/v2';
 
-    steps:
+const Color primaryColor = Color(0xFF0A3D62);
+const Color secondaryColor = Color(0xFF3C6382);
+const Color accentColor = Color(0xFFFBC531);
 
-      - name: Checkout repository
-        uses: actions/checkout@v4
+const String telegramUrl = 'https://t.me/itarbiatbadani';
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.35.4'
-          channel: stable
-          cache: true
+// اگر آدرس کانال بله شما متفاوت است، فقط این خط را تغییر دهید.
+const String baleUrl = 'https://ble.ir/itarbiatbadani';
 
-      - name: Check Flutter
-        run: |
-          flutter --version
-          dart --version
+void main() {
+  runApp(const ItarbiatbadaniApp());
+}
 
-      - name: Get dependencies
-        working-directory: app
-        run: flutter pub get
+class ItarbiatbadaniApp extends StatelessWidget {
+  const ItarbiatbadaniApp({super.key});
 
-      - name: Fix deprecated Flutter APIs
-        working-directory: app
-        run: |
-          sed -i 's/withOpacity(\([^)]*\))/withValues(alpha: \1)/g' lib/main.dart
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'تربیت بدنی و علوم ورزشی',
+      theme: ThemeData(
+        useMaterial3: true,
+        fontFamily: 'IRANSans',
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: primaryColor,
+        ),
+        scaffoldBackgroundColor: const Color(0xFFF5F7FA),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: primaryColor,
+          foregroundColor: Colors.white,
+          centerTitle: true,
+          elevation: 0,
+        ),
+      ),
+      home: const Directionality(
+        textDirection: TextDirection.rtl,
+        child: MainNavigation(),
+      ),
+    );
+  }
+}
 
-      - name: Remove default tests
-        working-directory: app
-        run: |
-          rm -rf test
+/* -------------------------------------------------------------------------- */
+/*                                  MODELS                                    */
+/* -------------------------------------------------------------------------- */
 
-      - name: Flutter analyze
-        working-directory: app
-        run: flutter analyze
+class PostModel {
+  final int id;
+  final String title;
+  final String link;
+  final String date;
+  final String excerpt;
+  final String image;
 
-      - name: Build release APK
-        working-directory: app
-        run: flutter build apk --release
+  const PostModel({
+    required this.id,
+    required this.title,
+    required this.link,
+    required this.date,
+    required this.excerpt,
+    required this.image,
+  });
 
-      - name: Prepare APK
-        run: |
-          mkdir -p release
-          cp app/build/app/outputs/flutter-apk/app-release.apk release/itarbiatbadani.apk
+  factory PostModel.fromJson(Map<String, dynamic> json) {
+    String image = '';
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: itarbiatbadani-modern-apk
-          path: release/itarbiatbadani.apk
-          if-no-files-found: error
+    try {
+      final embedded = json['_embedded'];
+
+      if (embedded != null &&
+          embedded['wp:featuredmedia'] != null &&
+          embedded['wp:featuredmedia'] is List &&
+          embedded['wp:featuredmedia'].isNotEmpty) {
+        image =
+            embedded['wp:featuredmedia'][0]['source_url']?.toString() ?? '';
+      }
+    } catch (_) {}
+
+    return PostModel(
+      id: json['id'] ?? 0,
+      title: cleanHtml(json['title']?['rendered']?.toString() ?? ''),
+      link: json['link']?.toString() ?? siteUrl,
+      date: json['date']?.toString() ?? '',
+      excerpt: cleanHtml(
+        json['excerpt']?['rendered']?.toString() ?? '',
+      ),
+      image: image,
+    );
+  }
+}
+
+class CategoryModel {
+  final int id;
+  final String name;
+  final int count;
+  final int parent;
+
+  const CategoryModel({
+    required this.id,
+    required this.name,
+    required this.count,
+    required this.parent,
+  });
+
+  factory CategoryModel.fromJson(Map<String, dynamic> json) {
+    return CategoryModel(
+      id: json['id'] ?? 0,
+      name: cleanHtml(json['name']?.toString() ?? ''),
+      count: json['count'] ?? 0,
+      parent: json['parent'] ?? 0,
+    );
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                              WORDPRESS API                                 */
+/* -------------------------------------------------------------------------- */
+
+class WordPressApi {
+  static Future<List<PostModel>> latestPosts() async {
+    final uri = Uri.parse(
+      '$apiUrl/posts?per_page=6&orderby=date&order=desc&_embed',
+    );
+
+    final response = await http.get(uri);
+
+    if (response.statusCode != 200) {
+      throw Exception('خطا در دریافت نوشته‌ها');
+    }
+
+    final List<dynamic> data = jsonDecode(response.body);
+
+    return data
+        .map(
+          (item) => PostModel.fromJson(
+            item as Map<String, dynamic>,
+          ),
+        )
+        .toList();
+  }
+
+  static Future<List<CategoryModel>> categories() async {
+    final List<CategoryModel> result = [];
+
+    int page = 1;
+
+    while (true) {
+      final uri = Uri.parse(
+        '$apiUrl/categories?per_page=100&page=$page&hide_empty=false',
+      );
+
+      final response = await http.get(uri);
+
+      if (response.statusCode == 400 && page > 1) {
+        break;
+      }
+
+      if (response.statusCode != 200) {
+        throw Exception('خطا در دریافت دسته‌بندی‌ها');
+      }
+
+      final List<dynamic> data = jsonDecode(response.body);
+
+      for (final item in data) {
+        result.add(
+          CategoryModel.fromJson(
+            item as Map<String, dynamic>,
+          ),
+        );
+      }
+
+      if (data.length < 100) {
+        break;
+      }
+
+      page++;
+    }
+
+    return result;
+  }
+
+  static Future<List<PostModel>> postsByCategory(
+    int categoryId,
+  ) async {
+    final uri = Uri.parse(
+      '$apiUrl/posts?categories=$categoryId&per_page=30&orderby=date&order=desc&_embed',
+    );
+
+    final response = await http.get(uri);
+
+    if (response.statusCode != 200) {
+      throw Exception('خطا در دریافت نوشته‌های دسته‌بندی');
+    }
+
+    final List<dynamic> data = jsonDecode(response.body);
+
+    return data
+        .map(
+          (item) => PostModel.fromJson(
+            item as Map<String, dynamic>,
+          ),
+        )
+        .toList();
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                              URL HANDLER                                   */
+/* -------------------------------------------------------------------------- */
+
+Future<void> openUrl(String url) async {
+  final uri = Uri.parse(url);
+
+  try {
+    final opened = await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
+
+    if (!opened) {
+      await launchUrl(uri);
+    }
+  } catch (_) {}
+}
+
+/* -------------------------------------------------------------------------- */
+/*                            MAIN NAVIGATION                                 */
+/* -------------------------------------------------------------------------- */
+
+class MainNavigation extends StatefulWidget {
+  const MainNavigation({super.key});
+
+  @override
+  State<MainNavigation> createState() => _MainNavigationState();
+}
+
+class _MainNavigationState extends State<MainNavigation> {
+  int currentIndex = 0;
+
+  final List<Widget> pages = const [
+    HomePage(),
+    CategoriesPage(),
+    StorePage(),
+    TelegramPage(),
+    MorePage(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: IndexedStack(
+        index: currentIndex,
+        children: pages,
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: currentIndex,
+        backgroundColor: Colors.white,
+        indicatorColor: accentColor.withValues(alpha: 0.25),
+        onDestinationSelected: (index) {
+          setState(() {
+            currentIndex = index;
+          });
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'خانه',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.category_outlined),
+            selectedIcon: Icon(Icons.category),
+            label: 'دسته‌بندی‌ها',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.store_outlined),
+            selectedIcon: Icon(Icons.store),
+            label: 'فروشگاه',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.send_outlined),
+            selectedIcon: Icon(Icons.send),
+            label: 'تلگرام',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.more_horiz),
+            selectedIcon: Icon(Icons.more),
+            label: 'بیشتر',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                  HOME                                      */
+/* -------------------------------------------------------------------------- */
+
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  late Future<List<PostModel>> futurePosts;
+
+  @override
+  void initState() {
+    super.initState();
+    futurePosts = WordPressApi.latestPosts();
+  }
+
+  Future<void> refresh() async {
+    setState(() {
+      futurePosts = WordPressApi.latestPosts();
+    });
+
+    await futurePosts;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: RefreshIndicator(
+        onRefresh: refresh,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            const SliverToBoxAdapter(
+              child: _HomeHeader(),
+            ),
+            SliverToBoxAdapter(
+              child: _QuickServices(),
+            ),
+            const SliverToBoxAdapter(
+              child: SectionTitle(
+                title: 'جدیدترین نوشته‌ها',
+                icon: Icons.article_outlined,
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: FutureBuilder<List<PostModel>>(
+                future: futurePosts,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState ==
+                      ConnectionState.waiting) {
+                    return const Padding(
+                      padding: EdgeInsets.all(30),
+                      child: Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+                  }
+
+                  if (snapshot.hasError) {
+                    return ErrorBox(
+                      message: 'دریافت نوشته‌ها با مشکل مواجه شد.',
+                      onRetry: refresh,
+                    );
+                  }
+
+                  final posts = snapshot.data ?? [];
+
+                  if (posts.isEmpty) {
+                    return const EmptyBox(
+                      message: 'نوشته‌ای پیدا نشد.',
+                    );
+                  }
+
+                  return ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(
+                      16,
+                      4,
+                      16,
+                      12,
+                    ),
+                    itemCount: posts.length,
+                    itemBuilder: (context, index) {
+                      return PostCard(post: posts[index]);
+                    },
+                  );
+                },
+              ),
+            ),
+            const SliverToBoxAdapter(
+              child: SectionTitle(
+                title: 'خدمات ما',
+                icon: Icons.dashboard_customize_outlined,
+              ),
+            ),
+            const SliverToBoxAdapter(
+              child: ServicesGrid(),
+            ),
+            const SliverToBoxAdapter(
+              child: SizedBox(height: 30),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                              HOME HEADER                                   */
+/* -------------------------------------------------------------------------- */
+
+class _HomeHeader extends StatelessWidget {
+  const _HomeHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 55, 20, 28),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            primaryColor,
+            secondaryColor,
+          ],
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+        ),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(30),
+          bottomRight: Radius.circular(30),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(17),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.12),
+                      blurRadius: 15,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(17),
+                  child: Image.network(
+                    '$siteUrl/wp-content/uploads/2025/07/1000073463.png',
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) {
+                      return const Icon(
+                        Icons.sports,
+                        color: primaryColor,
+                        size: 32,
+                      );
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Text(
+                  'تربیت بدنی و علوم ورزشی',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 21,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 22),
+          const Text(
+            'مرجع تخصصی تربیت بدنی و علوم ورزشی',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 17,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 7),
+          Text(
+            'مقالات، منابع، اخبار و مطالب تخصصی رشته تربیت بدنی',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.86),
+              fontSize: 13,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                             QUICK SERVICES                                 */
+/* -------------------------------------------------------------------------- */
+
+class _QuickServices extends StatelessWidget {
+  const _QuickServices();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 18, 16, 5),
+      child: Row(
+        children: [
+          Expanded(
+            child: _QuickButton(
+              title: 'تلگرام',
+              icon: Icons.send,
+              color: const Color(0xFF229ED9),
+              onTap: () => openUrl(telegramUrl),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _QuickButton(
+              title: 'بله',
+              icon: Icons.chat_bubble_outline,
+              color: const Color(0xFF00A884),
+              onTap: () => openUrl(baleUrl),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _QuickButton(
+              title: 'فروشگاه',
+              icon: Icons.shopping_bag_outlined,
+              color: accentColor,
+              darkIcon: true,
+              onTap: () => openUrl('$siteUrl/shop/'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickButton extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Color color;
+  final bool darkIcon;
+  final VoidCallback onTap;
+
+  const _QuickButton({
+    required this.title,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+    this.darkIcon = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: color,
+      borderRadius: BorderRadius.circular(17),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(17),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            vertical: 13,
+            horizontal: 7,
+          ),
+          child: Column(
+            children: [
+              Icon(
+                icon,
+                color: darkIcon ? primaryColor : Colors.white,
+                size: 25,
+              ),
+              const SizedBox(height: 5),
+              Text(
+                title,
+                style: TextStyle(
+                  color: darkIcon ? primaryColor : Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                             SERVICES                                       */
+/* -------------------------------------------------------------------------- */
+
+class ServicesGrid extends StatelessWidget {
+  const ServicesGrid({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final services = [
+      (
+        'معرفی رشته',
+        Icons.info_outline,
+        '$siteUrl/introduction-to-the-field-of-physical-education-and-sports-sciences/',
+      ),
+      (
+        'گرایش‌های ارشد',
+        Icons.layers_outlined,
+        '$siteUrl/%da%af%d8%b1%d8%a7%db%8c%d8%b4%d9%87%d8%a7%db%8c-%da%a9%d8%a7%d8%b1%d8%b4%d9%86%d8%a7%d8%b3%db%8c-%d8%a7%d8%b1%d8%b4%d8%af-%d8%aa%d8%b1%d8%a8%db%8c%d8%aa-%d8%a8%d8%af%d9%86%d9%8a-%d9%88/',
+      ),
+      (
+        'گرایش‌های دکتری',
+        Icons.school_outlined,
+        '$siteUrl/sports-science-phd-exam-resources/',
+      ),
+      (
+        'منابع ارشد',
+        Icons.menu_book_outlined,
+        '$siteUrl/master-of-sports-science-resources/',
+      ),
+      (
+        'منابع دکتری',
+        Icons.chrome_reader_mode_outlined,
+        '$siteUrl/manabe-konkur-doctori-tarbiat-badani/',
+      ),
+      (
+        'منابع استخدامی',
+        Icons.assignment_outlined,
+        '#',
+      ),
+      (
+        'دانشگاه‌های برتر',
+        Icons.account_balance_outlined,
+        '$siteUrl/physical-education-sports-science/',
+      ),
+      (
+        'بازار کار',
+        Icons.work_outline,
+        '$siteUrl/job-market-in-physical-education-and-sports-sciences/',
+      ),
+      (
+        'طرح درس',
+        Icons.co_present_outlined,
+        '$siteUrl/product-category/%d8%b7%d8%b1%d8%ad-%d8%af%d8%b1%d8%b3-%d8%b1%d9%88%d8%b2%d8%a7%d9%86%d9%87-%d9%85%d8%a7%d9%87%d8%a7%d9%86%d9%87-%d8%b3%d8%a7%d9%84%d8%a7%d9%86%d9%87/',
+      ),
+      (
+        'پاورپوینت',
+        Icons.slideshow_outlined,
+        '$siteUrl/product-category/powerpoint/',
+      ),
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: services.length,
+        gridDelegate:
+            const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 11,
+          mainAxisSpacing: 11,
+          childAspectRatio: 1.5,
+        ),
+        itemBuilder: (context, index) {
+          final service = services[index];
+
+          return ServiceCard(
+            title: service.$1,
+            icon: service.$2,
+            url: service.$3,
+          );
+        },
+      ),
+    );
+  }
+}
+
+class ServiceCard extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final String url;
+
+  const ServiceCard({
+    super.key,
+    required this.title,
+    required this.icon,
+    required this.url,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final disabled = url == '#';
+
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: disabled
+            ? null
+            : () {
+                openUrl(url);
+              },
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: primaryColor.withValues(alpha: 0.07),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.035),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: disabled
+                      ? Colors.grey.shade200
+                      : primaryColor.withValues(alpha: 0.09),
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: Icon(
+                  icon,
+                  color: disabled
+                      ? Colors.grey
+                      : primaryColor,
+                  size: 23,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    color: disabled
+                        ? Colors.grey
+                        : const Color(0xFF202124),
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              if (disabled)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'به‌زودی',
+                    style: TextStyle(
+                      fontSize: 8,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                              POST CARD                                     */
+/* -------------------------------------------------------------------------- */
+
+class PostCard extends StatelessWidget {
+  final PostModel post;
+
+  const PostCard({
+    super.key,
+    required this.post,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => openUrl(post.link),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 115,
+              height: 125,
+              child: post.image.isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: post.image,
+                      fit: BoxFit.cover,
+                      placeholder: (_, __) {
+                        return Container(
+                          color: primaryColor.withValues(alpha: 0.07),
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                            ),
+                          ),
+                        );
+                      },
+                      errorWidget: (_, __, ___) {
+                        return Container(
+                          color: primaryColor.withValues(alpha: 0.07),
+                          child: const Icon(
+                            Icons.image_not_supported_outlined,
+                            color: primaryColor,
+                          ),
+                        );
+                      },
+                    )
+                  : Container(
+                      color: primaryColor.withValues(alpha: 0.07),
+                      child: const Icon(
+                        Icons.article_outlined,
+                        color: primaryColor,
+                        size: 35,
+                      ),
+                    ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      post.title,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        height: 1.5,
+                        color: Color(0xFF202124),
+                      ),
+                    ),
+                    const SizedBox(height: 7),
+                    Text(
+                      post.excerpt,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11,
+                        height: 1.5,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.calendar_today_outlined,
+                          size: 12,
+                          color: Colors.grey.shade500,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          formatDate(post.date),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
+                        const Spacer(),
+                        const Icon(
+                          Icons.arrow_back_ios_new,
+                          size: 12,
+                          color: primaryColor,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                             CATEGORIES                                     */
+/* -------------------------------------------------------------------------- */
+
+class CategoriesPage extends StatefulWidget {
+  const CategoriesPage({super.key});
+
+  @override
+  State<CategoriesPage> createState() =>
+      _CategoriesPageState();
+}
+
+class _CategoriesPageState extends State<CategoriesPage> {
+  late Future<List<CategoryModel>> futureCategories;
+
+  @override
+  void initState() {
+    super.initState();
+    futureCategories = WordPressApi.categories();
+  }
+
+  Future<void> reload() async {
+    setState(() {
+      futureCategories = WordPressApi.categories();
+    });
+
+    await futureCategories;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('دسته‌بندی‌ها'),
+      ),
+      body: FutureBuilder<List<CategoryModel>>(
+        future: futureCategories,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState ==
+              ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+
+          if (snapshot.hasError) {
+            return ErrorBox(
+              message: 'دریافت دسته‌بندی‌ها با مشکل مواجه شد.',
+              onRetry: reload,
+            );
+          }
+
+          final categories = snapshot.data ?? [];
+
+          final parents = categories
+              .where((category) => category.parent == 0)
+              .toList();
+
+          if (parents.isEmpty) {
+            return const EmptyBox(
+              message: 'دسته‌بندی‌ای پیدا نشد.',
+            );
+          }
+
+          return RefreshIndicator(
+            onRefresh: reload,
+            child: ListView.builder(
+              padding: const EdgeInsets.all(14),
+              itemCount: parents.length,
+              itemBuilder: (context, index) {
+                final parent = parents[index];
+
+                final children = categories
+                    .where(
+                      (category) =>
+                          category.parent == parent.id,
+                    )
+                    .toList();
+
+                if (children.isEmpty) {
+                  return CategoryTile(
+                    category: parent,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              CategoryPostsPage(
+                            category: parent,
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                }
+
+                return Card(
+                  elevation: 0,
+                  margin:
+                      const EdgeInsets.only(bottom: 10),
+                  color: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(17),
+                  ),
+                  child: ExpansionTile(
+                    tilePadding:
+                        const EdgeInsets.symmetric(
+                      horizontal: 16,
+                    ),
+                    leading: CategoryIcon(
+                      name: parent.name,
+                    ),
+                    title: Text(
+                      parent.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    subtitle: Text(
+                      '${parent.count} نوشته',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    children: [
+                      ...children.map(
+                        (child) => ListTile(
+                          contentPadding:
+                              const EdgeInsets.only(
+                            right: 65,
+                            left: 16,
+                          ),
+                          leading: CategoryIcon(
+                            name: child.name,
+                            small: true,
+                          ),
+                          title: Text(
+                            child.name,
+                            style: const TextStyle(
+                              fontSize: 13,
+                            ),
+                          ),
+                          trailing: const Icon(
+                            Icons.chevron_left,
+                            size: 20,
+                            color: primaryColor,
+                          ),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    CategoryPostsPage(
+                                  category: child,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class CategoryTile extends StatelessWidget {
+  final CategoryModel category;
+  final VoidCallback onTap;
+
+  const CategoryTile({
+    super.key,
+    required this.category,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 10),
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(17),
+      ),
+      child: ListTile(
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16),
+        leading: CategoryIcon(
+          name: category.name,
+        ),
+        title: Text(
+          category.name,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+          ),
+        ),
+        subtitle: Text(
+          '${category.count} نوشته',
+          style: TextStyle(
+            fontSize: 10,
+            color: Colors.grey.shade600,
+          ),
+        ),
+        trailing: const Icon(
+          Icons.chevron_left,
+          color: primaryColor,
+        ),
+        onTap: onTap,
+      ),
+    );
+  }
+}
+
+class CategoryIcon extends StatelessWidget {
+  final String name;
+  final bool small;
+
+  const CategoryIcon({
+    super.key,
+    required this.name,
+    this.small = false,
+  });
+
+  IconData get icon {
+    final n = name.toLowerCase();
+
+    if (n.contains('ورزش')) {
+      return Icons.sports_soccer;
+    }
+
+    if (n.contains('تغذ')) {
+      return Icons.restaurant;
+    }
+
+    if (n.contains('تمرین')) {
+      return Icons.fitness_center;
+    }
+
+    if (n.contains('فیزیولوژی')) {
+      return Icons.monitor_heart_outlined;
+    }
+
+    if (n.contains('آسیب')) {
+      return Icons.healing_outlined;
+    }
+
+    if (n.contains('مدیریت')) {
+      return Icons.business_center_outlined;
+    }
+
+    if (n.contains('پژوهش') ||
+        n.contains('تحقیق')) {
+      return Icons.science_outlined;
+    }
+
+    if (n.contains('دانشگاه')) {
+      return Icons.account_balance_outlined;
+    }
+
+    if (n.contains('استخدام') ||
+        n.contains('شغل') ||
+        n.contains('کار')) {
+      return Icons.work_outline;
+    }
+
+    if (n.contains('درس') ||
+        n.contains('آموزش')) {
+      return Icons.school_outlined;
+    }
+
+    if (n.contains('مقال')) {
+      return Icons.article_outlined;
+    }
+
+    if (n.contains('سلامت')) {
+      return Icons.health_and_safety_outlined;
+    }
+
+    if (n.contains('بانوان') ||
+        n.contains('زنان')) {
+      return Icons.woman_outlined;
+    }
+
+    if (n.contains('کودک')) {
+      return Icons.child_care_outlined;
+    }
+
+    return Icons.category_outlined;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final size = small ? 34.0 : 45.0;
+    final iconSize = small ? 18.0 : 23.0;
+
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: primaryColor.withValues(alpha: 0.09),
+        borderRadius: BorderRadius.circular(
+          small ? 10 : 13,
+        ),
+      ),
+      child: Icon(
+        icon,
+        color: primaryColor,
+        size: iconSize,
+      ),
+    );
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                          CATEGORY POSTS                                    */
+/* -------------------------------------------------------------------------- */
+
+class CategoryPostsPage extends StatefulWidget {
+  final CategoryModel category;
+
+  const CategoryPostsPage({
+    super.key,
+    required this.category,
+  });
+
+  @override
+  State<CategoryPostsPage> createState() =>
+      _CategoryPostsPageState();
+}
+
+class _CategoryPostsPageState
+    extends State<CategoryPostsPage> {
+  late Future<List<PostModel>> futurePosts;
+
+  @override
+  void initState() {
+    super.initState();
+
+    futurePosts =
+        WordPressApi.postsByCategory(widget.category.id);
+  }
+
+  Future<void> reload() async {
+    setState(() {
+      futurePosts =
+          WordPressApi.postsByCategory(widget.category.id);
+    });
+
+    await futurePosts;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.category.name),
+      ),
+      body: FutureBuilder<List<PostModel>>(
+        future: futurePosts,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState ==
+              ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+
+          if (snapshot.hasError) {
+            return ErrorBox(
+              message: 'دریافت نوشته‌ها با مشکل مواجه شد.',
+              onRetry: reload,
+            );
+          }
+
+          final posts = snapshot.data ?? [];
+
+          if (posts.isEmpty) {
+            return const EmptyBox(
+              message:
+                  'در این دسته‌بندی هنوز نوشته‌ای وجود ندارد.',
+            );
+          }
+
+          return RefreshIndicator(
+            onRefresh: reload,
+            child: ListView.builder(
+              physics:
+                  const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(16),
+              itemCount: posts.length,
+              itemBuilder: (context, index) {
+                return PostCard(
+                  post: posts[index],
+                );
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                               STORE                                        */
+/* -------------------------------------------------------------------------- */
+
+class StorePage extends StatelessWidget {
+  const StorePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('فروشگاه'),
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment:
+                MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 90,
+                height: 90,
+                decoration: BoxDecoration(
+                  color: accentColor.withValues(alpha: 0.18),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.storefront_outlined,
+                  size: 45,
+                  color: primaryColor,
+                ),
+              ),
+              const SizedBox(height: 22),
+              const Text(
+                'فروشگاه تربیت بدنی و علوم ورزشی',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.bold,
+                  color: primaryColor,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'برای مشاهده محصولات و خرید، وارد فروشگاه سایت شوید.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey.shade600,
+                  height: 1.7,
+                ),
+              ),
+              const SizedBox(height: 25),
+              FilledButton.icon(
+                onPressed: () {
+                  openUrl('$siteUrl/shop/');
+                },
+                icon: const Icon(
+                  Icons.open_in_new,
+                ),
+                label: const Text(
+                  'ورود به فروشگاه',
+                ),
+                style: FilledButton.styleFrom(
+                  backgroundColor: primaryColor,
+                  padding:
+                      const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 13,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                              TELEGRAM                                      */
+/* -------------------------------------------------------------------------- */
+
+class TelegramPage extends StatelessWidget {
+  const TelegramPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('کانال تلگرام'),
+      ),
+      body: SocialChannelPage(
+        title: 'کانال تلگرام',
+        description:
+            'جدیدترین مطالب، مقالات و اطلاع‌رسانی‌های تربیت بدنی و علوم ورزشی',
+        icon: Icons.send,
+        color: const Color(0xFF229ED9),
+        url: telegramUrl,
+        buttonText: 'ورود به کانال تلگرام',
+      ),
+    );
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                 BALE                                       */
+/* -------------------------------------------------------------------------- */
+
+class BalePage extends StatelessWidget {
+  const BalePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('کانال بله'),
+      ),
+      body: SocialChannelPage(
+        title: 'کانال بله',
+        description:
+            'مطالب و اطلاع‌رسانی‌های تربیت بدنی و علوم ورزشی در پیام‌رسان بله',
+        icon: Icons.chat_bubble_outline,
+        color: const Color(0xFF00A884),
+        url: baleUrl,
+        buttonText: 'ورود به کانال بله',
+      ),
+    );
+  }
+}
+
+class SocialChannelPage extends StatelessWidget {
+  final String title;
+  final String description;
+  final IconData icon;
+  final Color color;
+  final String url;
+  final String buttonText;
+
+  const SocialChannelPage({
+    super.key,
+    required this.title,
+    required this.description,
+    required this.icon,
+    required this.color,
+    required this.url,
+    required this.buttonText,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(25),
+        child: Column(
+          mainAxisAlignment:
+              MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 105,
+              height: 105,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.13),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: color,
+                size: 55,
+              ),
+            ),
+            const SizedBox(height: 25),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: primaryColor,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              description,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey.shade600,
+                height: 1.8,
+              ),
+            ),
+            const SizedBox(height: 28),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () => openUrl(url),
+                icon: const Icon(
+                  Icons.open_in_new,
+                ),
+                label: Text(buttonText),
+                style: FilledButton.styleFrom(
+                  backgroundColor: color,
+                  padding:
+                      const EdgeInsets.symmetric(
+                    vertical: 15,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                  MORE                                      */
+/* -------------------------------------------------------------------------- */
+
+class MorePage extends StatelessWidget {
+  const MorePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('بیشتر'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          const AboutCard(),
+          const SizedBox(height: 14),
+
+          MoreItem(
+            icon: Icons.language,
+            title: 'وب‌سایت',
+            subtitle: 'itarbiatbadani.ir',
+            onTap: () => openUrl(siteUrl),
+          ),
+
+          MoreItem(
+            icon: Icons.send,
+            iconColor: const Color(0xFF229ED9),
+            title: 'کانال تلگرام',
+            subtitle: '@itarbiatbadani',
+            onTap: () => openUrl(telegramUrl),
+          ),
+
+          MoreItem(
+            icon: Icons.chat_bubble_outline,
+            iconColor: const Color(0xFF00A884),
+            title: 'کانال بله',
+            subtitle: 'ورود به کانال بله',
+            onTap: () => openUrl(baleUrl),
+          ),
+
+          MoreItem(
+            icon: Icons.camera_alt_outlined,
+            title: 'اینستاگرام',
+            subtitle: '@itarbiatbadani',
+            onTap: () => openUrl(
+              'https://instagram.com/itarbiatbadani',
+            ),
+          ),
+
+          MoreItem(
+            icon: Icons.support_agent_outlined,
+            title: 'ارتباط و خرید',
+            subtitle: '@ivarzeshiadmin',
+            onTap: () => openUrl(
+              'https://t.me/ivarzeshiadmin',
+            ),
+          ),
+
+          MoreItem(
+            icon: Icons.shopping_bag_outlined,
+            title: 'فروشگاه',
+            subtitle: 'مشاهده محصولات',
+            onTap: () => openUrl(
+              '$siteUrl/shop/',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                              ABOUT CARD                                    */
+/* -------------------------------------------------------------------------- */
+
+class AboutCard extends StatelessWidget {
+  const AboutCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [
+            primaryColor,
+            secondaryColor,
+          ],
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+        ),
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: const Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+        children: [
+          Text(
+            'تربیت بدنی و علوم ورزشی',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'مرجع تخصصی مطالب، منابع و آموزش‌های رشته تربیت بدنی و علوم ورزشی',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 12,
+              height: 1.8,
+            ),
+          ),
+          SizedBox(height: 10),
+          Text(
+            'محمد عیسی زهی، کارشناسی ارشد مدیریت ورزشی',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 11,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                              MORE ITEM                                     */
+/* -------------------------------------------------------------------------- */
+
+class MoreItem extends StatelessWidget {
+  final IconData icon;
+  final Color? iconColor;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const MoreItem({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.iconColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      color: Colors.white,
+      margin: const EdgeInsets.only(bottom: 10),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(17),
+      ),
+      child: ListTile(
+        onTap: onTap,
+        contentPadding:
+            const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 4,
+        ),
+        leading: Container(
+          width: 45,
+          height: 45,
+          decoration: BoxDecoration(
+            color: (iconColor ?? primaryColor)
+                .withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(13),
+          ),
+          child: Icon(
+            icon,
+            color: iconColor ?? primaryColor,
+          ),
+        ),
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+          ),
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 3),
+          child: Text(
+            subtitle,
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ),
+        trailing: const Icon(
+          Icons.chevron_left,
+          color: primaryColor,
+        ),
+      ),
+    );
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                              SECTION TITLE                                 */
+/* -------------------------------------------------------------------------- */
+
+class SectionTitle extends StatelessWidget {
+  final String title;
+  final IconData icon;
+
+  const SectionTitle({
+    super.key,
+    required this.title,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        16,
+        18,
+        16,
+        9,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: accentColor.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: Icon(
+              icon,
+              color: primaryColor,
+              size: 21,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            title,
+            style: const TextStyle(
+              color: primaryColor,
+              fontSize: 17,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                              ERROR BOX                                     */
+/* -------------------------------------------------------------------------- */
+
+class ErrorBox extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+
+  const ErrorBox({
+    super.key,
+    required this.message,
+    required this.onRetry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(25),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.cloud_off_outlined,
+            color: Colors.grey,
+            size: 45,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.grey,
+            ),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton(
+            onPressed: onRetry,
+            child: const Text('تلاش دوباره'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                              EMPTY BOX                                     */
+/* -------------------------------------------------------------------------- */
+
+class EmptyBox extends StatelessWidget {
+  final String message;
+
+  const EmptyBox({
+    super.key,
+    required this.message,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(30),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(
+              Icons.inbox_outlined,
+              size: 50,
+              color: Colors.grey.shade400,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                              HELPERS                                       */
+/* -------------------------------------------------------------------------- */
+
+String cleanHtml(String text) {
+  return text
+      .replaceAll(RegExp(r'<[^>]*>'), ' ')
+      .replaceAll('&nbsp;', ' ')
+      .replaceAll('&amp;', '&')
+      .replaceAll('&quot;', '"')
+      .replaceAll('&#8217;', '’')
+      .replaceAll('&#8216;', '‘')
+      .replaceAll('&#8220;', '“')
+      .replaceAll('&#8221;', '”')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
+}
+
+String formatDate(String date) {
+  if (date.isEmpty) {
+    return '';
+  }
+
+  try {
+    final parsed = DateTime.parse(date);
+
+    return '${parsed.year}/${parsed.month.toString().padLeft(2, '0')}/${parsed.day.toString().padLeft(2, '0')}';
+  } catch (_) {
+    return date.split('T').first;
+  }
+}
