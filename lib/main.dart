@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
+
+import 'screens/home_screen.dart';
+import 'screens/categories_screen.dart';
+import 'screens/search_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const ItarbiatbadaniApp());
+
+  runApp(const ItarbiatBadaniApp());
 }
 
-class ItarbiatbadaniApp extends StatelessWidget {
-  const ItarbiatbadaniApp({super.key});
+class ItarbiatBadaniApp extends StatelessWidget {
+  const ItarbiatBadaniApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -16,43 +20,77 @@ class ItarbiatbadaniApp extends StatelessWidget {
       title: 'تربیت بدنی و علوم ورزشی',
       theme: ThemeData(
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF07131F),
+        scaffoldBackgroundColor: const Color(0xff07131f),
+        fontFamily: 'Vazir',
         useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xfffbc531),
+          brightness: Brightness.dark,
+        ),
       ),
-      home: const HomePage(),
+      home: const MainNavigation(),
     );
   }
 }
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+class MainNavigation extends StatefulWidget {
+  const MainNavigation({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<MainNavigation> createState() => _MainNavigationState();
 }
 
-class _HomePageState extends State<HomePage> {
-  late final WebViewController controller;
+class _MainNavigationState extends State<MainNavigation> {
+  int currentIndex = 0;
 
-  @override
-  void initState() {
-    super.initState();
-
-    controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(const Color(0xFF07131F))
-      ..enableZoom(false)
-      ..loadFlutterAsset('assets/index.html');
-  }
+  final List<Widget> pages = const [
+    HomeScreen(),
+    CategoriesScreen(),
+    SearchScreen(),
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF07131F),
-      body: SafeArea(
-        child: WebViewWidget(
-          controller: controller,
-        ),
+      body: IndexedStack(
+        index: currentIndex,
+        children: pages,
+      ),
+      bottomNavigationBar: NavigationBar(
+        backgroundColor: const Color(0xff0d2233),
+        indicatorColor: const Color(0xfffbc531),
+        selectedIndex: currentIndex,
+        onDestinationSelected: (index) {
+          setState(() {
+            currentIndex = index;
+          });
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(
+              Icons.home,
+              color: Color(0xff07131f),
+            ),
+            label: 'خانه',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.category_outlined),
+            selectedIcon: Icon(
+              Icons.category,
+              color: Color(0xff07131f),
+            ),
+            label: 'دسته‌ها',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.search_outlined),
+            selectedIcon: Icon(
+              Icons.search,
+              color: Color(0xff07131f),
+            ),
+            label: 'جستجو',
+          ),
+        ],
       ),
     );
   }
