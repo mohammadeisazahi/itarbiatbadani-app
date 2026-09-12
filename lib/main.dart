@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 const String siteUrl = 'https://itarbiatbadani.ir';
 
@@ -44,6 +45,8 @@ String cleanHtml(String value) {
       .replaceAll('&#8216;', '‘')
       .replaceAll('&#8220;', '“')
       .replaceAll('&#8221;', '”')
+      .replaceAll('&#039;', "'")
+      .replaceAll('&#038;', '&')
       .trim();
 }
 
@@ -65,8 +68,21 @@ String postLink(dynamic post) {
 
 String postImage(dynamic post) {
   try {
-    final media = post['_embedded']['wp:featuredmedia'][0];
-    return media['source_url'] ?? '';
+    final embedded = post['_embedded'];
+
+    if (embedded != null &&
+        embedded['wp:featuredmedia'] != null &&
+        embedded['wp:featuredmedia'].isNotEmpty) {
+      return embedded['wp:featuredmedia'][0]['source_url'] ?? '';
+    }
+  } catch (_) {}
+
+  return '';
+}
+
+String postContent(dynamic post) {
+  try {
+    return post['content']['rendered'] ?? '';
   } catch (_) {
     return '';
   }
@@ -84,6 +100,7 @@ class ItarbiatbadaniApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'تربیت بدنی و علوم ورزشی',
+      locale: const Locale('fa', 'IR'),
       theme: ThemeData(
         brightness: Brightness.dark,
         scaffoldBackgroundColor: backgroundColor,
@@ -98,14 +115,16 @@ class ItarbiatbadaniApp extends StatelessWidget {
           elevation: 0,
         ),
       ),
+      builder: (context, child) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: child ?? const SizedBox(),
+        );
+      },
       home: const MainPage(),
     );
   }
 }
-
-/* =========================================================
-   MAIN PAGE
-   ========================================================= */
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -142,17 +161,26 @@ class _MainPageState extends State<MainPage> {
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home, color: goldColor),
+            selectedIcon: Icon(
+              Icons.home,
+              color: goldColor,
+            ),
             label: 'خانه',
           ),
           NavigationDestination(
             icon: Icon(Icons.grid_view_outlined),
-            selectedIcon: Icon(Icons.grid_view, color: goldColor),
+            selectedIcon: Icon(
+              Icons.grid_view,
+              color: goldColor,
+            ),
             label: 'دسته‌ها',
           ),
           NavigationDestination(
             icon: Icon(Icons.search_outlined),
-            selectedIcon: Icon(Icons.search, color: goldColor),
+            selectedIcon: Icon(
+              Icons.search,
+              color: goldColor,
+            ),
             label: 'جستجو',
           ),
         ],
@@ -160,10 +188,6 @@ class _MainPageState extends State<MainPage> {
     );
   }
 }
-
-/* =========================================================
-   HEADER
-   ========================================================= */
 
 class AppHeader extends StatelessWidget {
   final String title;
@@ -202,11 +226,10 @@ class AppHeader extends StatelessWidget {
                   Navigator.maybePop(context);
                 },
                 icon: const Icon(
-                  Icons.arrow_back,
+                  Icons.arrow_forward,
                   color: textColor,
                 ),
               ),
-
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: Image.network(
@@ -227,14 +250,13 @@ class AppHeader extends StatelessWidget {
                 },
               ),
             ),
-
             const SizedBox(width: 10),
-
             Expanded(
               child: Text(
                 title,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
+                textDirection: TextDirection.rtl,
                 style: const TextStyle(
                   color: textColor,
                   fontSize: 16,
@@ -243,25 +265,21 @@ class AppHeader extends StatelessWidget {
                 ),
               ),
             ),
-
-            IconButton(
-              onPressed: onSearch,
-              icon: const Icon(
-                Icons.search,
-                color: goldColor,
-                size: 27,
+            if (onSearch != null)
+              IconButton(
+                onPressed: onSearch,
+                icon: const Icon(
+                  Icons.search,
+                  color: goldColor,
+                  size: 27,
+                ),
               ),
-            ),
           ],
         ),
       ),
     );
   }
 }
-
-/* =========================================================
-   HOME
-   ========================================================= */
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -276,12 +294,12 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    postsFuture = WordPressApi.getPosts(perPage: 6);
+    postsFuture = WordPressApi.getPosts(perPage: 8);
   }
 
   Future<void> refresh() async {
     setState(() {
-      postsFuture = WordPressApi.getPosts(perPage: 6);
+      postsFuture = WordPressApi.getPosts(perPage: 8);
     });
 
     await postsFuture;
@@ -311,8 +329,13 @@ class _HomePageState extends State<HomePage> {
 
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 18, 14, 10),
-              child: _HeroSection(),
+              padding: const EdgeInsets.fromLTRB(
+                14,
+                18,
+                14,
+                10,
+              ),
+              child: const _HeroSection(),
             ),
           ),
 
@@ -321,7 +344,7 @@ class _HomePageState extends State<HomePage> {
           ),
 
           SliverToBoxAdapter(
-            child: SectionTitle(
+            child: const SectionTitle(
               title: 'جدیدترین نوشته‌ها',
               icon: Icons.article_outlined,
             ),
@@ -346,7 +369,8 @@ class _HomePageState extends State<HomePage> {
                 if (snapshot.hasError) {
                   return ErrorBox(
                     message:
-                        'دریافت مطالب با مشکل مواجه شد.\nلطفاً اتصال اینترنت را بررسی کنید.',
+                        'دریافت جدیدترین نوشته‌ها با مشکل مواجه شد.\n'
+                        'لطفاً اتصال اینترنت را بررسی کنید.',
                   );
                 }
 
@@ -357,21 +381,28 @@ class _HomePageState extends State<HomePage> {
                     padding: EdgeInsets.all(30),
                     child: Center(
                       child: Text(
-                        'مطلبی پیدا نشد.',
-                        style: TextStyle(color: mutedColor),
+                        'هنوز نوشته‌ای برای نمایش وجود ندارد.',
+                        textDirection: TextDirection.rtl,
+                        style: TextStyle(
+                          color: mutedColor,
+                        ),
                       ),
                     ),
                   );
                 }
 
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                  ),
                   child: Column(
-                    children: posts
-                        .map(
-                          (post) => PostCard(post: post),
-                        )
-                        .toList(),
+                    children: posts.map(
+                      (post) {
+                        return PostCard(
+                          post: post,
+                        );
+                      },
+                    ).toList(),
                   ),
                 );
               },
@@ -391,11 +422,9 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-/* =========================================================
-   HERO
-   ========================================================= */
-
 class _HeroSection extends StatelessWidget {
+  const _HeroSection();
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -417,30 +446,32 @@ class _HeroSection extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+        children: const [
           Row(
-            children: const [
+            children: [
               Icon(
                 Icons.sports_soccer,
                 color: goldColor,
                 size: 30,
               ),
               SizedBox(width: 10),
-              Text(
-                'تربیت بدنی و علوم ورزشی',
-                style: TextStyle(
-                  color: goldColor,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+              Expanded(
+                child: Text(
+                  'تربیت بدنی و علوم ورزشی',
+                  textDirection: TextDirection.rtl,
+                  style: TextStyle(
+                    color: goldColor,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
           ),
-
-          const SizedBox(height: 16),
-
-          const Text(
+          SizedBox(height: 16),
+          Text(
             'مرجع تخصصی تربیت بدنی و علوم ورزشی',
+            textDirection: TextDirection.rtl,
             style: TextStyle(
               color: Colors.white,
               fontSize: 22,
@@ -448,11 +479,10 @@ class _HeroSection extends StatelessWidget {
               height: 1.6,
             ),
           ),
-
-          const SizedBox(height: 8),
-
-          const Text(
+          SizedBox(height: 8),
+          Text(
             'اخبار، آموزش، منابع علمی، طرح درس و مطالب تخصصی ورزش',
+            textDirection: TextDirection.rtl,
             style: TextStyle(
               color: Color(0xffc5d4df),
               fontSize: 14,
@@ -464,10 +494,6 @@ class _HeroSection extends StatelessWidget {
     );
   }
 }
-
-/* =========================================================
-   SERVICES
-   ========================================================= */
 
 class ServiceItem {
   final String title;
@@ -500,12 +526,14 @@ class ServicesSection extends StatelessWidget {
     ServiceItem(
       title: 'گرایش‌های دکتری',
       icon: Icons.account_balance_outlined,
-      url: '$siteUrl/sports-science-phd-exam-resources/',
+      url:
+          '$siteUrl/sports-science-phd-exam-resources/',
     ),
     ServiceItem(
       title: 'منابع ارشد',
       icon: Icons.menu_book_outlined,
-      url: '$siteUrl/master-of-sports-science-resources/',
+      url:
+          '$siteUrl/master-of-sports-science-resources/',
     ),
     ServiceItem(
       title: 'منابع دکتری',
@@ -516,7 +544,8 @@ class ServicesSection extends StatelessWidget {
     ServiceItem(
       title: 'دانشگاه‌های برتر',
       icon: Icons.account_balance,
-      url: '$siteUrl/physical-education-sports-science/',
+      url:
+          '$siteUrl/physical-education-sports-science/',
     ),
     ServiceItem(
       title: 'بازار کار',
@@ -533,7 +562,8 @@ class ServicesSection extends StatelessWidget {
     ServiceItem(
       title: 'پاورپوینت',
       icon: Icons.slideshow_outlined,
-      url: '$siteUrl/product-category/powerpoint/',
+      url:
+          '$siteUrl/product-category/powerpoint/',
     ),
   ];
 
@@ -548,10 +578,13 @@ class ServicesSection extends StatelessWidget {
         SizedBox(
           height: 112,
           child: ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 14),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 14,
+            ),
             scrollDirection: Axis.horizontal,
             itemCount: services.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            separatorBuilder: (_, __) =>
+                const SizedBox(width: 10),
             itemBuilder: (context, index) {
               final item = services[index];
 
@@ -568,7 +601,8 @@ class ServicesSection extends StatelessWidget {
                     ),
                   ),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisAlignment:
+                        MainAxisAlignment.center,
                     children: [
                       Icon(
                         item.icon,
@@ -580,6 +614,7 @@ class ServicesSection extends StatelessWidget {
                         item.title,
                         maxLines: 2,
                         textAlign: TextAlign.center,
+                        textDirection: TextDirection.rtl,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           color: textColor,
@@ -601,10 +636,6 @@ class ServicesSection extends StatelessWidget {
   }
 }
 
-/* =========================================================
-   SECTION TITLE
-   ========================================================= */
-
 class SectionTitle extends StatelessWidget {
   final String title;
   final IconData icon;
@@ -618,7 +649,12 @@ class SectionTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 18, 14, 12),
+      padding: const EdgeInsets.fromLTRB(
+        14,
+        18,
+        14,
+        12,
+      ),
       child: Row(
         children: [
           Container(
@@ -638,6 +674,7 @@ class SectionTitle extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             title,
+            textDirection: TextDirection.rtl,
             style: const TextStyle(
               color: textColor,
               fontSize: 18,
@@ -649,10 +686,6 @@ class SectionTitle extends StatelessWidget {
     );
   }
 }
-
-/* =========================================================
-   POST CARD
-   ========================================================= */
 
 class PostCard extends StatelessWidget {
   final dynamic post;
@@ -668,7 +701,16 @@ class PostCard extends StatelessWidget {
     final title = postTitle(post);
 
     return GestureDetector(
-      onTap: () => openUrl(postLink(post)),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ArticlePage(
+              post: post,
+            ),
+          ),
+        );
+      },
       child: Container(
         margin: const EdgeInsets.only(bottom: 14),
         decoration: BoxDecoration(
@@ -679,6 +721,7 @@ class PostCard extends StatelessWidget {
           ),
         ),
         child: Row(
+          textDirection: TextDirection.rtl,
           children: [
             ClipRRect(
               borderRadius: const BorderRadius.only(
@@ -694,7 +737,8 @@ class PostCard extends StatelessWidget {
                         fit: BoxFit.cover,
                         placeholder: (_, __) {
                           return const Center(
-                            child: CircularProgressIndicator(
+                            child:
+                                CircularProgressIndicator(
                               strokeWidth: 2,
                               color: goldColor,
                             ),
@@ -722,6 +766,7 @@ class PostCard extends StatelessWidget {
                   title,
                   maxLines: 4,
                   overflow: TextOverflow.ellipsis,
+                  textDirection: TextDirection.rtl,
                   style: const TextStyle(
                     color: textColor,
                     fontSize: 14,
@@ -737,10 +782,6 @@ class PostCard extends StatelessWidget {
     );
   }
 }
-
-/* =========================================================
-   SOCIAL
-   ========================================================= */
 
 class SocialSection extends StatelessWidget {
   SocialSection({super.key});
@@ -777,10 +818,13 @@ class SocialSection extends StatelessWidget {
           icon: Icons.connect_without_contact,
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 14,
+          ),
           child: GridView.builder(
             shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
+            physics:
+                const NeverScrollableScrollPhysics(),
             itemCount: socials.length,
             gridDelegate:
                 const SliverGridDelegateWithFixedCrossAxisCount(
@@ -797,13 +841,15 @@ class SocialSection extends StatelessWidget {
                 child: Container(
                   decoration: BoxDecoration(
                     color: panelColor,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius:
+                        BorderRadius.circular(12),
                     border: Border.all(
                       color: Colors.white.withOpacity(.06),
                     ),
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisAlignment:
+                        MainAxisAlignment.center,
                     children: [
                       Icon(
                         item['icon'],
@@ -813,6 +859,8 @@ class SocialSection extends StatelessWidget {
                       const SizedBox(width: 8),
                       Text(
                         item['title'],
+                        textDirection:
+                            TextDirection.rtl,
                         style: const TextStyle(
                           color: textColor,
                           fontWeight: FontWeight.bold,
@@ -831,23 +879,26 @@ class SocialSection extends StatelessWidget {
 }
 
 /* =========================================================
-   CATEGORIES
+   دسته‌بندی‌ها
    ========================================================= */
 
 class CategoriesPage extends StatefulWidget {
   const CategoriesPage({super.key});
 
   @override
-  State<CategoriesPage> createState() => _CategoriesPageState();
+  State<CategoriesPage> createState() =>
+      _CategoriesPageState();
 }
 
-class _CategoriesPageState extends State<CategoriesPage> {
+class _CategoriesPageState
+    extends State<CategoriesPage> {
   late Future<List<dynamic>> categoriesFuture;
 
   @override
   void initState() {
     super.initState();
-    categoriesFuture = WordPressApi.getCategories();
+    categoriesFuture =
+        WordPressApi.getCategories();
   }
 
   @override
@@ -886,40 +937,47 @@ class _CategoriesPageState extends State<CategoriesPage> {
 
                 if (snapshot.hasError) {
                   return const ErrorBox(
-                    message: 'دریافت دسته‌بندی‌ها انجام نشد.',
+                    message:
+                        'دریافت دسته‌بندی‌ها انجام نشد.',
                   );
                 }
 
-                final categories = snapshot.data ?? [];
+                final categories =
+                    snapshot.data ?? [];
 
+                /*
+                 * تمام دسته‌های اصلی واقعی وردپرس
+                 * نمایش داده می‌شوند.
+                 *
+                 * دیگر از لیست ثابت slug استفاده نمی‌کنیم.
+                 */
                 final mainCategories = categories
                     .where(
                       (category) =>
-                          category['parent'] == 0 &&
-                          allowedMainCategorySlugs
-                              .contains(category['slug']),
+                          category['parent'] == 0,
+                    )
+                    .where(
+                      (category) =>
+                          cleanHtml(
+                            category['name'] ?? '',
+                          ).isNotEmpty,
                     )
                     .toList();
 
-                mainCategories.sort(
-                  (a, b) {
-                    final aIndex = allowedMainCategorySlugs
-                        .toList()
-                        .indexOf(a['slug']);
-                    final bIndex = allowedMainCategorySlugs
-                        .toList()
-                        .indexOf(b['slug']);
-
-                    return aIndex.compareTo(bIndex);
-                  },
-                );
+                if (mainCategories.isEmpty) {
+                  return const ErrorBox(
+                    message:
+                        'دسته اصلی در سایت پیدا نشد.',
+                  );
+                }
 
                 return Padding(
                   padding: const EdgeInsets.all(14),
                   child: Column(
                     children: mainCategories
                         .map(
-                          (category) => CategoryTile(
+                          (category) =>
+                              CategoryTile(
                             category: category,
                           ),
                         )
@@ -935,23 +993,6 @@ class _CategoriesPageState extends State<CategoriesPage> {
   }
 }
 
-const Set<String> allowedMainCategorySlugs = {
-  'physical-education-sport-sciences',
-  'sports-science',
-  'sports-science-exam-resources',
-  'sports-nutrition',
-  'sports-news-and-events',
-  'public-exercise-health-and-wellness',
-  'research-in-physical-education',
-  'physical-education-and-training',
-  'introduction-to-sources-and-reference-books',
-  'principles-of-exercise-and-physical-activity',
-  'employment-tests',
-  'introduction-to-sports-disciplines',
-  'exercise-for-special-groups-and-needs',
-  'technology-and-innovation-in-sports',
-};
-
 class CategoryTile extends StatelessWidget {
   final dynamic category;
 
@@ -962,39 +1003,46 @@ class CategoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = cleanHtml(category['name'] ?? '');
-    final id = category['id'];
+    final name =
+        cleanHtml(category['name'] ?? '');
 
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => SubCategoriesPage(
-              categoryId: id,
+            builder: (_) =>
+                CategoryBrowserPage(
+              categoryId: category['id'],
               categoryName: name,
             ),
           ),
         );
       },
       child: Container(
-        margin: const EdgeInsets.only(bottom: 11),
+        margin:
+            const EdgeInsets.only(bottom: 11),
         padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
           color: panelColor,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius:
+              BorderRadius.circular(14),
           border: Border.all(
-            color: Colors.white.withOpacity(.06),
+            color:
+                Colors.white.withOpacity(.06),
           ),
         ),
         child: Row(
+          textDirection: TextDirection.rtl,
           children: [
             Container(
               width: 45,
               height: 45,
               decoration: BoxDecoration(
-                color: goldColor.withOpacity(.12),
-                borderRadius: BorderRadius.circular(12),
+                color:
+                    goldColor.withOpacity(.12),
+                borderRadius:
+                    BorderRadius.circular(12),
               ),
               child: const Icon(
                 Icons.folder_outlined,
@@ -1005,9 +1053,12 @@ class CategoryTile extends StatelessWidget {
             Expanded(
               child: Text(
                 name,
+                textDirection:
+                    TextDirection.rtl,
                 style: const TextStyle(
                   color: textColor,
-                  fontWeight: FontWeight.bold,
+                  fontWeight:
+                      FontWeight.bold,
                   fontSize: 14,
                   height: 1.7,
                 ),
@@ -1024,127 +1075,51 @@ class CategoryTile extends StatelessWidget {
   }
 }
 
-/* =========================================================
-   SUB CATEGORIES
-   ========================================================= */
+/*
+ * این صفحه به صورت بازگشتی کار می‌کند:
+ *
+ * دسته اصلی
+ *      ↓
+ * زیر دسته
+ *      ↓
+ * زیر دسته بعدی
+ *      ↓
+ * مطالب
+ *
+ * بنابراین محدود به یک سطح نیست.
+ */
 
-class SubCategoriesPage extends StatefulWidget {
+class CategoryBrowserPage extends StatefulWidget {
   final int categoryId;
   final String categoryName;
 
-  const SubCategoriesPage({
+  const CategoryBrowserPage({
     super.key,
     required this.categoryId,
     required this.categoryName,
   });
 
   @override
-  State<SubCategoriesPage> createState() =>
-      _SubCategoriesPageState();
+  State<CategoryBrowserPage> createState() =>
+      _CategoryBrowserPageState();
 }
 
-class _SubCategoriesPageState extends State<SubCategoriesPage> {
-  late Future<List<dynamic>> future;
+class _CategoryBrowserPageState
+    extends State<CategoryBrowserPage> {
+  late Future<List<dynamic>> subCategoriesFuture;
+  late Future<List<dynamic>> postsFuture;
 
   @override
   void initState() {
     super.initState();
-    future =
-        WordPressApi.getSubCategories(widget.categoryId);
-  }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: AppHeader(
-              title: widget.categoryName,
-              showBack: true,
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: FutureBuilder<List<dynamic>>(
-              future: future,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState ==
-                    ConnectionState.waiting) {
-                  return const Padding(
-                    padding: EdgeInsets.all(40),
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        color: goldColor,
-                      ),
-                    ),
-                  );
-                }
-
-                if (snapshot.hasError) {
-                  return const ErrorBox(
-                    message: 'دریافت زیر دسته‌ها انجام نشد.',
-                  );
-                }
-
-                final subCategories =
-                    snapshot.data ?? [];
-
-                if (subCategories.isEmpty) {
-                  return CategoryPostsPage(
-                    categoryId: widget.categoryId,
-                    categoryName: widget.categoryName,
-                  );
-                }
-
-                return Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Column(
-                    children: subCategories
-                        .map(
-                          (category) => CategoryTile(
-                            category: category,
-                          ),
-                        )
-                        .toList(),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
+    subCategoriesFuture =
+        WordPressApi.getSubCategories(
+      widget.categoryId,
     );
-  }
-}
 
-/* =========================================================
-   CATEGORY POSTS
-   ========================================================= */
-
-class CategoryPostsPage extends StatefulWidget {
-  final int categoryId;
-  final String categoryName;
-
-  const CategoryPostsPage({
-    super.key,
-    required this.categoryId,
-    required this.categoryName,
-  });
-
-  @override
-  State<CategoryPostsPage> createState() =>
-      _CategoryPostsPageState();
-}
-
-class _CategoryPostsPageState
-    extends State<CategoryPostsPage> {
-  late Future<List<dynamic>> future;
-
-  @override
-  void initState() {
-    super.initState();
-
-    future = WordPressApi.getPosts(
+    postsFuture =
+        WordPressApi.getPosts(
       perPage: 20,
       category: widget.categoryId,
     );
@@ -1161,9 +1136,10 @@ class _CategoryPostsPageState
               showBack: true,
             ),
           ),
+
           SliverToBoxAdapter(
             child: FutureBuilder<List<dynamic>>(
-              future: future,
+              future: subCategoriesFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState ==
                     ConnectionState.waiting) {
@@ -1179,35 +1155,129 @@ class _CategoryPostsPageState
 
                 if (snapshot.hasError) {
                   return const ErrorBox(
-                    message: 'دریافت مطالب انجام نشد.',
+                    message:
+                        'دریافت زیر دسته‌ها انجام نشد.',
                   );
                 }
 
-                final posts = snapshot.data ?? [];
+                final subCategories =
+                    snapshot.data ?? [];
 
-                if (posts.isEmpty) {
-                  return const Padding(
-                    padding: EdgeInsets.all(35),
-                    child: Center(
-                      child: Text(
-                        'در این دسته مطلبی پیدا نشد.',
-                        style: TextStyle(
-                          color: mutedColor,
+                if (subCategories.isNotEmpty) {
+                  return Padding(
+                    padding:
+                        const EdgeInsets.fromLTRB(
+                      14,
+                      14,
+                      14,
+                      4,
+                    ),
+                    child: Column(
+                      children: [
+                        const SectionTitle(
+                          title: 'زیر دسته‌ها',
+                          icon: Icons.folder_copy_outlined,
                         ),
-                      ),
+                        ...subCategories.map(
+                          (category) =>
+                              CategoryTile(
+                            category: category,
+                          ),
+                        ),
+                      ],
                     ),
                   );
                 }
 
-                return Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Column(
-                    children: posts
-                        .map(
-                          (post) => PostCard(post: post),
-                        )
-                        .toList(),
-                  ),
+                return const SizedBox.shrink();
+              },
+            ),
+          ),
+
+          /*
+           * اگر این دسته زیر دسته نداشت،
+           * مطالب همان دسته نمایش داده می‌شوند.
+           */
+          SliverToBoxAdapter(
+            child: FutureBuilder<List<dynamic>>(
+              future: subCategoriesFuture,
+              builder: (context, subSnapshot) {
+                if (subSnapshot.connectionState !=
+                    ConnectionState.done) {
+                  return const SizedBox.shrink();
+                }
+
+                final subs =
+                    subSnapshot.data ?? [];
+
+                if (subs.isNotEmpty) {
+                  return const SizedBox.shrink();
+                }
+
+                return FutureBuilder<List<dynamic>>(
+                  future: postsFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState ==
+                        ConnectionState.waiting) {
+                      return const Padding(
+                        padding: EdgeInsets.all(40),
+                        child: Center(
+                          child:
+                              CircularProgressIndicator(
+                            color: goldColor,
+                          ),
+                        ),
+                      );
+                    }
+
+                    if (snapshot.hasError) {
+                      return const ErrorBox(
+                        message:
+                            'دریافت مطالب این دسته انجام نشد.',
+                      );
+                    }
+
+                    final posts =
+                        snapshot.data ?? [];
+
+                    if (posts.isEmpty) {
+                      return const Padding(
+                        padding: EdgeInsets.all(35),
+                        child: Center(
+                          child: Text(
+                            'در این دسته مطلبی پیدا نشد.',
+                            textDirection:
+                                TextDirection.rtl,
+                            style: TextStyle(
+                              color: mutedColor,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+
+                    return Padding(
+                      padding:
+                          const EdgeInsets.all(14),
+                      child: Column(
+                        crossAxisAlignment:
+                            CrossAxisAlignment.stretch,
+                        children: [
+                          const SectionTitle(
+                            title: 'مطالب',
+                            icon:
+                                Icons.article_outlined,
+                          ),
+                          ...posts.map(
+                            (post) =>
+                                PostCard(
+                              post: post,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 );
               },
             ),
@@ -1219,26 +1289,30 @@ class _CategoryPostsPageState
 }
 
 /* =========================================================
-   SEARCH
+   جستجو
    ========================================================= */
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
 
   @override
-  State<SearchPage> createState() => _SearchPageState();
+  State<SearchPage> createState() =>
+      _SearchPageState();
 }
 
-class _SearchPageState extends State<SearchPage> {
+class _SearchPageState
+    extends State<SearchPage> {
   final TextEditingController controller =
       TextEditingController();
 
   List<dynamic> results = [];
+
   bool loading = false;
   bool searched = false;
 
   Future<void> search() async {
-    final text = controller.text.trim();
+    final text =
+        controller.text.trim();
 
     if (text.isEmpty) return;
 
@@ -1250,7 +1324,8 @@ class _SearchPageState extends State<SearchPage> {
     });
 
     try {
-      final data = await WordPressApi.getPosts(
+      final data =
+          await WordPressApi.getPosts(
         search: text,
         perPage: 20,
       );
@@ -1285,12 +1360,15 @@ class _SearchPageState extends State<SearchPage> {
           SliverToBoxAdapter(
             child: AppHeader(
               title: 'جستجوی مطالب',
-              showBack: Navigator.canPop(context),
+              showBack:
+                  Navigator.canPop(context),
             ),
           ),
+
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(
+              padding:
+                  const EdgeInsets.fromLTRB(
                 14,
                 18,
                 14,
@@ -1298,53 +1376,69 @@ class _SearchPageState extends State<SearchPage> {
               ),
               child: TextField(
                 controller: controller,
-                textDirection: TextDirection.rtl,
-                textInputAction: TextInputAction.search,
+                textDirection:
+                    TextDirection.rtl,
+                textInputAction:
+                    TextInputAction.search,
                 onSubmitted: (_) => search(),
                 style: const TextStyle(
                   color: textColor,
                 ),
-                decoration: InputDecoration(
-                  hintText: 'عنوان یا موضوع مورد نظر را جستجو کنید...',
-                  hintStyle: const TextStyle(
+                decoration:
+                    InputDecoration(
+                  hintText:
+                      'عنوان یا موضوع مورد نظر را جستجو کنید...',
+                  hintStyle:
+                      const TextStyle(
                     color: mutedColor,
                     fontSize: 13,
                   ),
                   filled: true,
                   fillColor: panelColor,
-                  prefixIcon: IconButton(
+                  suffixIcon:
+                      IconButton(
                     onPressed: search,
                     icon: const Icon(
                       Icons.search,
                       color: goldColor,
                     ),
                   ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide.none,
+                  border:
+                      OutlineInputBorder(
+                    borderRadius:
+                        BorderRadius.circular(
+                      14,
+                    ),
+                    borderSide:
+                        BorderSide.none,
                   ),
                 ),
               ),
             ),
           ),
+
           if (loading)
             const SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.all(40),
                 child: Center(
-                  child: CircularProgressIndicator(
+                  child:
+                      CircularProgressIndicator(
                     color: goldColor,
                   ),
                 ),
               ),
             )
-          else if (searched && results.isEmpty)
+          else if (searched &&
+              results.isEmpty)
             const SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.all(35),
                 child: Center(
                   child: Text(
                     'نتیجه‌ای پیدا نشد.',
+                    textDirection:
+                        TextDirection.rtl,
                     style: TextStyle(
                       color: mutedColor,
                       fontSize: 15,
@@ -1355,15 +1449,18 @@ class _SearchPageState extends State<SearchPage> {
             )
           else
             SliverPadding(
-              padding: const EdgeInsets.all(14),
+              padding:
+                  const EdgeInsets.all(14),
               sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
+                delegate:
+                    SliverChildBuilderDelegate(
                   (context, index) {
                     return PostCard(
                       post: results[index],
                     );
                   },
-                  childCount: results.length,
+                  childCount:
+                      results.length,
                 ),
               ),
             ),
@@ -1374,7 +1471,142 @@ class _SearchPageState extends State<SearchPage> {
 }
 
 /* =========================================================
-   ERROR BOX
+   صفحه مقاله
+   ========================================================= */
+
+class ArticlePage extends StatefulWidget {
+  final dynamic post;
+
+  const ArticlePage({
+    super.key,
+    required this.post,
+  });
+
+  @override
+  State<ArticlePage> createState() =>
+      _ArticlePageState();
+}
+
+class _ArticlePageState
+    extends State<ArticlePage> {
+  late final WebViewController controller;
+
+  bool loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+
+    controller = WebViewController()
+      ..setJavaScriptMode(
+        JavaScriptMode.unrestricted,
+      )
+      ..setBackgroundColor(
+        backgroundColor,
+      )
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageStarted: (_) {
+            if (mounted) {
+              setState(() {
+                loading = true;
+              });
+            }
+          },
+          onPageFinished: (_) {
+            if (mounted) {
+              setState(() {
+                loading = false;
+              });
+            }
+          },
+        ),
+      )
+      ..loadRequest(
+        Uri.parse(postLink(widget.post)),
+      );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final title =
+        postTitle(widget.post);
+
+    return Scaffold(
+      backgroundColor: backgroundColor,
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        titleSpacing: 0,
+        title: Row(
+          children: [
+            IconButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              icon: const Icon(
+                Icons.arrow_forward,
+                color: textColor,
+              ),
+            ),
+            Expanded(
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow:
+                    TextOverflow.ellipsis,
+                textDirection:
+                    TextDirection.rtl,
+                style: const TextStyle(
+                  color: textColor,
+                  fontSize: 15,
+                  fontWeight:
+                      FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            tooltip: 'باز کردن در سایت',
+            onPressed: () {
+              openUrl(
+                postLink(widget.post),
+              );
+            },
+            icon: const Icon(
+              Icons.open_in_browser,
+              color: goldColor,
+            ),
+          ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          WebViewWidget(
+            controller: controller,
+          ),
+
+          if (loading)
+            const Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: LinearProgressIndicator(
+                color: goldColor,
+                backgroundColor:
+                    panelColor,
+                minHeight: 3,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/* =========================================================
+   خطا
    ========================================================= */
 
 class ErrorBox extends StatelessWidget {
@@ -1392,12 +1624,16 @@ class ErrorBox extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: panelColor,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius:
+            BorderRadius.circular(14),
         border: Border.all(
-          color: Colors.red.withOpacity(.2),
+          color:
+              Colors.red.withOpacity(.2),
         ),
       ),
       child: Row(
+        textDirection:
+            TextDirection.rtl,
         children: [
           const Icon(
             Icons.error_outline,
@@ -1408,6 +1644,8 @@ class ErrorBox extends StatelessWidget {
           Expanded(
             child: Text(
               message,
+              textDirection:
+                  TextDirection.rtl,
               style: const TextStyle(
                 color: mutedColor,
                 height: 1.7,
@@ -1421,19 +1659,21 @@ class ErrorBox extends StatelessWidget {
 }
 
 /* =========================================================
-   WORDPRESS API
+   WordPress API
    ========================================================= */
 
 class WordPressApi {
   static Future<List<dynamic>> getPosts({
     int page = 1,
-    int perPage = 6,
+    int perPage = 8,
     String? search,
     int? category,
   }) async {
-    final params = <String, String>{
+    final params =
+        <String, String>{
       'page': page.toString(),
-      'per_page': perPage.toString(),
+      'per_page':
+          perPage.toString(),
       'orderby': 'date',
       'order': 'desc',
       '_embed': 'true',
@@ -1441,11 +1681,13 @@ class WordPressApi {
 
     if (search != null &&
         search.trim().isNotEmpty) {
-      params['search'] = search.trim();
+      params['search'] =
+          search.trim();
     }
 
     if (category != null) {
-      params['categories'] = category.toString();
+      params['categories'] =
+          category.toString();
     }
 
     final uri = Uri.parse(
@@ -1454,21 +1696,26 @@ class WordPressApi {
       queryParameters: params,
     );
 
-    final response = await http.get(
+    final response =
+        await http.get(
       uri,
-      headers: {
-        'Accept': 'application/json',
+      headers: const {
+        'Accept':
+            'application/json',
       },
     );
 
     if (response.statusCode == 200) {
-      final decoded = jsonDecode(response.body);
+      final decoded =
+          jsonDecode(response.body);
 
       if (decoded is List) {
         return decoded;
       }
 
-      throw Exception('پاسخ نامعتبر از وردپرس');
+      throw Exception(
+        'پاسخ نامعتبر از وردپرس',
+      );
     }
 
     throw Exception(
@@ -1476,33 +1723,39 @@ class WordPressApi {
     );
   }
 
-  static Future<List<dynamic>> getCategories() async {
+  static Future<List<dynamic>>
+      getCategories() async {
     final uri = Uri.parse(
       '$apiUrl/categories',
     ).replace(
-      queryParameters: {
+      queryParameters: const {
         'per_page': '100',
-        'hide_empty': 'true',
+        'hide_empty': 'false',
         'orderby': 'name',
         'order': 'asc',
       },
     );
 
-    final response = await http.get(
+    final response =
+        await http.get(
       uri,
-      headers: {
-        'Accept': 'application/json',
+      headers: const {
+        'Accept':
+            'application/json',
       },
     );
 
     if (response.statusCode == 200) {
-      final decoded = jsonDecode(response.body);
+      final decoded =
+          jsonDecode(response.body);
 
       if (decoded is List) {
         return decoded;
       }
 
-      throw Exception('پاسخ نامعتبر از وردپرس');
+      throw Exception(
+        'پاسخ نامعتبر از وردپرس',
+      );
     }
 
     throw Exception(
@@ -1510,7 +1763,8 @@ class WordPressApi {
     );
   }
 
-  static Future<List<dynamic>> getSubCategories(
+  static Future<List<dynamic>>
+      getSubCategories(
     int parentId,
   ) async {
     final uri = Uri.parse(
@@ -1518,26 +1772,34 @@ class WordPressApi {
     ).replace(
       queryParameters: {
         'per_page': '100',
-        'hide_empty': 'true',
-        'parent': parentId.toString(),
+        'hide_empty': 'false',
+        'parent':
+            parentId.toString(),
+        'orderby': 'name',
+        'order': 'asc',
       },
     );
 
-    final response = await http.get(
+    final response =
+        await http.get(
       uri,
-      headers: {
-        'Accept': 'application/json',
+      headers: const {
+        'Accept':
+            'application/json',
       },
     );
 
     if (response.statusCode == 200) {
-      final decoded = jsonDecode(response.body);
+      final decoded =
+          jsonDecode(response.body);
 
       if (decoded is List) {
         return decoded;
       }
 
-      throw Exception('پاسخ نامعتبر از وردپرس');
+      throw Exception(
+        'پاسخ نامعتبر از وردپرس',
+      );
     }
 
     throw Exception(
