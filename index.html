@@ -1,1238 +1,2422 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#0A3D62">
-<meta name="description" content="تربیت بدنی و علوم ورزشی؛ مرجع تخصصی تربیت بدنی و علوم ورزشی">
-<title>تربیت بدنی و علوم ورزشی</title>
-
-<style>
-*{
-  box-sizing:border-box;
-  margin:0;
-  padding:0;
-}
-
-html{
-  scroll-behavior:smooth;
-}
-
-body{
-  font-family:Tahoma,"Segoe UI",sans-serif;
-  background:#f7f9fc;
-  color:#17202a;
-  direction:rtl;
-  padding-bottom:82px;
-}
-
-button,a{
-  font-family:inherit;
-}
-
-a{
-  text-decoration:none;
-  color:inherit;
-}
-
-.app{
-  max-width:1100px;
-  margin:auto;
-  min-height:100vh;
-}
-
-/* Header */
-.header{
-  background:linear-gradient(135deg,#0A3D62,#3C6382);
-  color:white;
-  padding:25px 18px 28px;
-  text-align:center;
-  box-shadow:0 5px 18px rgba(10,61,98,.18);
-}
-
-.logo-box{
-  width:82px;
-  height:82px;
-  background:white;
-  border-radius:18px;
-  padding:7px;
-  margin:0 auto 13px;
-  box-shadow:0 5px 18px rgba(0,0,0,.15);
-}
-
-.logo-box img{
-  width:100%;
-  height:100%;
-  object-fit:contain;
-  border-radius:10px;
-}
-
-.header h1{
-  font-size:23px;
-  line-height:1.8;
-  font-weight:800;
-}
-
-.header p{
-  font-size:14px;
-  line-height:1.9;
-  opacity:.95;
-  margin-top:3px;
-}
-
-.header .author{
-  color:#FBC531;
-  font-size:12px;
-  margin-top:8px;
-  font-weight:bold;
-}
-
-/* Content */
-.page{
-  display:none;
-  padding:18px 14px 30px;
-}
-
-.page.active{
-  display:block;
-}
-
-.section-title{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  margin:4px 2px 14px;
-}
-
-.section-title h2{
-  color:#0A3D62;
-  font-size:19px;
-  font-weight:800;
-}
-
-.section-title span{
-  width:5px;
-  height:24px;
-  background:#FBC531;
-  display:inline-block;
-  margin-left:9px;
-  border-radius:3px;
-}
-
-/* Services */
-.services{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:11px;
-}
-
-.service{
-  background:white;
-  border:1px solid #e8edf2;
-  border-radius:15px;
-  min-height:104px;
-  padding:15px 10px;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  text-align:center;
-  box-shadow:0 3px 12px rgba(0,0,0,.055);
-  cursor:pointer;
-  transition:.18s;
-}
-
-.service:hover{
-  transform:translateY(-2px);
-  box-shadow:0 7px 18px rgba(0,0,0,.09);
-}
-
-.service-icon{
-  width:43px;
-  height:43px;
-  border-radius:13px;
-  background:#edf5fa;
-  color:#0A3D62;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:22px;
-  margin-bottom:8px;
-}
-
-.service-title{
-  font-size:13px;
-  font-weight:bold;
-  line-height:1.7;
-}
-
-.service.disabled{
-  opacity:.55;
-  cursor:default;
-}
-
-.service.disabled:hover{
-  transform:none;
-}
-
-/* Posts */
-.posts{
-  display:flex;
-  flex-direction:column;
-  gap:11px;
-}
-
-.post{
-  background:white;
-  border:1px solid #e8edf2;
-  border-radius:15px;
-  padding:11px;
-  display:flex;
-  gap:12px;
-  min-height:112px;
-  box-shadow:0 3px 12px rgba(0,0,0,.055);
-}
-
-.post-image{
-  width:105px;
-  min-width:105px;
-  height:90px;
-  object-fit:cover;
-  border-radius:12px;
-  background:#e9eef2;
-}
-
-.post-content{
-  flex:1;
-  min-width:0;
-}
-
-.post-title{
-  color:#17202a;
-  font-size:14px;
-  font-weight:800;
-  line-height:1.8;
-  display:-webkit-box;
-  -webkit-line-clamp:3;
-  -webkit-box-orient:vertical;
-  overflow:hidden;
-}
-
-.post-excerpt{
-  color:#68737d;
-  font-size:11px;
-  line-height:1.7;
-  margin-top:3px;
-  display:-webkit-box;
-  -webkit-line-clamp:2;
-  -webkit-box-orient:vertical;
-  overflow:hidden;
-}
-
-.post-link{
-  display:inline-block;
-  color:#0A3D62;
-  font-size:11px;
-  font-weight:bold;
-  margin-top:5px;
-}
-
-/* Categories */
-.categories{
-  display:flex;
-  flex-direction:column;
-  gap:9px;
-}
-
-.category{
-  background:white;
-  border:1px solid #e8edf2;
-  border-radius:14px;
-  padding:14px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  box-shadow:0 3px 12px rgba(0,0,0,.05);
-  cursor:pointer;
-}
-
-.category-right{
-  display:flex;
-  align-items:center;
-  gap:11px;
-}
-
-.category-icon{
-  width:43px;
-  height:43px;
-  border-radius:12px;
-  background:#edf5fa;
-  color:#0A3D62;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:20px;
-}
-
-.category-name{
-  font-size:14px;
-  font-weight:bold;
-}
-
-.category-arrow{
-  color:#0A3D62;
-  font-size:20px;
-}
-
-/* Category posts */
-.back-btn{
-  border:0;
-  background:white;
-  color:#0A3D62;
-  padding:10px 15px;
-  border-radius:11px;
-  font-weight:bold;
-  margin-bottom:15px;
-  box-shadow:0 2px 9px rgba(0,0,0,.06);
-  cursor:pointer;
-}
-
-/* Store */
-.center-box{
-  background:white;
-  border:1px solid #e8edf2;
-  border-radius:18px;
-  padding:35px 20px;
-  text-align:center;
-  box-shadow:0 4px 15px rgba(0,0,0,.05);
-}
-
-.big-icon{
-  width:78px;
-  height:78px;
-  background:#edf5fa;
-  color:#0A3D62;
-  border-radius:22px;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  font-size:38px;
-  margin:0 auto 17px;
-}
-
-.center-box h2{
-  color:#0A3D62;
-  font-size:20px;
-  margin-bottom:10px;
-}
-
-.center-box p{
-  color:#68737d;
-  font-size:13px;
-  line-height:2;
-  margin-bottom:20px;
-}
-
-.main-btn{
-  display:inline-block;
-  background:#0A3D62;
-  color:white;
-  border:0;
-  border-radius:11px;
-  padding:12px 25px;
-  font-size:13px;
-  font-weight:bold;
-  cursor:pointer;
-}
-
-/* Telegram */
-.telegram-box{
-  text-align:center;
-  background:white;
-  border-radius:18px;
-  padding:35px 20px;
-  box-shadow:0 4px 15px rgba(0,0,0,.05);
-}
-
-.telegram-icon{
-  width:82px;
-  height:82px;
-  background:#229ED9;
-  color:white;
-  border-radius:50%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:38px;
-  margin:0 auto 18px;
-}
-
-.telegram-box h2{
-  color:#0A3D62;
-  margin-bottom:9px;
-}
-
-.telegram-box p{
-  color:#68737d;
-  font-size:13px;
-  line-height:2;
-  margin-bottom:18px;
-}
-
-/* More */
-.about{
-  background:white;
-  border-radius:16px;
-  padding:20px;
-  box-shadow:0 4px 15px rgba(0,0,0,.05);
-  margin-bottom:12px;
-}
-
-.about h2{
-  color:#0A3D62;
-  font-size:18px;
-  margin-bottom:10px;
-}
-
-.about p{
-  color:#68737d;
-  font-size:13px;
-  line-height:2.1;
-}
-
-.more-list{
-  display:flex;
-  flex-direction:column;
-  gap:9px;
-}
-
-.more-item{
-  background:white;
-  border:1px solid #e8edf2;
-  border-radius:14px;
-  padding:15px;
-  display:flex;
-  align-items:center;
-  gap:12px;
-  cursor:pointer;
-  box-shadow:0 3px 11px rgba(0,0,0,.045);
-}
-
-.more-icon{
-  width:42px;
-  height:42px;
-  border-radius:12px;
-  background:#edf5fa;
-  color:#0A3D62;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  font-size:19px;
-}
-
-.more-text{
-  font-size:13px;
-  font-weight:bold;
-}
-
-/* Loading / errors */
-.loading{
-  text-align:center;
-  padding:30px;
-  color:#68737d;
-  font-size:13px;
-}
-
-.error{
-  background:#fff4f4;
-  color:#b42318;
-  border:1px solid #ffd5d5;
-  padding:14px;
-  border-radius:12px;
-  font-size:12px;
-  line-height:1.9;
-}
-
-/* Bottom nav */
-.bottom-nav{
-  position:fixed;
-  z-index:1000;
-  bottom:0;
-  right:0;
-  left:0;
-  height:70px;
-  background:rgba(255,255,255,.98);
-  border-top:1px solid #e3e8ed;
-  box-shadow:0 -4px 18px rgba(0,0,0,.08);
-  display:flex;
-  justify-content:center;
-}
-
-.nav-inner{
-  width:100%;
-  max-width:700px;
-  display:grid;
-  grid-template-columns:repeat(5,1fr);
-}
-
-.nav-btn{
-  border:0;
-  background:transparent;
-  color:#7a858e;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  gap:4px;
-  cursor:pointer;
-  font-size:10px;
-}
-
-.nav-icon{
-  font-size:22px;
-  line-height:1;
-}
-
-.nav-btn.active{
-  color:#0A3D62;
-  font-weight:bold;
-}
-
-.nav-btn.active .nav-icon{
-  color:#0A3D62;
-}
-
-/* Desktop */
-@media(min-width:700px){
-  body{
-    padding-bottom:0;
-  }
-
-  .header{
-    border-radius:0 0 25px 25px;
-    margin-bottom:8px;
-  }
-
-  .services{
-    grid-template-columns:repeat(5,1fr);
-  }
-
-  .posts{
-    display:grid;
-    grid-template-columns:repeat(2,1fr);
-  }
-
-  .bottom-nav{
-    position:sticky;
-    top:0;
-    bottom:auto;
-    height:65px;
-    order:-1;
-  }
-
-  .nav-inner{
-    max-width:900px;
-  }
-
-  .nav-btn{
-    font-size:12px;
-  }
-
-  .page{
-    padding:24px 20px 40px;
-  }
-}
-
-@media(min-width:1000px){
-  .services{
-    grid-template-columns:repeat(5,1fr);
-  }
-
-  .posts{
-    grid-template-columns:repeat(3,1fr);
-  }
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>تربیت بدنی و علوم ورزشی</title>
+
+  <meta name="description"
+        content="مرجع تخصصی تربیت بدنی و علوم ورزشی؛ اخبار، مقالات، منابع دانشگاهی، طرح درس و فایل‌های تخصصی ورزشی">
+
+  <meta name="theme-color" content="#071b2e">
+
+  <link rel="icon"
+        href="https://itarbiatbadani.ir/wp-content/uploads/2025/07/1000073463.png">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family:
+        Tahoma,
+        Arial,
+        sans-serif;
+      background: #f3f6f9;
+      color: #152535;
+      line-height: 1.8;
+      overflow-x: hidden;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    button {
+      font-family: inherit;
+    }
+
+    :root {
+      --navy: #071b2e;
+      --navy2: #0a3d62;
+      --blue: #3c6382;
+      --gold: #fbc531;
+      --gold2: #ffd86a;
+      --white: #ffffff;
+      --gray: #718096;
+      --light: #f3f6f9;
+      --border: #e4e9ef;
+      --green: #19a974;
+    }
+
+    /* =========================
+       TOP BAR
+    ========================= */
+
+    .topbar {
+      height: 38px;
+      background: #04121f;
+      color: #aebdca;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+
+    .topbar-inner {
+      width: min(1180px, calc(100% - 30px));
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .topbar-left {
+      display: flex;
+      gap: 18px;
+    }
+
+    .live {
+      color: #ff5252;
+      font-weight: bold;
+    }
+
+    .live::before {
+      content: "";
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #ff5252;
+      margin-left: 6px;
+    }
+
+    /* =========================
+       HEADER
+    ========================= */
+
+    header {
+      background:
+        linear-gradient(135deg, #071b2e 0%, #0a3d62 60%, #153f5d 100%);
+      color: white;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 8px 30px rgba(0,0,0,.16);
+    }
+
+    .header-inner {
+      width: min(1180px, calc(100% - 30px));
+      min-height: 82px;
+      margin: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      min-width: 0;
+    }
+
+    .brand-logo {
+      width: 50px;
+      height: 50px;
+      object-fit: contain;
+      background: white;
+      padding: 4px;
+      border-radius: 10px;
+    }
+
+    .brand-text {
+      min-width: 0;
+    }
+
+    .brand-title {
+      font-size: 18px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .brand-subtitle {
+      color: #c5d3de;
+      font-size: 11px;
+      margin-top: 1px;
+    }
+
+    .desktop-menu {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .desktop-menu a {
+      padding: 9px 13px;
+      color: #dce7ef;
+      font-size: 13px;
+      font-weight: bold;
+      border-radius: 7px;
+      transition: .2s;
+    }
+
+    .desktop-menu a:hover {
+      color: var(--gold);
+      background: rgba(255,255,255,.06);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .icon-button {
+      width: 40px;
+      height: 40px;
+      border: 1px solid rgba(255,255,255,.13);
+      background: rgba(255,255,255,.06);
+      color: white;
+      border-radius: 9px;
+      cursor: pointer;
+      font-size: 17px;
+    }
+
+    .icon-button:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    /* =========================
+       HERO
+    ========================= */
+
+    .hero {
+      background:
+        radial-gradient(circle at 85% 30%, rgba(251,197,49,.18), transparent 30%),
+        linear-gradient(135deg, #071b2e, #0a3d62);
+      color: white;
+      padding: 44px 0 52px;
+    }
+
+    .hero-inner {
+      width: min(1180px, calc(100% - 30px));
+      margin: auto;
+      display: grid;
+      grid-template-columns: 1.25fr .75fr;
+      gap: 30px;
+      align-items: center;
+    }
+
+    .hero-content {
+      max-width: 690px;
+    }
+
+    .hero-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--gold);
+      font-size: 12px;
+      font-weight: bold;
+      margin-bottom: 12px;
+    }
+
+    .hero-label::before {
+      content: "";
+      width: 25px;
+      height: 2px;
+      background: var(--gold);
+    }
+
+    .hero h1 {
+      font-size: clamp(28px, 4vw, 48px);
+      line-height: 1.25;
+      margin-bottom: 13px;
+      font-weight: 900;
+    }
+
+    .hero p {
+      color: #d1dce5;
+      font-size: 15px;
+      max-width: 650px;
+      margin-bottom: 24px;
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .primary-btn,
+    .secondary-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 45px;
+      padding: 0 20px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .primary-btn {
+      background: var(--gold);
+      color: #18212a;
+    }
+
+    .secondary-btn {
+      border: 1px solid rgba(255,255,255,.22);
+      color: white;
+      background: rgba(255,255,255,.05);
+    }
+
+    .hero-card {
+      min-height: 235px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      border-radius: 14px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .hero-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .hero-card-badge {
+      background: var(--gold);
+      color: #17212a;
+      font-size: 10px;
+      font-weight: 900;
+      padding: 4px 9px;
+      border-radius: 5px;
+    }
+
+    .hero-card-number {
+      font-size: 40px;
+      font-weight: 900;
+      color: white;
+      direction: ltr;
+    }
+
+    .hero-card-title {
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .hero-card-text {
+      color: #b7c8d4;
+      font-size: 12px;
+    }
+
+    /* =========================
+       MAIN
+    ========================= */
+
+    main {
+      width: min(1180px, calc(100% - 30px));
+      margin: 0 auto;
+    }
+
+    .section {
+      padding: 38px 0 0;
+    }
+
+    .section-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 17px;
+      gap: 15px;
+    }
+
+    .heading-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .heading-line {
+      width: 5px;
+      height: 25px;
+      background: var(--gold);
+      border-radius: 3px;
+    }
+
+    .section-heading h2 {
+      font-size: 21px;
+      color: var(--navy);
+      font-weight: 900;
+    }
+
+    .view-all {
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    /* =========================
+       CATEGORY CHIPS
+    ========================= */
+
+    .chips {
+      display: flex;
+      gap: 9px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-bottom: 4px;
+    }
+
+    .chips::-webkit-scrollbar {
+      display: none;
+    }
+
+    .chip {
+      white-space: nowrap;
+      background: white;
+      border: 1px solid var(--border);
+      color: #4b5d6c;
+      padding: 8px 15px;
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .chip.active {
+      background: var(--navy);
+      color: white;
+      border-color: var(--navy);
+    }
+
+    /* =========================
+       FEATURED POSTS
+    ========================= */
+
+    .featured-layout {
+      display: grid;
+      grid-template-columns: 1.4fr .8fr;
+      gap: 18px;
+    }
+
+    .featured-main {
+      position: relative;
+      min-height: 350px;
+      overflow: hidden;
+      border-radius: 14px;
+      background: var(--navy);
+      color: white;
+    }
+
+    .featured-main img {
+      width: 100%;
+      height: 100%;
+      min-height: 350px;
+      object-fit: cover;
+      opacity: .62;
+      display: block;
+    }
+
+    .featured-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to top,
+        rgba(3,15,27,.95),
+        rgba(3,15,27,.05) 70%
+      );
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 25px;
+    }
+
+    .post-tag {
+      display: inline-block;
+      width: fit-content;
+      background: var(--gold);
+      color: #17212a;
+      padding: 4px 9px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 900;
+      margin-bottom: 9px;
+    }
+
+    .featured-title {
+      font-size: 23px;
+      line-height: 1.5;
+      font-weight: 900;
+      margin-bottom: 7px;
+    }
+
+    .post-meta {
+      color: #c2cdd6;
+      font-size: 10px;
+    }
+
+    .side-featured {
+      display: grid;
+      grid-template-rows: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .side-card {
+      background: white;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: 40% 60%;
+      min-height: 165px;
+    }
+
+    .side-card img {
+      width: 100%;
+      height: 100%;
+      min-height: 165px;
+      object-fit: cover;
+    }
+
+    .side-card-content {
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .side-card-title {
+      font-size: 14px;
+      line-height: 1.7;
+      font-weight: 900;
+      color: var(--navy);
+      margin-bottom: 7px;
+    }
+
+    .side-card-meta {
+      color: var(--gray);
+      font-size: 10px;
+    }
+
+    /* =========================
+       POSTS
+    ========================= */
+
+    .posts-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 17px;
+    }
+
+    .post-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: .2s;
+    }
+
+    .post-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px rgba(7,27,46,.10);
+    }
+
+    .post-image {
+      height: 190px;
+      position: relative;
+      overflow: hidden;
+      background: #dfe6eb;
+    }
+
+    .post-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .post-image .post-tag {
+      position: absolute;
+      top: 11px;
+      right: 11px;
+      margin: 0;
+    }
+
+    .post-body {
+      padding: 15px;
+    }
+
+    .post-title {
+      color: var(--navy);
+      font-size: 14px;
+      line-height: 1.75;
+      font-weight: 900;
+      margin-bottom: 8px;
+    }
+
+    .post-excerpt {
+      color: #687988;
+      font-size: 11px;
+      line-height: 1.8;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* =========================
+       SERVICES
+    ========================= */
+
+    .services {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 11px;
+    }
+
+    .service {
+      background: white;
+      border: 1px solid var(--border);
+      min-height: 108px;
+      padding: 15px 10px;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      gap: 8px;
+      transition: .2s;
+    }
+
+    .service:hover {
+      border-color: var(--gold);
+      box-shadow: 0 8px 22px rgba(7,27,46,.08);
+    }
+
+    .service-icon {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 9px;
+      background: #eef4f8;
+      color: var(--navy2);
+      font-size: 20px;
+    }
+
+    .service-title {
+      font-size: 11px;
+      color: var(--navy);
+      font-weight: 900;
+    }
+
+    /* =========================
+       STORE BANNER
+    ========================= */
+
+    .store-banner {
+      background:
+        radial-gradient(circle at 10% 20%, rgba(251,197,49,.18), transparent 30%),
+        linear-gradient(110deg, #071b2e, #0a3d62);
+      border-radius: 14px;
+      color: white;
+      padding: 25px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 25px;
+      overflow: hidden;
+    }
+
+    .store-banner h3 {
+      font-size: 21px;
+      margin-bottom: 5px;
+    }
+
+    .store-banner p {
+      color: #bdcbd6;
+      font-size: 12px;
+    }
+
+    .store-button {
+      flex-shrink: 0;
+      background: var(--gold);
+      color: #18212a;
+      padding: 11px 19px;
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    /* =========================
+       SOCIAL
+    ========================= */
+
+    .social-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .social-card {
+      background: white;
+      border: 1px solid var(--border);
+      padding: 20px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .social-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #eef4f8;
+      font-size: 22px;
+    }
+
+    .social-card strong {
+      display: block;
+      color: var(--navy);
+      font-size: 13px;
+    }
+
+    .social-card span {
+      color: var(--gray);
+      font-size: 10px;
+    }
+
+    /* =========================
+       FOOTER
+    ========================= */
+
+    footer {
+      margin-top: 45px;
+      background: #04121f;
+      color: #b7c5d0;
+      padding: 35px 0 90px;
+    }
+
+    .footer-inner {
+      width: min(1180px, calc(100% - 30px));
+      margin: auto;
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr;
+      gap: 35px;
+    }
+
+    .footer-brand {
+      color: white;
+      font-size: 17px;
+      font-weight: 900;
+      margin-bottom: 8px;
+    }
+
+    .footer-text {
+      font-size: 11px;
+      line-height: 2;
+      color: #8294a2;
+      max-width: 430px;
+    }
+
+    .footer-title {
+      color: white;
+      font-size: 13px;
+      font-weight: 900;
+      margin-bottom: 10px;
+    }
+
+    .footer-links {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .footer-links a {
+      font-size: 11px;
+      color: #91a3b1;
+    }
+
+    .footer-links a:hover {
+      color: var(--gold);
+    }
+
+    .copyright {
+      width: min(1180px, calc(100% - 30px));
+      margin: 28px auto 0;
+      padding-top: 18px;
+      border-top: 1px solid rgba(255,255,255,.08);
+      font-size: 10px;
+      color: #687986;
+    }
+
+    /* =========================
+       BOTTOM NAV
+    ========================= */
+
+    .bottom-nav {
+      display: none;
+    }
+
+    /* =========================
+       SEARCH
+    ========================= */
+
+    .search-box {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      background: rgba(2,14,25,.92);
+      padding: 30px 15px;
+    }
+
+    .search-box.active {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .search-panel {
+      width: min(700px, 100%);
+      margin-top: 70px;
+      background: white;
+      border-radius: 14px;
+      padding: 20px;
+    }
+
+    .search-panel-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .search-panel h3 {
+      color: var(--navy);
+      font-size: 17px;
+    }
+
+    .close-search {
+      border: none;
+      background: #edf2f6;
+      width: 35px;
+      height: 35px;
+      border-radius: 7px;
+      cursor: pointer;
+    }
+
+    #searchInput {
+      width: 100%;
+      height: 48px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0 15px;
+      font-family: inherit;
+      outline: none;
+      font-size: 13px;
+    }
+
+    #searchResults {
+      margin-top: 12px;
+      max-height: 400px;
+      overflow: auto;
+    }
+
+    .search-result {
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    /* =========================
+       LOADING
+    ========================= */
+
+    .loading {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 30px;
+      text-align: center;
+      color: var(--gray);
+      font-size: 12px;
+      grid-column: 1 / -1;
+    }
+
+    .error {
+      background: #fff4f4;
+      border: 1px solid #ffd2d2;
+      color: #a33;
+      padding: 15px;
+      border-radius: 10px;
+      font-size: 12px;
+      grid-column: 1 / -1;
+    }
+
+    /* =========================
+       RESPONSIVE
+    ========================= */
+
+    @media (max-width: 900px) {
+
+      .desktop-menu {
+        display: none;
+      }
+
+      .hero-inner {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-card {
+        display: none;
+      }
+
+      .featured-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .posts-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .services {
+        grid-template-columns: repeat(4, 1fr);
+      }
+
+      .footer-inner {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .bottom-nav {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        right: 0;
+        left: 0;
+        height: 65px;
+        background: rgba(4,18,31,.97);
+        z-index: 1500;
+        border-top: 1px solid rgba(255,255,255,.08);
+        justify-content: space-around;
+        align-items: center;
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+
+      .bottom-nav a {
+        color: #91a2af;
+        font-size: 9px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        min-width: 60px;
+      }
+
+      .bottom-nav a.active {
+        color: var(--gold);
+      }
+
+      .bottom-icon {
+        font-size: 20px;
+        line-height: 1;
+      }
+    }
+
+    @media (max-width: 600px) {
+
+      .topbar {
+        display: none;
+      }
+
+      .header-inner {
+        min-height: 68px;
+      }
+
+      .brand-logo {
+        width: 42px;
+        height: 42px;
+      }
+
+      .brand-title {
+        font-size: 14px;
+      }
+
+      .brand-subtitle {
+        display: none;
+      }
+
+      .header-actions .icon-button {
+        width: 37px;
+        height: 37px;
+      }
+
+      .hero {
+        padding: 30px 0 34px;
+      }
+
+      .hero h1 {
+        font-size: 28px;
+      }
+
+      .hero p {
+        font-size: 12px;
+      }
+
+      .hero-buttons {
+        width: 100%;
+      }
+
+      .primary-btn,
+      .secondary-btn {
+        flex: 1;
+        padding: 0 10px;
+      }
+
+      .section {
+        padding-top: 29px;
+      }
+
+      .section-heading h2 {
+        font-size: 17px;
+      }
+
+      .featured-main {
+        min-height: 280px;
+      }
+
+      .featured-main img {
+        min-height: 280px;
+      }
+
+      .featured-title {
+        font-size: 18px;
+      }
+
+      .side-card {
+        min-height: 130px;
+      }
+
+      .side-card img {
+        min-height: 130px;
+      }
+
+      .side-card-title {
+        font-size: 12px;
+      }
+
+      .posts-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .post-image {
+        height: 135px;
+      }
+
+      .post-body {
+        padding: 11px;
+      }
+
+      .post-title {
+        font-size: 12px;
+      }
+
+      .post-excerpt {
+        font-size: 10px;
+      }
+
+      .services {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+
+      .service {
+        min-height: 95px;
+        padding: 10px 5px;
+      }
+
+      .service-icon {
+        width: 35px;
+        height: 35px;
+        font-size: 17px;
+      }
+
+      .service-title {
+        font-size: 9px;
+      }
+
+      .store-banner {
+        padding: 20px;
+      }
+
+      .store-banner h3 {
+        font-size: 17px;
+      }
+
+      .store-banner p {
+        font-size: 10px;
+      }
+
+      .store-button {
+        padding: 9px 12px;
+        font-size: 10px;
+      }
+
+      .social-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .footer-inner {
+        grid-template-columns: 1fr;
+      }
+
+      .footer-inner > div:nth-child(2),
+      .footer-inner > div:nth-child(3) {
+        display: none;
+      }
+    }
+
+    @media (max-width: 390px) {
+
+      .brand-title {
+        font-size: 12px;
+      }
+
+      .posts-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .post-image {
+        height: 180px;
+      }
+
+      .services {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+  </style>
 </head>
 
 <body>
 
-<div class="app">
+<!-- =========================
+     TOP BAR
+========================= -->
 
-  <!-- Header -->
-  <header class="header">
-    <div class="logo-box">
-      <img src="https://itarbiatbadani.ir/wp-content/uploads/2025/07/1000073463.png"
-           alt="تربیت بدنی و علوم ورزشی">
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-left">
+      <span class="live">مرجع تخصصی ورزشی</span>
+      <span>تربیت بدنی و علوم ورزشی</span>
     </div>
 
-    <h1>مرجع تخصصی تربیت بدنی و علوم ورزشی</h1>
-    <p>تخصصی‌ترین وب‌سایت رشته تربیت بدنی و علوم ورزشی</p>
-    <div class="author">محمد عیسی زهی، کارشناسی ارشد مدیریت ورزشی</div>
-  </header>
-
-  <!-- HOME -->
-  <main id="home" class="page active">
-
-    <div class="section-title">
-      <div style="display:flex;align-items:center">
-        <span></span>
-        <h2>خدمات و دسترسی سریع</h2>
-      </div>
-    </div>
-
-    <div class="services">
-
-      <a class="service" href="https://itarbiatbadani.ir/introduction-to-the-field-of-physical-education-and-sports-sciences/" target="_blank">
-        <div class="service-icon">🎓</div>
-        <div class="service-title">معرفی رشته</div>
-      </a>
-
-      <a class="service" href="https://itarbiatbadani.ir/%da%af%d8%b1%d8%a7%db%8c%d8%b4%d9%87%d8%a7%db%8c-%da%a9%d8%a7%d8%b1%d8%b4%d9%86%d8%a7%d8%b3%db%8c-%d8%a7%d8%b1%d8%b4%d8%af-%d8%aa%d8%b1%d8%a8%db%8c%d8%aa-%d8%a8%d8%af%d9%86%db%8c-%d9%88/" target="_blank">
-        <div class="service-icon">📚</div>
-        <div class="service-title">گرایش‌های ارشد</div>
-      </a>
-
-      <a class="service" href="https://itarbiatbadani.ir/sports-science-phd-exam-resources/" target="_blank">
-        <div class="service-icon">🎯</div>
-        <div class="service-title">گرایش‌های دکتری</div>
-      </a>
-
-      <a class="service" href="https://itarbiatbadani.ir/master-of-sports-science-resources/" target="_blank">
-        <div class="service-icon">📖</div>
-        <div class="service-title">منابع ارشد</div>
-      </a>
-
-      <a class="service" href="https://itarbiatbadani.ir/manabe-konkur-doctori-tarbiat-badani/" target="_blank">
-        <div class="service-icon">🔬</div>
-        <div class="service-title">منابع دکتری</div>
-      </a>
-
-      <div class="service disabled">
-        <div class="service-icon">💼</div>
-        <div class="service-title">منابع استخدامی</div>
-        <small style="font-size:9px;color:#999;margin-top:3px">به‌زودی</small>
-      </div>
-
-      <a class="service" href="https://itarbiatbadani.ir/physical-education-sports-science/" target="_blank">
-        <div class="service-icon">🏫</div>
-        <div class="service-title">دانشگاه‌های برتر</div>
-      </a>
-
-      <a class="service" href="https://itarbiatbadani.ir/job-market-in-physical-education-and-sports-sciences/" target="_blank">
-        <div class="service-icon">📈</div>
-        <div class="service-title">بازار کار</div>
-      </a>
-
-      <a class="service" href="https://itarbiatbadani.ir/product-category/%d8%b7%d8%b1%d8%ad-%d8%af%d8%b1%d8%b3-%d8%b1%d9%88%d8%b2%d8%a7%d9%86%d9%87-%d9%85%d8%a7%d9%87%d8%a7%d9%86%d9%87-%d8%b3%d8%a7%d9%84%d8%a7%d9%86%d9%87/" target="_blank">
-        <div class="service-icon">📝</div>
-        <div class="service-title">طرح درس</div>
-      </a>
-
-      <a class="service" href="https://itarbiatbadani.ir/product-category/powerpoint/" target="_blank">
-        <div class="service-icon">📊</div>
-        <div class="service-title">پاورپوینت</div>
-      </a>
-
-    </div>
-
-    <div style="height:25px"></div>
-
-    <div class="section-title">
-      <div style="display:flex;align-items:center">
-        <span></span>
-        <h2>جدیدترین نوشته‌ها</h2>
-      </div>
-    </div>
-
-    <div id="latestPosts" class="posts">
-      <div class="loading">در حال دریافت جدیدترین مطالب...</div>
-    </div>
-
-  </main>
-
-  <!-- CATEGORIES -->
-  <main id="categories" class="page">
-
-    <div class="section-title">
-      <div style="display:flex;align-items:center">
-        <span></span>
-        <h2>دسته‌بندی‌ها</h2>
-      </div>
-    </div>
-
-    <div id="categoryList" class="categories">
-      <div class="loading">در حال دریافت دسته‌بندی‌ها...</div>
-    </div>
-
-  </main>
-
-  <!-- CATEGORY POSTS -->
-  <main id="categoryPosts" class="page">
-
-    <button class="back-btn" onclick="showPage('categories')">
-      ← بازگشت به دسته‌بندی‌ها
-    </button>
-
-    <div class="section-title">
-      <div style="display:flex;align-items:center">
-        <span></span>
-        <h2 id="categoryTitle">مطالب دسته‌بندی</h2>
-      </div>
-    </div>
-
-    <div id="categoryPostList" class="posts"></div>
-
-  </main>
-
-  <!-- STORE -->
-  <main id="store" class="page">
-
-    <div class="center-box">
-      <div class="big-icon">🛒</div>
-
-      <h2>فروشگاه</h2>
-
-      <p>
-        انواع طرح درس، فایل‌های ورزشی، پاورپوینت و محصولات آموزشی
-        تربیت بدنی و علوم ورزشی را مشاهده و تهیه کنید.
-      </p>
-
-      <a class="main-btn"
-         href="https://itarbiatbadani.ir/shop/"
-         target="_blank">
-        ورود به فروشگاه
-      </a>
-    </div>
-
-  </main>
-
-  <!-- TELEGRAM -->
-  <main id="telegram" class="page">
-
-    <div class="telegram-box">
-
-      <div class="telegram-icon">➤</div>
-
-      <h2>کانال تلگرام</h2>
-
-      <p>
-        جدیدترین مطالب، اخبار، منابع، طرح درس‌ها و مطالب تخصصی
-        تربیت بدنی و علوم ورزشی را در کانال ما دنبال کنید.
-      </p>
-
-      <a class="main-btn"
-         href="https://t.me/itarbiatbadani"
-         target="_blank">
-        ورود به کانال تلگرام
-      </a>
-
-    </div>
-
-  </main>
-
-  <!-- MORE -->
-  <main id="more" class="page">
-
-    <div class="about">
-      <h2>درباره ما</h2>
-
-      <p>
-        وب‌سایت «تربیت بدنی و علوم ورزشی» با هدف ارائه مطالب تخصصی،
-        آموزشی و کاربردی در زمینه تربیت بدنی و علوم ورزشی فعالیت می‌کند.
-        این مجموعه تلاش دارد منابع و محتوای مورد نیاز دانشجویان،
-        معلمان، مربیان و علاقه‌مندان این حوزه را فراهم کند.
-      </p>
-    </div>
-
-    <div class="more-list">
-
-      <a class="more-item"
-         href="https://itarbiatbadani.ir/"
-         target="_blank">
-        <div class="more-icon">🌐</div>
-        <div class="more-text">وب‌سایت تربیت بدنی و علوم ورزشی</div>
-      </a>
-
-      <a class="more-item"
-         href="https://instagram.com/itarbiatbadani"
-         target="_blank">
-        <div class="more-icon">📷</div>
-        <div class="more-text">اینستاگرام</div>
-      </a>
-
-      <a class="more-item"
-         href="https://t.me/ivarzeshiadmin"
-         target="_blank">
-        <div class="more-icon">💬</div>
-        <div class="more-text">ارتباط و خرید</div>
-      </a>
-
-      <a class="more-item"
-         href="https://ble.ir/itarbiatbadani"
-         target="_blank">
-        <div class="more-icon">📱</div>
-        <div class="more-text">کانال بله</div>
-      </a>
-
-    </div>
-
-  </main>
-
+    <span>آخرین مطالب و منابع تخصصی</span>
+  </div>
 </div>
 
-<!-- Bottom Navigation -->
-<nav class="bottom-nav">
 
-  <div class="nav-inner">
+<!-- =========================
+     HEADER
+========================= -->
 
-    <button class="nav-btn active" data-page="home" onclick="showPage('home',this)">
-      <div class="nav-icon">⌂</div>
-      <div>خانه</div>
-    </button>
+<header>
 
-    <button class="nav-btn" data-page="categories" onclick="showPage('categories',this)">
-      <div class="nav-icon">☷</div>
-      <div>دسته‌بندی‌ها</div>
-    </button>
+  <div class="header-inner">
 
-    <button class="nav-btn" data-page="store" onclick="showPage('store',this)">
-      <div class="nav-icon">🛒</div>
-      <div>فروشگاه</div>
-    </button>
+    <a href="#home" class="brand">
 
-    <button class="nav-btn" data-page="telegram" onclick="showPage('telegram',this)">
-      <div class="nav-icon">➤</div>
-      <div>تلگرام</div>
-    </button>
+      <img
+        class="brand-logo"
+        src="https://itarbiatbadani.ir/wp-content/uploads/2025/07/1000073463.png"
+        alt="تربیت بدنی و علوم ورزشی">
 
-    <button class="nav-btn" data-page="more" onclick="showPage('more',this)">
-      <div class="nav-icon">☰</div>
-      <div>بیشتر</div>
-    </button>
+      <div class="brand-text">
+        <div class="brand-title">
+          تربیت بدنی و علوم ورزشی
+        </div>
+
+        <div class="brand-subtitle">
+          مرجع تخصصی رشته تربیت بدنی و علوم ورزشی
+        </div>
+      </div>
+
+    </a>
+
+
+    <nav class="desktop-menu">
+
+      <a href="#home">خانه</a>
+      <a href="#latest">مطالب</a>
+      <a href="#services">خدمات تخصصی</a>
+      <a href="https://itarbiatbadani.ir/product-category/%d8%b7%d8%b1%d8%ad-%d8%af%d8%b1%d8%b3-%d8%b1%d9%88%d8%b2%d8%a7%d9%86%d9%87-%d9%85%d8%a7%d9%87%d8%a7%d9%86%d9%87-%d8%b3%d8%a7%d9%84%d8%a7%d9%86%d9%87/" target="_blank">فروشگاه</a>
+
+    </nav>
+
+
+    <div class="header-actions">
+
+      <button
+        class="icon-button"
+        onclick="openSearch()"
+        aria-label="جستجو">
+        🔍
+      </button>
+
+    </div>
 
   </div>
 
+</header>
+
+
+<!-- =========================
+     HERO
+========================= -->
+
+<section class="hero" id="home">
+
+  <div class="hero-inner">
+
+    <div class="hero-content">
+
+      <div class="hero-label">
+        دانش، آموزش و ورزش
+      </div>
+
+      <h1>
+        مرجع تخصصی<br>
+        تربیت بدنی و علوم ورزشی
+      </h1>
+
+      <p>
+        جدیدترین مطالب آموزشی، منابع دانشگاهی،
+        مقالات تخصصی، طرح درس و فایل‌های موردنیاز
+        دانشجویان و علاقه‌مندان علوم ورزشی.
+      </p>
+
+      <div class="hero-buttons">
+
+        <a
+          class="primary-btn"
+          href="#latest">
+          جدیدترین مطالب
+        </a>
+
+        <a
+          class="secondary-btn"
+          href="https://itarbiatbadani.ir/shop/"
+          target="_blank">
+          ورود به فروشگاه
+        </a>
+
+      </div>
+
+    </div>
+
+
+    <div class="hero-card">
+
+      <div class="hero-card-top">
+
+        <span class="hero-card-badge">
+          SPORT SCIENCE
+        </span>
+
+        <span>⚡</span>
+
+      </div>
+
+      <div>
+        <div class="hero-card-number">
+          01
+        </div>
+
+        <div class="hero-card-title">
+          آموزش تخصصی علوم ورزشی
+        </div>
+
+        <div class="hero-card-text">
+          منابع، مقالات، آموزش و مطالب کاربردی
+          در یک مرجع تخصصی.
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<main>
+
+
+<!-- =========================
+     CATEGORY CHIPS
+========================= -->
+
+<section class="section">
+
+  <div class="section-heading">
+
+    <div class="heading-right">
+
+      <span class="heading-line"></span>
+
+      <h2>
+        دسترسی سریع
+      </h2>
+
+    </div>
+
+  </div>
+
+
+  <div class="chips">
+
+    <a class="chip active" href="#latest">
+      جدیدترین مطالب
+    </a>
+
+    <a class="chip"
+       href="https://itarbiatbadani.ir/physical-education-sports-science/"
+       target="_blank">
+      دانشگاه‌های برتر
+    </a>
+
+    <a class="chip"
+       href="https://itarbiatbadani.ir/master-of-sports-science-resources/"
+       target="_blank">
+      منابع ارشد
+    </a>
+
+    <a class="chip"
+       href="https://itarbiatbadani.ir/manabe-konkur-doctori-tarbiat-badani/"
+       target="_blank">
+      منابع دکتری
+    </a>
+
+    <a class="chip"
+       href="https://itarbiatbadani.ir/job-market-in-physical-education-and-sports-sciences/"
+       target="_blank">
+      بازار کار
+    </a>
+
+    <a class="chip"
+       href="https://itarbiatbadani.ir/product-category/%d8%b7%d8%b1%d8%ad-%d8%af%d8%b1%d8%b3-%d8%b1%d9%88%d8%b2%d8%a7%d9%86%d9%87-%d9%85%d8%a7%d9%87%d8%a7%d9%86%d9%87-%d8%b3%d8%a7%d9%84%d8%a7%d9%86%d9%87/"
+       target="_blank">
+      طرح درس
+    </a>
+
+  </div>
+
+</section>
+
+
+<!-- =========================
+     FEATURED
+========================= -->
+
+<section class="section">
+
+  <div class="section-heading">
+
+    <div class="heading-right">
+
+      <span class="heading-line"></span>
+
+      <h2>
+        مطالب منتخب
+      </h2>
+
+    </div>
+
+    <a
+      class="view-all"
+      href="https://itarbiatbadani.ir/"
+      target="_blank">
+      مشاهده سایت ←
+    </a>
+
+  </div>
+
+
+  <div id="featuredArea" class="featured-layout">
+
+    <div class="loading">
+      در حال دریافت مطالب...
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- =========================
+     LATEST
+========================= -->
+
+<section class="section" id="latest">
+
+  <div class="section-heading">
+
+    <div class="heading-right">
+
+      <span class="heading-line"></span>
+
+      <h2>
+        جدیدترین نوشته‌ها
+      </h2>
+
+    </div>
+
+    <a
+      class="view-all"
+      href="https://itarbiatbadani.ir/"
+      target="_blank">
+      همه مطالب ←
+    </a>
+
+  </div>
+
+
+  <div
+    id="postsGrid"
+    class="posts-grid">
+
+    <div class="loading">
+      در حال دریافت مطالب...
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- =========================
+     SERVICES
+========================= -->
+
+<section class="section" id="services">
+
+  <div class="section-heading">
+
+    <div class="heading-right">
+
+      <span class="heading-line"></span>
+
+      <h2>
+        خدمات و بخش‌های تخصصی
+      </h2>
+
+    </div>
+
+  </div>
+
+
+  <div class="services">
+
+    <a
+      class="service"
+      href="https://itarbiatbadani.ir/introduction-to-the-field-of-physical-education-and-sports-sciences/"
+      target="_blank">
+
+      <div class="service-icon">🎓</div>
+
+      <div class="service-title">
+        معرفی رشته
+      </div>
+
+    </a>
+
+
+    <a
+      class="service"
+      href="https://itarbiatbadani.ir/%da%af%d8%b1%d8%a7%db%8c%d8%b4%d9%87%d8%a7%db%8c-%da%a9%d8%a7%d8%b1%d8%b4%d9%86%d8%a7%d8%b3%db%8c-%d8%a7%d8%b1%d8%b4%d8%af-%d8%aa%d8%b1%d8%a8%db%8c%d8%aa-%d8%a8%d8%af%d9%86%db%8c-%d9%88/"
+      target="_blank">
+
+      <div class="service-icon">📚</div>
+
+      <div class="service-title">
+        گرایش‌های ارشد
+      </div>
+
+    </a>
+
+
+    <a
+      class="service"
+      href="https://itarbiatbadani.ir/sports-science-phd-exam-resources/"
+      target="_blank">
+
+      <div class="service-icon">🏆</div>
+
+      <div class="service-title">
+        گرایش‌های دکتری
+      </div>
+
+    </a>
+
+
+    <a
+      class="service"
+      href="https://itarbiatbadani.ir/master-of-sports-science-resources/"
+      target="_blank">
+
+      <div class="service-icon">📖</div>
+
+      <div class="service-title">
+        منابع ارشد
+      </div>
+
+    </a>
+
+
+    <a
+      class="service"
+      href="https://itarbiatbadani.ir/manabe-konkur-doctori-tarbiat-badani/"
+      target="_blank">
+
+      <div class="service-icon">🎯</div>
+
+      <div class="service-title">
+        منابع دکتری
+      </div>
+
+    </a>
+
+
+    <a
+      class="service"
+      href="#"
+      onclick="alert('این بخش به‌زودی فعال می‌شود'); return false;">
+
+      <div class="service-icon">💼</div>
+
+      <div class="service-title">
+        منابع استخدامی
+      </div>
+
+    </a>
+
+
+    <a
+      class="service"
+      href="https://itarbiatbadani.ir/physical-education-sports-science/"
+      target="_blank">
+
+      <div class="service-icon">🏫</div>
+
+      <div class="service-title">
+        دانشگاه‌های برتر
+      </div>
+
+    </a>
+
+
+    <a
+      class="service"
+      href="https://itarbiatbadani.ir/job-market-in-physical-education-and-sports-sciences/"
+      target="_blank">
+
+      <div class="service-icon">📈</div>
+
+      <div class="service-title">
+        بازار کار
+      </div>
+
+    </a>
+
+
+    <a
+      class="service"
+      href="https://itarbiatbadani.ir/product-category/%d8%b7%d8%b1%d8%ad-%d8%af%d8%b1%d8%b3-%d8%b1%d9%88%d8%b2%d8%a7%d9%86%d9%87-%d9%85%d8%a7%d9%87%d8%a7%d9%86%d9%87-%d8%b3%d8%a7%d9%84%d8%a7%d9%86%d9%87/"
+      target="_blank">
+
+      <div class="service-icon">📝</div>
+
+      <div class="service-title">
+        طرح درس
+      </div>
+
+    </a>
+
+
+    <a
+      class="service"
+      href="https://itarbiatbadani.ir/product-category/powerpoint/"
+      target="_blank">
+
+      <div class="service-icon">📊</div>
+
+      <div class="service-title">
+        پاورپوینت
+      </div>
+
+    </a>
+
+  </div>
+
+</section>
+
+
+<!-- =========================
+     STORE
+========================= -->
+
+<section class="section">
+
+  <div class="store-banner">
+
+    <div>
+
+      <h3>
+        فروشگاه تخصصی علوم ورزشی
+      </h3>
+
+      <p>
+        طرح درس، پاورپوینت و فایل‌های تخصصی تربیت بدنی
+      </p>
+
+    </div>
+
+    <a
+      class="store-button"
+      href="https://itarbiatbadani.ir/shop/"
+      target="_blank">
+      ورود به فروشگاه
+    </a>
+
+  </div>
+
+</section>
+
+
+<!-- =========================
+     SOCIAL
+========================= -->
+
+<section class="section">
+
+  <div class="section-heading">
+
+    <div class="heading-right">
+
+      <span class="heading-line"></span>
+
+      <h2>
+        شبکه‌های اجتماعی
+      </h2>
+
+    </div>
+
+  </div>
+
+
+  <div class="social-grid">
+
+    <a
+      class="social-card"
+      href="https://t.me/itarbiatbadani"
+      target="_blank">
+
+      <div class="social-icon">
+        ✈️
+      </div>
+
+      <div>
+        <strong>
+          کانال تلگرام
+        </strong>
+
+        <span>
+          @itarbiatbadani
+        </span>
+      </div>
+
+    </a>
+
+
+    <a
+      class="social-card"
+      href="https://instagram.com/itarbiatbadani"
+      target="_blank">
+
+      <div class="social-icon">
+        ◎
+      </div>
+
+      <div>
+        <strong>
+          اینستاگرام
+        </strong>
+
+        <span>
+          @itarbiatbadani
+        </span>
+      </div>
+
+    </a>
+
+
+    <a
+      class="social-card"
+      href="https://ble.ir/itarbiatbadani"
+      target="_blank">
+
+      <div class="social-icon">
+        💬
+      </div>
+
+      <div>
+        <strong>
+          بله
+        </strong>
+
+        <span>
+          کانال تربیت بدنی و علوم ورزشی
+        </span>
+      </div>
+
+    </a>
+
+  </div>
+
+</section>
+
+
+</main>
+
+
+<!-- =========================
+     FOOTER
+========================= -->
+
+<footer>
+
+  <div class="footer-inner">
+
+    <div>
+
+      <div class="footer-brand">
+        تربیت بدنی و علوم ورزشی
+      </div>
+
+      <div class="footer-text">
+        مرجع تخصصی آموزش، منابع و مطالب علمی
+        رشته تربیت بدنی و علوم ورزشی.
+        هدف این مجموعه ارائه محتوای کاربردی
+        برای دانشجویان، معلمان، مربیان و علاقه‌مندان
+        علوم ورزشی است.
+      </div>
+
+    </div>
+
+
+    <div>
+
+      <div class="footer-title">
+        دسترسی سریع
+      </div>
+
+      <div class="footer-links">
+
+        <a href="#latest">
+          جدیدترین مطالب
+        </a>
+
+        <a href="#services">
+          خدمات تخصصی
+        </a>
+
+        <a
+          href="https://itarbiatbadani.ir/shop/"
+          target="_blank">
+          فروشگاه
+        </a>
+
+      </div>
+
+    </div>
+
+
+    <div>
+
+      <div class="footer-title">
+        ارتباط
+      </div>
+
+      <div class="footer-links">
+
+        <a
+          href="https://t.me/itarbiatbadani"
+          target="_blank">
+          تلگرام
+        </a>
+
+        <a
+          href="https://instagram.com/itarbiatbadani"
+          target="_blank">
+          اینستاگرام
+        </a>
+
+        <a
+          href="https://t.me/ivarzeshiadmin"
+          target="_blank">
+          ارتباط و خرید
+        </a>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <div class="copyright">
+    © تربیت بدنی و علوم ورزشی — تمامی حقوق محفوظ است.
+  </div>
+
+</footer>
+
+
+<!-- =========================
+     BOTTOM NAV
+========================= -->
+
+<nav class="bottom-nav">
+
+  <a
+    href="#home"
+    class="active">
+
+    <span class="bottom-icon">⌂</span>
+    خانه
+
+  </a>
+
+
+  <a href="#latest">
+
+    <span class="bottom-icon">📰</span>
+    مطالب
+
+  </a>
+
+
+  <a href="#services">
+
+    <span class="bottom-icon">▦</span>
+    خدمات
+
+  </a>
+
+
+  <a
+    href="https://itarbiatbadani.ir/shop/"
+    target="_blank">
+
+    <span class="bottom-icon">🛒</span>
+    فروشگاه
+
+  </a>
+
+
+  <a
+    href="https://t.me/itarbiatbadani"
+    target="_blank">
+
+    <span class="bottom-icon">✈</span>
+    تلگرام
+
+  </a>
+
 </nav>
+
+
+<!-- =========================
+     SEARCH
+========================= -->
+
+<div
+  id="searchBox"
+  class="search-box">
+
+  <div class="search-panel">
+
+    <div class="search-panel-top">
+
+      <h3>
+        جستجو در مطالب
+      </h3>
+
+      <button
+        class="close-search"
+        onclick="closeSearch()">
+        ✕
+      </button>
+
+    </div>
+
+    <input
+      id="searchInput"
+      type="search"
+      placeholder="عنوان مطلب را جستجو کنید...">
+
+    <div id="searchResults"></div>
+
+  </div>
+
+</div>
+
 
 <script>
 
-const siteUrl = 'https://itarbiatbadani.ir';
-const apiUrl = siteUrl + '/wp-json/wp/v2';
+  /* =========================
+     CONFIG
+  ========================= */
 
-/* ------------------------------
-   Navigation
------------------------------- */
+  const SITE_URL =
+    "https://itarbiatbadani.ir";
 
-function showPage(pageId, button){
+  const API_URL =
+    SITE_URL + "/wp-json/wp/v2";
 
-  document.querySelectorAll('.page').forEach(page=>{
-    page.classList.remove('active');
-  });
 
-  const page = document.getElementById(pageId);
+  let allPosts = [];
 
-  if(page){
-    page.classList.add('active');
-  }
 
-  if(button){
+  /* =========================
+     HTML CLEANER
+  ========================= */
 
-    document.querySelectorAll('.nav-btn').forEach(btn=>{
-      btn.classList.remove('active');
-    });
+  function stripHtml(html) {
 
-    button.classList.add('active');
+    const div =
+      document.createElement("div");
 
-  }else{
+    div.innerHTML = html || "";
 
-    document.querySelectorAll('.nav-btn').forEach(btn=>{
-      btn.classList.remove('active');
-    });
-
-    const nav = document.querySelector(
-      '.nav-btn[data-page="' + pageId + '"]'
-    );
-
-    if(nav){
-      nav.classList.add('active');
-    }
+    return (
+      div.textContent ||
+      div.innerText ||
+      ""
+    ).trim();
 
   }
 
-  window.scrollTo({
-    top:0,
-    behavior:'smooth'
-  });
-}
 
+  /* =========================
+     DATE
+  ========================= */
 
-/* ------------------------------
-   Clean WordPress HTML
------------------------------- */
+  function formatDate(dateString) {
 
-function cleanHtml(html){
-
-  if(!html) return '';
-
-  const temp = document.createElement('div');
-  temp.innerHTML = html;
-
-  return temp.textContent
-    .replace(/\s+/g,' ')
-    .trim();
-}
-
-
-/* ------------------------------
-   Latest Posts
------------------------------- */
-
-async function loadLatestPosts(){
-
-  const container = document.getElementById('latestPosts');
-
-  try{
-
-    const response = await fetch(
-      apiUrl +
-      '/posts?per_page=6&orderby=date&order=desc&_embed'
-    );
-
-    if(!response.ok){
-      throw new Error('خطا در دریافت مطالب');
+    if (!dateString) {
+      return "";
     }
 
-    const posts = await response.json();
+    try {
 
-    if(!posts.length){
+      const date =
+        new Date(dateString);
 
-      container.innerHTML =
-        '<div class="loading">مطلبی پیدا نشد.</div>';
+      return date.toLocaleDateString(
+        "fa-IR",
+        {
+          year: "numeric",
+          month: "long",
+          day: "numeric"
+        }
+      );
 
-      return;
+    } catch (e) {
+
+      return "";
+
     }
 
-    container.innerHTML = posts.map(post=>{
+  }
 
-      let image =
-        'https://itarbiatbadani.ir/wp-content/uploads/2025/07/1000073463.png';
 
-      try{
+  /* =========================
+     IMAGE
+  ========================= */
 
-        if(
-          post._embedded &&
-          post._embedded['wp:featuredmedia'] &&
-          post._embedded['wp:featuredmedia'][0]
-        ){
+  function getImage(post) {
 
-          image =
-            post._embedded['wp:featuredmedia'][0].source_url ||
-            image;
+    try {
+
+      return post
+        ._embedded
+        ["wp:featuredmedia"]
+        [0]
+        .source_url;
+
+    } catch (e) {
+
+      return (
+        SITE_URL +
+        "/wp-content/uploads/2025/07/1000073463.png"
+      );
+
+    }
+
+  }
+
+
+  /* =========================
+     CATEGORY
+  ========================= */
+
+  function getCategory(post) {
+
+    try {
+
+      const categories =
+        post
+          ._embedded
+          ["wp:term"];
+
+      for (const group of categories) {
+
+        if (Array.isArray(group)) {
+
+          const category =
+            group.find(
+              item =>
+                item.taxonomy === "category"
+            );
+
+          if (category) {
+            return category.name;
+          }
 
         }
 
-      }catch(e){}
+      }
 
-      const title = cleanHtml(post.title?.rendered || '');
-      const excerpt = cleanHtml(post.excerpt?.rendered || '');
+    } catch (e) {}
 
-      return `
-        <article class="post">
-
-          <img
-            class="post-image"
-            src="${escapeAttribute(image)}"
-            alt="${escapeAttribute(title)}"
-            loading="lazy"
-            onerror="this.src='https://itarbiatbadani.ir/wp-content/uploads/2025/07/1000073463.png'"
-          >
-
-          <div class="post-content">
-
-            <div class="post-title">
-              ${escapeHtml(title)}
-            </div>
-
-            <div class="post-excerpt">
-              ${escapeHtml(excerpt)}
-            </div>
-
-            <a
-              class="post-link"
-              href="${escapeAttribute(post.link)}"
-              target="_blank">
-              مشاهده مطلب ←
-            </a>
-
-          </div>
-
-        </article>
-      `;
-
-    }).join('');
-
-  }catch(error){
-
-    container.innerHTML = `
-      <div class="error">
-        دریافت مطالب سایت با مشکل مواجه شد.
-        <br>
-        لطفاً اتصال اینترنت را بررسی کرده و دوباره تلاش کنید.
-      </div>
-    `;
+    return "تربیت بدنی";
 
   }
 
-}
 
+  /* =========================
+     FETCH POSTS
+  ========================= */
 
-/* ------------------------------
-   Categories
------------------------------- */
+  async function loadPosts() {
 
-async function loadCategories(){
+    const url =
+      API_URL +
+      "/posts?per_page=6&orderby=date&order=desc&_embed";
 
-  const container = document.getElementById('categoryList');
+    try {
 
-  try{
+      const response =
+        await fetch(url);
 
-    let allCategories = [];
-    let page = 1;
-
-    while(true){
-
-      const response = await fetch(
-        apiUrl +
-        '/categories?per_page=100&hide_empty=false&page=' +
-        page
-      );
-
-      if(response.status === 400){
-        break;
+      if (!response.ok) {
+        throw new Error("API Error");
       }
 
-      if(!response.ok){
-        throw new Error('خطا در دریافت دسته‌بندی‌ها');
-      }
+      const posts =
+        await response.json();
 
-      const data = await response.json();
+      allPosts = posts;
 
-      allCategories = allCategories.concat(data);
+      renderFeatured(posts);
 
-      if(data.length < 100){
-        break;
-      }
+      renderPosts(posts);
 
-      page++;
-    }
+    } catch (error) {
 
-    allCategories.sort((a,b)=>
-      a.name.localeCompare(b.name,'fa')
-    );
-
-    if(!allCategories.length){
-
-      container.innerHTML =
-        '<div class="loading">دسته‌بندی‌ای پیدا نشد.</div>';
-
-      return;
-    }
-
-    container.innerHTML = allCategories.map(category=>{
-
-      return `
-        <div
-          class="category"
-          onclick="openCategory(${category.id},'${escapeJs(category.name)}')">
-
-          <div class="category-right">
-
-            <div class="category-icon">📚</div>
-
-            <div class="category-name">
-              ${escapeHtml(category.name)}
-            </div>
-
-          </div>
-
-          <div class="category-arrow">
-            ←
-          </div>
-
+      document.getElementById(
+        "featuredArea"
+      ).innerHTML = `
+        <div class="error">
+          دریافت مطالب از سایت با مشکل مواجه شد.
+          لطفاً چند لحظه بعد دوباره تلاش کنید.
         </div>
       `;
 
-    }).join('');
+      document.getElementById(
+        "postsGrid"
+      ).innerHTML = `
+        <div class="error">
+          ارتباط با سایت برقرار نشد.
+        </div>
+      `;
 
-  }catch(error){
-
-    container.innerHTML = `
-      <div class="error">
-        دریافت دسته‌بندی‌ها با مشکل مواجه شد.
-        <br>
-        ممکن است WordPress REST API در حال حاضر پاسخ ندهد.
-      </div>
-    `;
+    }
 
   }
 
-}
 
+  /* =========================
+     FEATURED
+  ========================= */
 
-/* ------------------------------
-   Category Posts
------------------------------- */
+  function renderFeatured(posts) {
 
-async function openCategory(categoryId,categoryName){
-
-  document.getElementById('categoryTitle').textContent =
-    categoryName;
-
-  document.getElementById('categoryPostList').innerHTML =
-    '<div class="loading">در حال دریافت مطالب...</div>';
-
-  showPage('categoryPosts');
-
-  try{
-
-    const response = await fetch(
-      apiUrl +
-      '/posts?categories=' +
-      categoryId +
-      '&per_page=30&orderby=date&order=desc&_embed'
-    );
-
-    if(!response.ok){
-      throw new Error('خطا');
+    if (!posts.length) {
+      return;
     }
 
-    const posts = await response.json();
+    const main =
+      posts[0];
 
-    const container =
-      document.getElementById('categoryPostList');
+    const image =
+      getImage(main);
 
-    if(!posts.length){
+    const title =
+      stripHtml(main.title.rendered);
 
-      container.innerHTML =
-        '<div class="loading">مطلبی در این دسته‌بندی پیدا نشد.</div>';
+    const category =
+      getCategory(main);
+
+    let html = `
+
+      <a
+        class="featured-main"
+        href="${main.link}"
+        target="_blank">
+
+        <img
+          src="${image}"
+          alt="${title}"
+          loading="eager">
+
+        <div class="featured-overlay">
+
+          <span class="post-tag">
+            ${category}
+          </span>
+
+          <div class="featured-title">
+            ${title}
+          </div>
+
+          <div class="post-meta">
+            ${formatDate(main.date)}
+          </div>
+
+        </div>
+
+      </a>
+
+      <div class="side-featured">
+    `;
+
+
+    posts
+      .slice(1, 3)
+      .forEach(post => {
+
+        const img =
+          getImage(post);
+
+        const title =
+          stripHtml(
+            post.title.rendered
+          );
+
+        html += `
+
+          <a
+            class="side-card"
+            href="${post.link}"
+            target="_blank">
+
+            <img
+              src="${img}"
+              alt="${title}"
+              loading="lazy">
+
+            <div class="side-card-content">
+
+              <div class="post-tag">
+                ${getCategory(post)}
+              </div>
+
+              <div class="side-card-title">
+                ${title}
+              </div>
+
+              <div class="side-card-meta">
+                ${formatDate(post.date)}
+              </div>
+
+            </div>
+
+          </a>
+
+        `;
+
+      });
+
+
+    html += `
+      </div>
+    `;
+
+    document.getElementById(
+      "featuredArea"
+    ).innerHTML = html;
+
+  }
+
+
+  /* =========================
+     POSTS
+  ========================= */
+
+  function renderPosts(posts) {
+
+    if (!posts.length) {
+
+      document.getElementById(
+        "postsGrid"
+      ).innerHTML = `
+        <div class="loading">
+          مطلبی پیدا نشد.
+        </div>
+      `;
 
       return;
     }
 
-    container.innerHTML = posts.map(post=>{
 
-      let image =
-        'https://itarbiatbadani.ir/wp-content/uploads/2025/07/1000073463.png';
+    let html = "";
 
-      try{
 
-        if(
-          post._embedded &&
-          post._embedded['wp:featuredmedia'] &&
-          post._embedded['wp:featuredmedia'][0]
-        ){
-
-          image =
-            post._embedded['wp:featuredmedia'][0].source_url ||
-            image;
-
-        }
-
-      }catch(e){}
+    posts.forEach(post => {
 
       const title =
-        cleanHtml(post.title?.rendered || '');
+        stripHtml(
+          post.title.rendered
+        );
 
       const excerpt =
-        cleanHtml(post.excerpt?.rendered || '');
+        stripHtml(
+          post.excerpt.rendered
+        );
 
-      return `
-        <article class="post">
+      const image =
+        getImage(post);
 
-          <img
-            class="post-image"
-            src="${escapeAttribute(image)}"
-            alt="${escapeAttribute(title)}"
-            loading="lazy"
-            onerror="this.src='https://itarbiatbadani.ir/wp-content/uploads/2025/07/1000073463.png'"
-          >
+      const category =
+        getCategory(post);
 
-          <div class="post-content">
 
-            <div class="post-title">
-              ${escapeHtml(title)}
-            </div>
+      html += `
 
-            <div class="post-excerpt">
-              ${escapeHtml(excerpt)}
-            </div>
+        <a
+          class="post-card"
+          href="${post.link}"
+          target="_blank">
 
-            <a
-              class="post-link"
-              href="${escapeAttribute(post.link)}"
-              target="_blank">
-              مشاهده مطلب ←
-            </a>
+          <div class="post-image">
+
+            <img
+              src="${image}"
+              alt="${title}"
+              loading="lazy">
+
+            <span class="post-tag">
+              ${category}
+            </span>
 
           </div>
 
-        </article>
+
+          <div class="post-body">
+
+            <div class="post-title">
+              ${title}
+            </div>
+
+            <div class="post-excerpt">
+              ${excerpt}
+            </div>
+
+            <div
+              class="post-meta"
+              style="margin-top:9px;color:#8a98a5;">
+
+              ${formatDate(post.date)}
+
+            </div>
+
+          </div>
+
+        </a>
+
       `;
 
-    }).join('');
+    });
 
-  }catch(error){
 
-    document.getElementById('categoryPostList').innerHTML = `
-      <div class="error">
-        دریافت مطالب این دسته‌بندی با مشکل مواجه شد.
-      </div>
-    `;
+    document.getElementById(
+      "postsGrid"
+    ).innerHTML = html;
 
   }
 
-}
+
+  /* =========================
+     SEARCH
+  ========================= */
+
+  function openSearch() {
+
+    document
+      .getElementById("searchBox")
+      .classList.add("active");
+
+    setTimeout(() => {
+
+      document
+        .getElementById("searchInput")
+        .focus();
+
+    }, 100);
+
+  }
 
 
-/* ------------------------------
-   Security / HTML helpers
------------------------------- */
+  function closeSearch() {
 
-function escapeHtml(value){
+    document
+      .getElementById("searchBox")
+      .classList.remove("active");
 
-  return String(value ?? '')
-    .replace(/&/g,'&amp;')
-    .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;')
-    .replace(/'/g,'&#039;');
-
-}
-
-function escapeAttribute(value){
-
-  return escapeHtml(value);
-
-}
-
-function escapeJs(value){
-
-  return String(value ?? '')
-    .replace(/\\/g,'\\\\')
-    .replace(/'/g,"\\'")
-    .replace(/\r/g,'')
-    .replace(/\n/g,' ');
-
-}
+  }
 
 
-/* ------------------------------
-   Start
------------------------------- */
+  document
+    .getElementById("searchInput")
+    .addEventListener(
+      "input",
+      function () {
 
-loadLatestPosts();
-loadCategories();
+        const query =
+          this.value
+            .trim()
+            .toLowerCase();
+
+
+        const result =
+          document.getElementById(
+            "searchResults"
+          );
+
+
+        if (!query) {
+
+          result.innerHTML = "";
+
+          return;
+
+        }
+
+
+        const matches =
+          allPosts.filter(post => {
+
+            const title =
+              stripHtml(
+                post.title.rendered
+              ).toLowerCase();
+
+            return title.includes(query);
+
+          });
+
+
+        if (!matches.length) {
+
+          result.innerHTML = `
+            <div class="search-result">
+              مطلبی با این عنوان پیدا نشد.
+            </div>
+          `;
+
+          return;
+
+        }
+
+
+        result.innerHTML =
+          matches
+            .map(post => `
+
+              <a
+                class="search-result"
+                href="${post.link}"
+                target="_blank">
+
+                ${stripHtml(
+                  post.title.rendered
+                )}
+
+              </a>
+
+            `)
+            .join("");
+
+      });
+
+
+  document
+    .getElementById("searchBox")
+    .addEventListener(
+      "click",
+      function (event) {
+
+        if (
+          event.target === this
+        ) {
+
+          closeSearch();
+
+        }
+
+      }
+    );
+
+
+  /* =========================
+     START
+  ========================= */
+
+  loadPosts();
 
 </script>
 
