@@ -14,10 +14,10 @@ class ItarbiatBadaniApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'تربیت بدنی و علوم ورزشی',
       theme: ThemeData(
-        useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF0A3D62),
         ),
+        useMaterial3: true,
       ),
       home: const HomePage(),
     );
@@ -27,10 +27,10 @@ class ItarbiatBadaniApp extends StatelessWidget {
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
-  final String siteUrl = 'https://itarbiatbadani.ir';
-
   Future<void> openSite() async {
-    final Uri url = Uri.parse(siteUrl);
+    final Uri url = Uri.parse(
+      'https://itarbiatbadani.ir',
+    );
 
     await launchUrl(
       url,
@@ -49,13 +49,12 @@ class HomePage extends StatelessWidget {
             'تربیت بدنی و علوم ورزشی',
             style: TextStyle(
               color: Colors.white,
-              fontWeight: FontWeight.bold,
             ),
           ),
           centerTitle: true,
         ),
 
-        body: SingleChildScrollView(
+        body: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -63,7 +62,7 @@ class HomePage extends StatelessWidget {
 
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(25),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [
@@ -73,6 +72,7 @@ class HomePage extends StatelessWidget {
                   ),
                   borderRadius: BorderRadius.circular(20),
                 ),
+
                 child: const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -97,48 +97,8 @@ class HomePage extends StatelessWidget {
                       ),
                     ),
 
-                    SizedBox(height: 10),
-
-                    Text(
-                      'آخرین مطالب، آموزش‌ها و منابع تخصصی ورزش',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
-                    ),
                   ],
                 ),
-              ),
-
-              const SizedBox(height: 25),
-
-              const Text(
-                'دسته‌بندی‌ها',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-
-                  'تربیت بدنی',
-                  'علوم ورزشی',
-                  'ورزش',
-                  'طرح درس',
-                  'آموزش',
-                ]
-                    .map(
-                      (item) => Chip(
-                        label: Text(item),
-                      ),
-                    )
-                    .toList(),
               ),
 
               const SizedBox(height: 25),
@@ -153,23 +113,38 @@ class HomePage extends StatelessWidget {
 
               const SizedBox(height: 15),
 
-              ArticleCard(
-                title:
-                    'جدیدترین مطالب تربیت بدنی و علوم ورزشی',
-                onTap: openSite,
+              Card(
+                child: ListTile(
+                  leading: const Icon(
+                    Icons.sports,
+                    color: Color(0xFF0A3D62),
+                  ),
+                  title: const Text(
+                    'مطالب تخصصی تربیت بدنی و علوم ورزشی',
+                  ),
+                  trailing: const Icon(
+                    Icons.arrow_back_ios,
+                  ),
+                  onTap: openSite,
+                ),
               ),
 
-              ArticleCard(
-                title:
-                    'آموزش‌های تخصصی رشته تربیت بدنی',
-                onTap: openSite,
+              Card(
+                child: ListTile(
+                  leading: const Icon(
+                    Icons.menu_book,
+                    color: Color(0xFF0A3D62),
+                  ),
+                  title: const Text(
+                    'طرح درس‌ها و منابع آموزشی',
+                  ),
+                  trailing: const Icon(
+                    Icons.arrow_back_ios,
+                  ),
+                  onTap: openSite,
+                ),
               ),
 
-              ArticleCard(
-                title:
-                    'طرح درس‌های ورزشی و منابع آموزشی',
-                onTap: openSite,
-              ),
             ],
           ),
         ),
@@ -189,7 +164,7 @@ class HomePage extends StatelessWidget {
 
             NavigationDestination(
               icon: Icon(Icons.shopping_bag),
-              label: 'محصولات',
+              label: 'فروشگاه',
             ),
 
             NavigationDestination(
@@ -199,52 +174,6 @@ class HomePage extends StatelessWidget {
 
           ],
         ),
-      ),
-    );
-  }
-}
-
-
-class ArticleCard extends StatelessWidget {
-
-  final String title;
-  final VoidCallback onTap;
-
-  const ArticleCard({
-    super.key,
-    required this.title,
-    required this.onTap,
-  });
-
-
-  @override
-  Widget build(BuildContext context) {
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 15),
-
-      child: ListTile(
-
-        leading: const CircleAvatar(
-          backgroundColor: Color(0xFF0A3D62),
-          child: Icon(
-            Icons.sports,
-            color: Colors.white,
-          ),
-        ),
-
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-
-        trailing: const Icon(
-          Icons.arrow_back_ios,
-        ),
-
-        onTap: onTap,
       ),
     );
   }
