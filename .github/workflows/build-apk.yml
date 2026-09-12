@@ -11,9 +11,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
+      # -----------------------------
+      # 1. دریافت پروژه
+      # -----------------------------
       - name: Checkout
         uses: actions/checkout@v4
 
+
+      # -----------------------------
+      # 2. نصب Flutter
+      # -----------------------------
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -21,6 +29,10 @@ jobs:
           channel: stable
           cache: true
 
+
+      # -----------------------------
+      # 3. ساخت پروژه Flutter
+      # -----------------------------
       - name: Create Flutter project
         run: |
           flutter create \
@@ -29,6 +41,10 @@ jobs:
             --platforms android \
             app
 
+
+      # -----------------------------
+      # 4. نصب پکیج‌ها
+      # -----------------------------
       - name: Add packages
         working-directory: app
         run: |
@@ -37,13 +53,22 @@ jobs:
           flutter pub add cached_network_image
           flutter pub add flutter_launcher_icons
 
+
+      # -----------------------------
+      # 5. دریافت لوگوی سایت
+      # -----------------------------
       - name: Download website logo
         run: |
           mkdir -p app/assets
+
           curl -L \
             "https://itarbiatbadani.ir/wp-content/uploads/2025/07/1000073463.png" \
             -o app/assets/logo.png
 
+
+      # -----------------------------
+      # 6. تنظیم آیکون برنامه
+      # -----------------------------
       - name: Configure launcher icon
         working-directory: app
         run: |
@@ -56,10 +81,15 @@ jobs:
             adaptive_icon_foreground: "assets/logo.png"
           EOF
 
+
+      # -----------------------------
+      # 7. ساخت main.dart
+      # -----------------------------
       - name: Write application
         working-directory: app
         run: |
           cat > lib/main.dart <<'DART'
+
           import 'dart:convert';
 
           import 'package:cached_network_image/cached_network_image.dart';
@@ -67,87 +97,198 @@ jobs:
           import 'package:http/http.dart' as http;
           import 'package:url_launcher/url_launcher.dart';
 
-          const String siteUrl = 'https://itarbiatbadani.ir';
-          const String apiUrl = '$siteUrl/wp-json/wp/v2';
 
-          const Color primaryColor = Color(0xFF0A3D62);
-          const Color secondaryColor = Color(0xFF3C6382);
-          const Color goldColor = Color(0xFFFBC531);
+          // =========================================================
+          // اطلاعات اصلی سایت
+          // =========================================================
+
+          const String siteUrl = 'https://itarbiatbadani.ir';
+
+          const String apiUrl =
+              '$siteUrl/wp-json/wp/v2';
+
+
+          // رنگ‌های اصلی سایت
+          const Color primaryColor =
+              Color(0xFF0A3D62);
+
+          const Color secondaryColor =
+              Color(0xFF3C6382);
+
+          const Color goldColor =
+              Color(0xFFFBC531);
+
+
+          // =========================================================
+          // شروع برنامه
+          // =========================================================
 
           void main() {
+
             WidgetsFlutterBinding.ensureInitialized();
+
             runApp(const MyApp());
           }
 
+
+          // =========================================================
+          // برنامه اصلی
+          // =========================================================
+
           class MyApp extends StatelessWidget {
+
             const MyApp({super.key});
 
             @override
             Widget build(BuildContext context) {
+
               return MaterialApp(
+
                 debugShowCheckedModeBanner: false,
-                title: 'تربیت بدنی و علوم ورزشی',
+
+                title:
+                    'تربیت بدنی و علوم ورزشی',
+
                 theme: ThemeData(
+
                   useMaterial3: true,
-                  colorScheme: ColorScheme.fromSeed(
+
+                  colorScheme:
+                      ColorScheme.fromSeed(
                     seedColor: primaryColor,
                   ),
-                  scaffoldBackgroundColor: const Color(0xFFF5F7FA),
-                  appBarTheme: const AppBarTheme(
-                    backgroundColor: primaryColor,
-                    foregroundColor: Colors.white,
+
+                  scaffoldBackgroundColor:
+                      const Color(0xFFF5F7FA),
+
+                  appBarTheme:
+                      const AppBarTheme(
+                    backgroundColor:
+                        primaryColor,
+                    foregroundColor:
+                        Colors.white,
                     centerTitle: true,
                   ),
                 ),
-                home: const Directionality(
-                  textDirection: TextDirection.rtl,
-                  child: MainNavigation(),
+
+                home:
+                    const Directionality(
+                  textDirection:
+                      TextDirection.rtl,
+                  child:
+                      MainNavigation(),
                 ),
               );
             }
           }
 
-          Future<void> openUrl(String url) async {
-            if (url == '#' || url.trim().isEmpty) return;
 
-            final uri = Uri.parse(url);
+          // =========================================================
+          // باز کردن لینک
+          // =========================================================
+
+          Future<void> openUrl(String url) async {
+
+            if (url == '#' ||
+                url.trim().isEmpty) {
+              return;
+            }
+
+            final Uri uri =
+                Uri.parse(url);
 
             try {
+
               await launchUrl(
                 uri,
-                mode: LaunchMode.externalApplication,
+                mode:
+                    LaunchMode.externalApplication,
               );
+
             } catch (_) {}
           }
 
+
+          // =========================================================
+          // پاک کردن HTML
+          // =========================================================
+
           String cleanHtml(String text) {
+
             return text
-                .replaceAll(RegExp(r'<[^>]*>'), '')
-                .replaceAll('&nbsp;', ' ')
-                .replaceAll('&amp;', '&')
-                .replaceAll('&quot;', '"')
-                .replaceAll('&#8217;', '’')
-                .replaceAll('&#8211;', '–')
-                .replaceAll('&#8230;', '…')
+                .replaceAll(
+                  RegExp(r'<[^>]*>'),
+                  '',
+                )
+                .replaceAll(
+                  '&nbsp;',
+                  ' ',
+                )
+                .replaceAll(
+                  '&amp;',
+                  '&',
+                )
+                .replaceAll(
+                  '&quot;',
+                  '"',
+                )
+                .replaceAll(
+                  '&#8217;',
+                  '’',
+                )
+                .replaceAll(
+                  '&#8211;',
+                  '–',
+                )
+                .replaceAll(
+                  '&#8230;',
+                  '…',
+                )
                 .trim();
           }
 
+
+          // =========================================================
+          // تاریخ
+          // =========================================================
+
           String formatDate(String date) {
+
             try {
-              final parsed = DateTime.parse(date);
-              return '${parsed.year}/${parsed.month.toString().padLeft(2, '0')}/${parsed.day.toString().padLeft(2, '0')}';
+
+              final parsed =
+                  DateTime.parse(date);
+
+              return
+                  '${parsed.year}/'
+                  '${parsed.month.toString().padLeft(2, '0')}/'
+                  '${parsed.day.toString().padLeft(2, '0')}';
+
             } catch (_) {
+
               return '';
             }
           }
 
+
+          // =========================================================
+          // مدل مطالب
+          // =========================================================
+
           class PostItem {
+
             final int id;
+
             final String title;
+
             final String link;
+
             final String excerpt;
+
             final String date;
+
             final String image;
+
 
             PostItem({
               required this.id,
@@ -158,39 +299,88 @@ jobs:
               required this.image,
             });
 
-            factory PostItem.fromJson(Map<String, dynamic> json) {
+
+            factory PostItem.fromJson(
+              Map<String, dynamic> json,
+            ) {
+
               String image = '';
 
               try {
-                final embedded = json['_embedded'];
-                final media = embedded?['wp:featuredmedia'];
 
-                if (media is List && media.isNotEmpty) {
-                  image = media[0]['source_url']?.toString() ?? '';
+                final embedded =
+                    json['_embedded'];
+
+                final media =
+                    embedded?[
+                        'wp:featuredmedia'];
+
+                if (media is List &&
+                    media.isNotEmpty) {
+
+                  image =
+                      media[0]['source_url']
+                              ?.toString() ??
+                          '';
                 }
+
               } catch (_) {}
 
+
               return PostItem(
-                id: json['id'] ?? 0,
-                title: cleanHtml(
-                  json['title']?['rendered']?.toString() ?? '',
+
+                id:
+                    json['id'] ?? 0,
+
+                title:
+                    cleanHtml(
+                  json['title']
+                          ?['rendered']
+                          ?.toString() ??
+                      '',
                 ),
-                link: json['link']?.toString() ?? siteUrl,
-                excerpt: cleanHtml(
-                  json['excerpt']?['rendered']?.toString() ?? '',
+
+                link:
+                    json['link']
+                            ?.toString() ??
+                        siteUrl,
+
+                excerpt:
+                    cleanHtml(
+                  json['excerpt']
+                          ?['rendered']
+                          ?.toString() ??
+                      '',
                 ),
-                date: json['date']?.toString() ?? '',
-                image: image,
+
+                date:
+                    json['date']
+                            ?.toString() ??
+                        '',
+
+                image:
+                    image,
               );
             }
           }
 
+
+          // =========================================================
+          // مدل دسته‌بندی
+          // =========================================================
+
           class CategoryItem {
+
             final int id;
+
             final String name;
+
             final int parent;
+
             final int count;
+
             final String link;
+
 
             CategoryItem({
               required this.id,
@@ -200,153 +390,305 @@ jobs:
               required this.link,
             });
 
-            factory CategoryItem.fromJson(Map<String, dynamic> json) {
+
+            factory CategoryItem.fromJson(
+              Map<String, dynamic> json,
+            ) {
+
               return CategoryItem(
-                id: json['id'] ?? 0,
-                name: json['name']?.toString() ?? '',
-                parent: json['parent'] ?? 0,
-                count: json['count'] ?? 0,
-                link: json['link']?.toString() ?? '',
+
+                id:
+                    json['id'] ?? 0,
+
+                name:
+                    json['name']
+                            ?.toString() ??
+                        '',
+
+                parent:
+                    json['parent'] ?? 0,
+
+                count:
+                    json['count'] ?? 0,
+
+                link:
+                    json['link']
+                            ?.toString() ??
+                        '',
               );
             }
           }
 
-          Future<List<PostItem>> fetchLatestPosts() async {
-            final uri = Uri.parse(
-              '$apiUrl/posts?per_page=6&orderby=date&order=desc&_embed',
+
+          // =========================================================
+          // دریافت 6 مطلب جدید
+          // =========================================================
+
+          Future<List<PostItem>>
+              fetchLatestPosts() async {
+
+            final uri =
+                Uri.parse(
+              '$apiUrl/posts'
+              '?per_page=6'
+              '&orderby=date'
+              '&order=desc'
+              '&_embed',
             );
 
-            final response = await http
-                .get(uri)
-                .timeout(const Duration(seconds: 20));
+
+            final response =
+                await http.get(uri).timeout(
+              const Duration(seconds: 20),
+            );
+
 
             if (response.statusCode != 200) {
-              throw Exception('خطا در دریافت مطالب');
+
+              throw Exception(
+                'خطا در دریافت مطالب',
+              );
             }
 
-            final List<dynamic> data = jsonDecode(response.body);
+
+            final List<dynamic> data =
+                jsonDecode(response.body);
+
 
             return data
-                .map((item) => PostItem.fromJson(item))
+                .map(
+                  (item) =>
+                      PostItem.fromJson(item),
+                )
                 .toList();
           }
 
-          Future<List<PostItem>> fetchCategoryPosts(int categoryId) async {
-            final uri = Uri.parse(
-              '$apiUrl/posts?categories=$categoryId&per_page=30&orderby=date&order=desc&_embed',
+
+          // =========================================================
+          // دریافت مطالب دسته
+          // =========================================================
+
+          Future<List<PostItem>>
+              fetchCategoryPosts(
+            int categoryId,
+          ) async {
+
+            final uri =
+                Uri.parse(
+              '$apiUrl/posts'
+              '?categories=$categoryId'
+              '&per_page=30'
+              '&orderby=date'
+              '&order=desc'
+              '&_embed',
             );
 
-            final response = await http
-                .get(uri)
-                .timeout(const Duration(seconds: 20));
+
+            final response =
+                await http.get(uri).timeout(
+              const Duration(seconds: 20),
+            );
+
 
             if (response.statusCode != 200) {
-              throw Exception('خطا در دریافت مطالب دسته‌بندی');
+
+              throw Exception(
+                'خطا در دریافت مطالب دسته‌بندی',
+              );
             }
 
-            final List<dynamic> data = jsonDecode(response.body);
+
+            final List<dynamic> data =
+                jsonDecode(response.body);
+
 
             return data
-                .map((item) => PostItem.fromJson(item))
+                .map(
+                  (item) =>
+                      PostItem.fromJson(item),
+                )
                 .toList();
           }
 
-          Future<List<CategoryItem>> fetchAllCategories() async {
-            final List<CategoryItem> result = [];
+
+          // =========================================================
+          // دریافت تمام دسته‌بندی‌های وردپرس
+          // =========================================================
+
+          Future<List<CategoryItem>>
+              fetchAllCategories() async {
+
+            final List<CategoryItem>
+                result = [];
+
             int page = 1;
 
+
             while (true) {
-              final uri = Uri.parse(
-                '$apiUrl/categories?per_page=100&hide_empty=false&page=$page&orderby=name&order=asc',
+
+              final uri =
+                  Uri.parse(
+                '$apiUrl/categories'
+                '?per_page=100'
+                '&hide_empty=false'
+                '&page=$page'
+                '&orderby=name'
+                '&order=asc',
               );
 
-              final response = await http
-                  .get(uri)
-                  .timeout(const Duration(seconds: 20));
 
-              if (response.statusCode == 400 && page > 1) {
+              final response =
+                  await http.get(uri).timeout(
+                const Duration(seconds: 20),
+              );
+
+
+              if (response.statusCode == 400 &&
+                  page > 1) {
+
                 break;
               }
+
 
               if (response.statusCode != 200) {
-                throw Exception('خطا در دریافت دسته‌بندی‌ها');
+
+                throw Exception(
+                  'خطا در دریافت دسته‌بندی‌ها',
+                );
               }
 
-              final List<dynamic> data = jsonDecode(response.body);
+
+              final List<dynamic> data =
+                  jsonDecode(response.body);
+
 
               if (data.isEmpty) {
+
                 break;
               }
+
 
               result.addAll(
-                data.map((item) => CategoryItem.fromJson(item)),
+                data.map(
+                  (item) =>
+                      CategoryItem.fromJson(
+                    item,
+                  ),
+                ),
               );
 
+
               if (data.length < 100) {
+
                 break;
               }
+
 
               page++;
             }
 
+
             return result;
           }
 
-          IconData categoryIcon(String name) {
-            final text = name.toLowerCase();
+
+          // =========================================================
+          // آیکون دسته‌بندی
+          // =========================================================
+
+          IconData categoryIcon(
+            String name,
+          ) {
+
+            final text =
+                name.toLowerCase();
+
 
             if (text.contains('تغذیه')) {
+
               return Icons.restaurant_menu;
             }
+
 
             if (text.contains('تمرین') ||
                 text.contains('آمادگی') ||
                 text.contains('بدنسازی')) {
+
               return Icons.fitness_center;
             }
 
+
             if (text.contains('فیزیولوژی')) {
-              return Icons.monitor_heart_outlined;
+
+              return Icons
+                  .monitor_heart_outlined;
             }
 
+
             if (text.contains('روان')) {
+
               return Icons.psychology_outlined;
             }
 
+
             if (text.contains('مدیریت')) {
-              return Icons.business_center_outlined;
+
+              return Icons
+                  .business_center_outlined;
             }
+
 
             if (text.contains('پژوهش') ||
                 text.contains('تحقیق')) {
+
               return Icons.science_outlined;
             }
 
+
             if (text.contains('آموزش') ||
                 text.contains('درس')) {
+
               return Icons.school_outlined;
             }
 
+
             if (text.contains('ورزش')) {
+
               return Icons.sports_soccer;
             }
 
+
             if (text.contains('مقال')) {
+
               return Icons.article_outlined;
             }
 
+
             if (text.contains('دانشگاه')) {
-              return Icons.account_balance_outlined;
+
+              return Icons
+                  .account_balance_outlined;
             }
+
 
             return Icons.category_outlined;
           }
 
+
+          // =========================================================
+          // خدمات سایت
+          // =========================================================
+
           class ServiceItem {
+
             final String title;
+
             final String url;
+
             final IconData icon;
+
             final bool disabled;
+
 
             const ServiceItem({
               required this.title,
@@ -356,121 +698,226 @@ jobs:
             });
           }
 
-          const List<ServiceItem> services = [
+
+          const List<ServiceItem>
+              services = [
+
             ServiceItem(
               title: 'معرفی رشته',
               url:
                   '$siteUrl/introduction-to-the-field-of-physical-education-and-sports-sciences/',
-              icon: Icons.info_outline,
+              icon:
+                  Icons.info_outline,
             ),
+
             ServiceItem(
               title: 'گرایش‌های ارشد',
               url:
                   '$siteUrl/%da%af%d8%b1%d8%a7%db%8c%d8%b4%d9%87%d8%a7%db%8c-%da%a9%d8%a7%d8%b1%d8%b4%d9%86%d8%a7%d8%b3%db%8c-%d8%a7%d8%b1%d8%b4%d8%af-%d8%aa%d8%b1%d8%a8%db%8c%d8%aa-%d8%a8%d8%af%d9%86%db%8c-%d9%88/',
-              icon: Icons.layers_outlined,
+              icon:
+                  Icons.layers_outlined,
             ),
+
             ServiceItem(
               title: 'گرایش‌های دکتری',
-              url: '$siteUrl/sports-science-phd-exam-resources/',
-              icon: Icons.school_outlined,
+              url:
+                  '$siteUrl/sports-science-phd-exam-resources/',
+              icon:
+                  Icons.school_outlined,
             ),
+
             ServiceItem(
               title: 'منابع ارشد',
-              url: '$siteUrl/master-of-sports-science-resources/',
-              icon: Icons.menu_book_outlined,
+              url:
+                  '$siteUrl/master-of-sports-science-resources/',
+              icon:
+                  Icons.menu_book_outlined,
             ),
+
             ServiceItem(
               title: 'منابع دکتری',
-              url: '$siteUrl/manabe-konkur-doctori-tarbiat-badani/',
-              icon: Icons.chrome_reader_mode_outlined,
+              url:
+                  '$siteUrl/manabe-konkur-doctori-tarbiat-badani/',
+              icon:
+                  Icons.chrome_reader_mode_outlined,
             ),
+
             ServiceItem(
               title: 'منابع استخدامی',
               url: '#',
-              icon: Icons.assignment_outlined,
+              icon:
+                  Icons.assignment_outlined,
               disabled: true,
             ),
+
             ServiceItem(
               title: 'دانشگاه‌های برتر',
-              url: '$siteUrl/physical-education-sports-science/',
-              icon: Icons.account_balance_outlined,
+              url:
+                  '$siteUrl/physical-education-sports-science/',
+              icon:
+                  Icons.account_balance_outlined,
             ),
+
             ServiceItem(
               title: 'بازار کار',
               url:
                   '$siteUrl/job-market-in-physical-education-and-sports-sciences/',
-              icon: Icons.work_outline,
+              icon:
+                  Icons.work_outline,
             ),
+
             ServiceItem(
               title: 'طرح درس',
               url:
                   '$siteUrl/product-category/%d8%b7%d8%b1%d8%ad-%d8%af%d8%b1%d8%b3-%d8%b1%d9%88%d8%b2%d8%a7%d9%86%d9%87-%d9%85%d8%a7%d9%87%d8%a7%d9%86%d9%87-%d8%b3%d8%a7%d9%84%d8%a7%d9%86%d9%87/',
-              icon: Icons.co_present_outlined,
+              icon:
+                  Icons.co_present_outlined,
             ),
+
             ServiceItem(
               title: 'پاورپوینت',
-              url: '$siteUrl/product-category/powerpoint/',
-              icon: Icons.slideshow_outlined,
+              url:
+                  '$siteUrl/product-category/powerpoint/',
+              icon:
+                  Icons.slideshow_outlined,
             ),
           ];
 
-          class MainNavigation extends StatefulWidget {
-            const MainNavigation({super.key});
+
+          // =========================================================
+          // ناوبری اصلی
+          // =========================================================
+
+          class MainNavigation
+              extends StatefulWidget {
+
+            const MainNavigation({
+              super.key,
+            });
+
 
             @override
-            State<MainNavigation> createState() => _MainNavigationState();
+            State<MainNavigation>
+                createState() =>
+                    _MainNavigationState();
           }
 
-          class _MainNavigationState extends State<MainNavigation> {
+
+          class _MainNavigationState
+              extends State<MainNavigation> {
+
             int currentIndex = 0;
 
+
             final pages = const [
+
               HomePage(),
+
               CategoriesPage(),
+
               StorePage(),
+
               TelegramPage(),
+
               MorePage(),
             ];
 
+
             @override
-            Widget build(BuildContext context) {
+            Widget build(
+              BuildContext context,
+            ) {
+
               return Scaffold(
-                body: IndexedStack(
+
+                body:
+                    IndexedStack(
                   index: currentIndex,
                   children: pages,
                 ),
-                bottomNavigationBar: NavigationBar(
-                  selectedIndex: currentIndex,
-                  onDestinationSelected: (index) {
+
+
+                bottomNavigationBar:
+                    NavigationBar(
+
+                  selectedIndex:
+                      currentIndex,
+
+                  onDestinationSelected:
+                      (index) {
+
                     setState(() {
-                      currentIndex = index;
+
+                      currentIndex =
+                          index;
                     });
                   },
+
+
                   destinations: const [
+
                     NavigationDestination(
-                      icon: Icon(Icons.home_outlined),
-                      selectedIcon: Icon(Icons.home),
+                      icon:
+                          Icon(
+                        Icons.home_outlined,
+                      ),
+                      selectedIcon:
+                          Icon(
+                        Icons.home,
+                      ),
                       label: 'خانه',
                     ),
+
                     NavigationDestination(
-                      icon: Icon(Icons.category_outlined),
-                      selectedIcon: Icon(Icons.category),
-                      label: 'دسته‌بندی‌ها',
+                      icon:
+                          Icon(
+                        Icons.category_outlined,
+                      ),
+                      selectedIcon:
+                          Icon(
+                        Icons.category,
+                      ),
+                      label:
+                          'دسته‌بندی‌ها',
                     ),
+
                     NavigationDestination(
-                      icon: Icon(Icons.storefront_outlined),
-                      selectedIcon: Icon(Icons.storefront),
-                      label: 'فروشگاه',
+                      icon:
+                          Icon(
+                        Icons.storefront_outlined,
+                      ),
+                      selectedIcon:
+                          Icon(
+                        Icons.storefront,
+                      ),
+                      label:
+                          'فروشگاه',
                     ),
+
                     NavigationDestination(
-                      icon: Icon(Icons.send_outlined),
-                      selectedIcon: Icon(Icons.send),
-                      label: 'تلگرام',
+                      icon:
+                          Icon(
+                        Icons.send_outlined,
+                      ),
+                      selectedIcon:
+                          Icon(
+                        Icons.send,
+                      ),
+                      label:
+                          'تلگرام',
                     ),
+
                     NavigationDestination(
-                      icon: Icon(Icons.more_horiz),
-                      selectedIcon: Icon(Icons.more),
-                      label: 'بیشتر',
+                      icon:
+                          Icon(
+                        Icons.more_horiz,
+                      ),
+                      selectedIcon:
+                          Icon(
+                        Icons.more,
+                      ),
+                      label:
+                          'بیشتر',
                     ),
                   ],
                 ),
@@ -478,34 +925,76 @@ jobs:
             }
           }
 
-          class HomePage extends StatelessWidget {
-            const HomePage({super.key});
+
+          // =========================================================
+          // صفحه خانه
+          // =========================================================
+
+          class HomePage
+              extends StatelessWidget {
+
+            const HomePage({
+              super.key,
+            });
+
 
             @override
-            Widget build(BuildContext context) {
+            Widget build(
+              BuildContext context,
+            ) {
+
               return Scaffold(
-                appBar: AppBar(
+
+                appBar:
+                    AppBar(
                   title: const Text(
                     'تربیت بدنی و علوم ورزشی',
                     style: TextStyle(
-                      fontWeight: FontWeight.bold,
+                      fontWeight:
+                          FontWeight.bold,
                     ),
                   ),
                 ),
-                body: RefreshIndicator(
+
+
+                body:
+                    RefreshIndicator(
+
                   onRefresh: () async {
-                    await Future.wait([
-                      fetchLatestPosts(),
-                    ]);
+
+                    await fetchLatestPosts();
                   },
-                  child: ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+
+
+                  child:
+                      ListView(
+
+                    physics:
+                        const AlwaysScrollableScrollPhysics(),
+
+                    padding:
+                        const EdgeInsets.fromLTRB(
+                      16,
+                      16,
+                      16,
+                      28,
+                    ),
+
+
                     children: const [
+
                       _WelcomeCard(),
-                      SizedBox(height: 22),
+
+                      SizedBox(
+                        height: 22,
+                      ),
+
                       _LatestPostsSection(),
-                      SizedBox(height: 28),
+
+                      SizedBox(
+                        height: 28,
+                      ),
+
                       _ServicesSection(),
                     ],
                   ),
@@ -514,45 +1003,84 @@ jobs:
             }
           }
 
-          class _WelcomeCard extends StatelessWidget {
+
+          // =========================================================
+          // کارت خوش‌آمد
+          // =========================================================
+
+          class _WelcomeCard
+              extends StatelessWidget {
+
             const _WelcomeCard();
 
+
             @override
-            Widget build(BuildContext context) {
+            Widget build(
+              BuildContext context,
+            ) {
+
               return Container(
-                padding: const EdgeInsets.all(22),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
+
+                padding:
+                    const EdgeInsets.all(22),
+
+                decoration:
+                    BoxDecoration(
+
+                  gradient:
+                      const LinearGradient(
                     colors: [
                       primaryColor,
                       secondaryColor,
                     ],
                   ),
-                  borderRadius: BorderRadius.circular(22),
+
+                  borderRadius:
+                      BorderRadius.circular(22),
+
                   boxShadow: [
+
                     BoxShadow(
-                      color: primaryColor.withOpacity(.18),
+                      color:
+                          primaryColor.withValues(
+                        alpha: .18,
+                      ),
                       blurRadius: 18,
-                      offset: const Offset(0, 8),
+                      offset:
+                          const Offset(0, 8),
                     ),
                   ],
                 ),
-                child: const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+
+
+                child:
+                    const Column(
+
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+
                   children: [
+
                     Text(
                       'مرجع تخصصی تربیت بدنی و علوم ورزشی',
                       style: TextStyle(
-                        color: Colors.white,
+                        color:
+                            Colors.white,
                         fontSize: 21,
-                        fontWeight: FontWeight.bold,
+                        fontWeight:
+                            FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: 10),
+
+                    SizedBox(
+                      height: 10,
+                    ),
+
                     Text(
                       'آخرین مطالب، منابع و خدمات تخصصی رشته تربیت بدنی و علوم ورزشی',
                       style: TextStyle(
-                        color: Colors.white70,
+                        color:
+                            Colors.white70,
                         height: 1.7,
                         fontSize: 14,
                       ),
@@ -563,64 +1091,117 @@ jobs:
             }
           }
 
-          class _LatestPostsSection extends StatelessWidget {
+
+          // =========================================================
+          // جدیدترین مطالب
+          // =========================================================
+
+          class _LatestPostsSection
+              extends StatelessWidget {
+
             const _LatestPostsSection();
 
+
             @override
-            Widget build(BuildContext context) {
+            Widget build(
+              BuildContext context,
+            ) {
+
               return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+
                 children: [
+
                   const _SectionTitle(
-                    title: 'جدیدترین مطالب',
-                    icon: Icons.article_outlined,
+                    title:
+                        'جدیدترین مطالب',
+                    icon:
+                        Icons.article_outlined,
                   ),
-                  const SizedBox(height: 12),
-                  FutureBuilder<List<PostItem>>(
-                    future: fetchLatestPosts(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState ==
-                          ConnectionState.waiting) {
+
+                  const SizedBox(
+                    height: 12,
+                  ),
+
+
+                  FutureBuilder<
+                      List<PostItem>>(
+                    future:
+                        fetchLatestPosts(),
+
+                    builder:
+                        (context, snapshot) {
+
+                      if (snapshot
+                              .connectionState ==
+                          ConnectionState
+                              .waiting) {
+
                         return const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(30),
-                            child: CircularProgressIndicator(),
+                          child:
+                              Padding(
+                            padding:
+                                EdgeInsets.all(30),
+                            child:
+                                CircularProgressIndicator(),
                           ),
                         );
                       }
 
+
                       if (snapshot.hasError) {
+
                         return _ErrorCard(
                           message:
                               'دریافت مطالب از سایت انجام نشد.',
+
                           onRetry: () {
-                            Navigator.of(context).pushReplacement(
+
+                            Navigator.of(
+                              context,
+                            ).pushReplacement(
                               MaterialPageRoute(
-                                builder: (_) => const HomePage(),
+                                builder: (_) =>
+                                    const HomePage(),
                               ),
                             );
                           },
                         );
                       }
 
-                      final posts = snapshot.data ?? [];
+
+                      final posts =
+                          snapshot.data ?? [];
+
 
                       if (posts.isEmpty) {
+
                         return const _InfoCard(
-                          text: 'هنوز مطلبی برای نمایش وجود ندارد.',
+                          text:
+                              'هنوز مطلبی برای نمایش وجود ندارد.',
                         );
                       }
 
+
                       return Column(
-                        children: posts
-                            .map(
-                              (post) => Padding(
-                                padding:
-                                    const EdgeInsets.only(bottom: 12),
-                                child: PostCard(post: post),
-                              ),
-                            )
-                            .toList(),
+
+                        children:
+                            posts.map(
+                          (post) => Padding(
+
+                            padding:
+                                const EdgeInsets.only(
+                              bottom: 12,
+                            ),
+
+                            child:
+                                PostCard(
+                              post: post,
+                            ),
+                          ),
+                        ).toList(),
                       );
                     },
                   ),
@@ -629,32 +1210,72 @@ jobs:
             }
           }
 
-          class _ServicesSection extends StatelessWidget {
+
+          // =========================================================
+          // خدمات ما
+          // =========================================================
+
+          class _ServicesSection
+              extends StatelessWidget {
+
             const _ServicesSection();
 
+
             @override
-            Widget build(BuildContext context) {
+            Widget build(
+              BuildContext context,
+            ) {
+
               return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+
                 children: [
+
                   const _SectionTitle(
-                    title: 'خدمات ما',
-                    icon: Icons.apps_outlined,
+                    title:
+                        'خدمات ما',
+                    icon:
+                        Icons.apps_outlined,
                   ),
-                  const SizedBox(height: 12),
+
+                  const SizedBox(
+                    height: 12,
+                  ),
+
+
                   SizedBox(
+
                     height: 150,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: services.length,
-                      separatorBuilder: (_, __) =>
-                          const SizedBox(width: 12),
-                      itemBuilder: (context, index) {
-                        final service = services[index];
+
+                    child:
+                        ListView.separated(
+
+                      scrollDirection:
+                          Axis.horizontal,
+
+                      itemCount:
+                          services.length,
+
+                      separatorBuilder:
+                          (_, __) =>
+                              const SizedBox(
+                        width: 12,
+                      ),
+
+                      itemBuilder:
+                          (context, index) {
 
                         return SizedBox(
+
                           width: 145,
-                          child: _ServiceCard(service: service),
+
+                          child:
+                              _ServiceCard(
+                            service:
+                                services[index],
+                          ),
                         );
                       },
                     ),
@@ -664,38 +1285,73 @@ jobs:
             }
           }
 
-          class _SectionTitle extends StatelessWidget {
+
+          // =========================================================
+          // عنوان بخش
+          // =========================================================
+
+          class _SectionTitle
+              extends StatelessWidget {
+
             final String title;
+
             final IconData icon;
+
 
             const _SectionTitle({
               required this.title,
               required this.icon,
             });
 
+
             @override
-            Widget build(BuildContext context) {
+            Widget build(
+              BuildContext context,
+            ) {
+
               return Row(
+
                 children: [
+
                   Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: goldColor.withOpacity(.16),
-                      borderRadius: BorderRadius.circular(10),
+
+                    padding:
+                        const EdgeInsets.all(8),
+
+                    decoration:
+                        BoxDecoration(
+
+                      color:
+                          goldColor.withValues(
+                        alpha: .16,
+                      ),
+
+                      borderRadius:
+                          BorderRadius.circular(10),
                     ),
-                    child: Icon(
+
+                    child:
+                        Icon(
                       icon,
-                      color: primaryColor,
+                      color:
+                          primaryColor,
                       size: 21,
                     ),
                   ),
-                  const SizedBox(width: 10),
+
+                  const SizedBox(
+                    width: 10,
+                  ),
+
                   Text(
                     title,
-                    style: const TextStyle(
+                    style:
+                        const TextStyle(
                       fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: primaryColor,
+                      fontWeight:
+                          FontWeight.bold,
+                      color:
+                          primaryColor,
                     ),
                   ),
                 ],
@@ -703,65 +1359,141 @@ jobs:
             }
           }
 
-          class PostCard extends StatelessWidget {
+
+          // =========================================================
+          // کارت مطلب
+          // =========================================================
+
+          class PostCard
+              extends StatelessWidget {
+
             final PostItem post;
+
 
             const PostCard({
               super.key,
               required this.post,
             });
 
+
             @override
-            Widget build(BuildContext context) {
+            Widget build(
+              BuildContext context,
+            ) {
+
               return Card(
+
                 elevation: 0,
-                margin: EdgeInsets.zero,
-                clipBehavior: Clip.antiAlias,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                  side: BorderSide(
-                    color: Colors.grey.shade200,
+
+                margin:
+                    EdgeInsets.zero,
+
+                clipBehavior:
+                    Clip.antiAlias,
+
+                shape:
+                    RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(18),
+
+                  side:
+                      BorderSide(
+                    color:
+                        Colors.grey.shade200,
                   ),
                 ),
-                child: InkWell(
-                  onTap: () => openUrl(post.link),
-                  child: Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+
+
+                child:
+                    InkWell(
+
+                  onTap: () =>
+                      openUrl(post.link),
+
+
+                  child:
+                      Padding(
+
+                    padding:
+                        const EdgeInsets.all(10),
+
+                    child:
+                        Row(
+
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
+
                       children: [
-                        _PostImage(image: post.image),
-                        const SizedBox(width: 12),
+
+                        _PostImage(
+                          image:
+                              post.image,
+                        ),
+
+                        const SizedBox(
+                          width: 12,
+                        ),
+
                         Expanded(
-                          child: Column(
+
+                          child:
+                              Column(
+
                             crossAxisAlignment:
                                 CrossAxisAlignment.start,
+
                             children: [
+
                               Text(
                                 post.title,
+
                                 maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
+
+                                overflow:
+                                    TextOverflow.ellipsis,
+
+                                style:
+                                    const TextStyle(
+                                  fontWeight:
+                                      FontWeight.bold,
                                   fontSize: 16,
                                   height: 1.5,
                                 ),
                               ),
-                              const SizedBox(height: 6),
+
+                              const SizedBox(
+                                height: 6,
+                              ),
+
                               Text(
-                                formatDate(post.date),
-                                style: TextStyle(
-                                  color: Colors.grey.shade600,
+                                formatDate(
+                                  post.date,
+                                ),
+
+                                style:
+                                    TextStyle(
+                                  color:
+                                      Colors.grey.shade600,
                                   fontSize: 12,
                                 ),
                               ),
-                              const SizedBox(height: 6),
+
+                              const SizedBox(
+                                height: 6,
+                              ),
+
                               Text(
                                 post.excerpt,
+
                                 maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: Colors.grey.shade700,
+
+                                overflow:
+                                    TextOverflow.ellipsis,
+
+                                style:
+                                    TextStyle(
+                                  color:
+                                      Colors.grey.shade700,
                                   height: 1.5,
                                   fontSize: 12.5,
                                 ),
@@ -777,51 +1509,105 @@ jobs:
             }
           }
 
-          class _PostImage extends StatelessWidget {
+
+          // =========================================================
+          // تصویر مطلب
+          // =========================================================
+
+          class _PostImage
+              extends StatelessWidget {
+
             final String image;
+
 
             const _PostImage({
               required this.image,
             });
 
+
             @override
-            Widget build(BuildContext context) {
+            Widget build(
+              BuildContext context,
+            ) {
+
               if (image.isEmpty) {
+
                 return Container(
+
                   width: 95,
+
                   height: 95,
-                  decoration: BoxDecoration(
-                    color: primaryColor.withOpacity(.08),
-                    borderRadius: BorderRadius.circular(14),
+
+                  decoration:
+                      BoxDecoration(
+
+                    color:
+                        primaryColor.withValues(
+                      alpha: .08,
+                    ),
+
+                    borderRadius:
+                        BorderRadius.circular(14),
                   ),
-                  child: const Icon(
+
+                  child:
+                      const Icon(
                     Icons.article_outlined,
-                    color: primaryColor,
+                    color:
+                        primaryColor,
                     size: 35,
                   ),
                 );
               }
 
+
               return ClipRRect(
-                borderRadius: BorderRadius.circular(14),
-                child: CachedNetworkImage(
-                  imageUrl: image,
+
+                borderRadius:
+                    BorderRadius.circular(14),
+
+                child:
+                    CachedNetworkImage(
+
+                  imageUrl:
+                      image,
+
                   width: 95,
+
                   height: 95,
-                  fit: BoxFit.cover,
-                  placeholder: (_, __) => Container(
-                    color: Colors.grey.shade200,
-                    child: const Center(
-                      child: CircularProgressIndicator(
+
+                  fit:
+                      BoxFit.cover,
+
+                  placeholder:
+                      (_, __) =>
+                          Container(
+                    color:
+                        Colors.grey.shade200,
+
+                    child:
+                        const Center(
+                      child:
+                          CircularProgressIndicator(
                         strokeWidth: 2,
                       ),
                     ),
                   ),
-                  errorWidget: (_, __, ___) => Container(
-                    color: primaryColor.withOpacity(.08),
-                    child: const Icon(
-                      Icons.image_not_supported_outlined,
-                      color: primaryColor,
+
+                  errorWidget:
+                      (_, __, ___) =>
+                          Container(
+                    color:
+                        primaryColor.withValues(
+                      alpha: .08,
+                    ),
+
+                    child:
+                        const Icon(
+                      Icons
+                          .image_not_supported_outlined,
+                      color:
+                          primaryColor,
                     ),
                   ),
                 ),
@@ -829,78 +1615,153 @@ jobs:
             }
           }
 
-          class _ServiceCard extends StatelessWidget {
+
+          // =========================================================
+          // کارت خدمات
+          // =========================================================
+
+          class _ServiceCard
+              extends StatelessWidget {
+
             final ServiceItem service;
+
 
             const _ServiceCard({
               required this.service,
             });
 
+
             @override
-            Widget build(BuildContext context) {
+            Widget build(
+              BuildContext context,
+            ) {
+
               return Card(
+
                 elevation: 0,
-                margin: EdgeInsets.zero,
-                color: service.disabled
-                    ? Colors.grey.shade100
-                    : Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                  side: BorderSide(
-                    color: service.disabled
-                        ? Colors.grey.shade300
-                        : Colors.grey.shade200,
+
+                margin:
+                    EdgeInsets.zero,
+
+                color:
+                    service.disabled
+                        ? Colors.grey.shade100
+                        : Colors.white,
+
+                shape:
+                    RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(18),
+
+                  side:
+                      BorderSide(
+                    color:
+                        service.disabled
+                            ? Colors.grey.shade300
+                            : Colors.grey.shade200,
                   ),
                 ),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(18),
+
+
+                child:
+                    InkWell(
+
+                  borderRadius:
+                      BorderRadius.circular(18),
+
                   onTap: () {
+
                     if (service.disabled) {
-                      ScaffoldMessenger.of(context).showSnackBar(
+
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(
                         const SnackBar(
-                          content: Text(
+                          content:
+                              Text(
                             'این بخش به‌زودی فعال می‌شود.',
                           ),
                         ),
                       );
+
                     } else {
-                      openUrl(service.url);
+
+                      openUrl(
+                        service.url,
+                      );
                     }
                   },
-                  child: Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Column(
+
+
+                  child:
+                      Padding(
+
+                    padding:
+                        const EdgeInsets.all(14),
+
+                    child:
+                        Column(
+
                       mainAxisAlignment:
                           MainAxisAlignment.center,
+
                       children: [
+
                         Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: service.disabled
-                                ? Colors.grey.shade200
-                                : primaryColor.withOpacity(.08),
-                            shape: BoxShape.circle,
+
+                          padding:
+                              const EdgeInsets.all(12),
+
+                          decoration:
+                              BoxDecoration(
+
+                            color:
+                                service.disabled
+                                    ? Colors.grey.shade200
+                                    : primaryColor.withValues(
+                                        alpha: .08,
+                                      ),
+
+                            shape:
+                                BoxShape.circle,
                           ),
-                          child: Icon(
+
+                          child:
+                              Icon(
                             service.icon,
                             size: 32,
-                            color: service.disabled
-                                ? Colors.grey
-                                : primaryColor,
+
+                            color:
+                                service.disabled
+                                    ? Colors.grey
+                                    : primaryColor,
                           ),
                         ),
-                        const SizedBox(height: 12),
+
+                        const SizedBox(
+                          height: 12,
+                        ),
+
                         Text(
                           service.title,
-                          textAlign: TextAlign.center,
+
+                          textAlign:
+                              TextAlign.center,
+
                           maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
+
+                          overflow:
+                              TextOverflow.ellipsis,
+
+                          style:
+                              TextStyle(
+                            fontWeight:
+                                FontWeight.bold,
                             fontSize: 13,
-                            color: service.disabled
-                                ? Colors.grey
-                                : primaryColor,
+                            color:
+                                service.disabled
+                                    ? Colors.grey
+                                    : primaryColor,
                           ),
                         ),
                       ],
@@ -911,31 +1772,68 @@ jobs:
             }
           }
 
-          class CategoriesPage extends StatelessWidget {
-            const CategoriesPage({super.key});
+
+          // =========================================================
+          // صفحه دسته‌بندی‌ها
+          // =========================================================
+
+          class CategoriesPage
+              extends StatelessWidget {
+
+            const CategoriesPage({
+              super.key,
+            });
+
 
             @override
-            Widget build(BuildContext context) {
+            Widget build(
+              BuildContext context,
+            ) {
+
               return Scaffold(
-                appBar: AppBar(
-                  title: const Text('دسته‌بندی‌ها'),
+
+                appBar:
+                    AppBar(
+                  title:
+                      const Text(
+                    'دسته‌بندی‌ها',
+                  ),
                 ),
-                body: FutureBuilder<List<CategoryItem>>(
-                  future: fetchAllCategories(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState ==
-                        ConnectionState.waiting) {
+
+
+                body:
+                    FutureBuilder<
+                        List<CategoryItem>>(
+
+                  future:
+                      fetchAllCategories(),
+
+                  builder:
+                      (context, snapshot) {
+
+                    if (snapshot
+                            .connectionState ==
+                        ConnectionState
+                            .waiting) {
+
                       return const Center(
-                        child: CircularProgressIndicator(),
+                        child:
+                            CircularProgressIndicator(),
                       );
                     }
 
+
                     if (snapshot.hasError) {
+
                       return _ErrorCard(
                         message:
                             'دسته‌بندی‌ها از سایت دریافت نشد.',
+
                         onRetry: () {
-                          Navigator.of(context).pushReplacement(
+
+                          Navigator.of(
+                            context,
+                          ).pushReplacement(
                             MaterialPageRoute(
                               builder: (_) =>
                                   const CategoriesPage(),
@@ -945,34 +1843,60 @@ jobs:
                       );
                     }
 
-                    final categories = snapshot.data ?? [];
+
+                    final categories =
+                        snapshot.data ?? [];
+
 
                     if (categories.isEmpty) {
+
                       return const _InfoCard(
                         text:
                             'در حال حاضر دسته‌بندی‌ای برای نمایش وجود ندارد.',
                       );
                     }
 
-                    final Map<int, List<CategoryItem>> children =
-                        {};
 
-                    for (final category in categories) {
+                    final Map<int,
+                            List<CategoryItem>>
+                        children = {};
+
+
+                    for (final category
+                        in categories) {
+
                       children
-                          .putIfAbsent(category.parent, () => [])
+                          .putIfAbsent(
+                            category.parent,
+                            () => [],
+                          )
                           .add(category);
                     }
 
-                    final roots = children[0] ?? [];
+
+                    final roots =
+                        children[0] ?? [];
+
 
                     return ListView(
-                      padding: const EdgeInsets.all(16),
-                      children: roots.map((category) {
-                        return _CategoryTile(
-                          category: category,
-                          children: children,
-                        );
-                      }).toList(),
+
+                      padding:
+                          const EdgeInsets.all(16),
+
+                      children:
+                          roots.map(
+                        (category) {
+
+                          return _CategoryTile(
+
+                            category:
+                                category,
+
+                            children:
+                                children,
+                          );
+                        },
+                      ).toList(),
                     );
                   },
                 ),
@@ -980,49 +1904,98 @@ jobs:
             }
           }
 
-          class _CategoryTile extends StatelessWidget {
+
+          // =========================================================
+          // دسته‌بندی و زیر دسته‌ها
+          // =========================================================
+
+          class _CategoryTile
+              extends StatelessWidget {
+
             final CategoryItem category;
-            final Map<int, List<CategoryItem>> children;
+
+            final Map<int,
+                    List<CategoryItem>>
+                children;
+
 
             const _CategoryTile({
               required this.category,
               required this.children,
             });
 
+
             @override
-            Widget build(BuildContext context) {
+            Widget build(
+              BuildContext context,
+            ) {
+
               final subCategories =
-                  children[category.id] ?? [];
+                  children[category.id] ??
+                      [];
+
 
               if (subCategories.isEmpty) {
+
                 return Card(
+
                   elevation: 0,
-                  margin: const EdgeInsets.only(bottom: 10),
-                  child: ListTile(
-                    leading: CircleAvatar(
+
+                  margin:
+                      const EdgeInsets.only(
+                    bottom: 10,
+                  ),
+
+                  child:
+                      ListTile(
+
+                    leading:
+                        CircleAvatar(
+
                       backgroundColor:
-                          primaryColor.withOpacity(.1),
-                      child: Icon(
-                        categoryIcon(category.name),
-                        color: primaryColor,
+                          primaryColor.withValues(
+                        alpha: .1,
+                      ),
+
+                      child:
+                          Icon(
+                        categoryIcon(
+                          category.name,
+                        ),
+                        color:
+                            primaryColor,
                       ),
                     ),
-                    title: Text(
+
+                    title:
+                        Text(
                       category.name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
+                      style:
+                          const TextStyle(
+                        fontWeight:
+                            FontWeight.bold,
                       ),
                     ),
+
                     subtitle:
-                        Text('${category.count} مطلب'),
+                        Text(
+                      '${category.count} مطلب',
+                    ),
+
                     trailing:
-                        const Icon(Icons.chevron_left),
+                        const Icon(
+                      Icons.chevron_left,
+                    ),
+
                     onTap: () {
+
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => CategoryPostsPage(
-                            category: category,
+                          builder: (_) =>
+                              CategoryPostsPage(
+                            category:
+                                category,
                           ),
                         ),
                       );
@@ -1031,74 +2004,137 @@ jobs:
                 );
               }
 
+
               return Card(
+
                 elevation: 0,
-                margin: const EdgeInsets.only(bottom: 10),
-                clipBehavior: Clip.antiAlias,
-                child: ExpansionTile(
-                  leading: CircleAvatar(
+
+                margin:
+                    const EdgeInsets.only(
+                  bottom: 10,
+                ),
+
+                clipBehavior:
+                    Clip.antiAlias,
+
+                child:
+                    ExpansionTile(
+
+                  leading:
+                      CircleAvatar(
+
                     backgroundColor:
-                        primaryColor.withOpacity(.1),
-                    child: Icon(
-                      categoryIcon(category.name),
-                      color: primaryColor,
+                        primaryColor.withValues(
+                      alpha: .1,
+                    ),
+
+                    child:
+                        Icon(
+                      categoryIcon(
+                        category.name,
+                      ),
+                      color:
+                          primaryColor,
                     ),
                   ),
-                  title: Text(
+
+                  title:
+                      Text(
                     category.name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
+                    style:
+                        const TextStyle(
+                      fontWeight:
+                          FontWeight.bold,
                     ),
                   ),
+
                   subtitle:
-                      Text('${category.count} مطلب'),
+                      Text(
+                    '${category.count} مطلب',
+                  ),
+
+
                   children: [
+
                     ListTile(
-                      title: const Text(
+
+                      title:
+                          const Text(
                         'مشاهده مطالب این دسته',
                       ),
-                      leading: const Icon(
+
+                      leading:
+                          const Icon(
                         Icons.article_outlined,
-                        color: secondaryColor,
+                        color:
+                            secondaryColor,
                       ),
+
                       onTap: () {
+
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => CategoryPostsPage(
-                              category: category,
+                            builder: (_) =>
+                                CategoryPostsPage(
+                              category:
+                                  category,
                             ),
                           ),
                         );
                       },
                     ),
+
+
                     ...subCategories.map(
-                      (child) => ListTile(
-                        contentPadding:
-                            const EdgeInsets.symmetric(
-                          horizontal: 28,
-                        ),
-                        leading: Icon(
-                          categoryIcon(child.name),
-                          color: secondaryColor,
-                        ),
-                        title: Text(child.name),
-                        subtitle:
-                            Text('${child.count} مطلب'),
-                        trailing:
-                            const Icon(Icons.chevron_left),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  CategoryPostsPage(
-                                category: child,
-                              ),
+                      (child) {
+
+                        return ListTile(
+
+                          contentPadding:
+                              const EdgeInsets.symmetric(
+                            horizontal: 28,
+                          ),
+
+                          leading:
+                              Icon(
+                            categoryIcon(
+                              child.name,
                             ),
-                          );
-                        },
-                      ),
+                            color:
+                                secondaryColor,
+                          ),
+
+                          title:
+                              Text(
+                            child.name,
+                          ),
+
+                          subtitle:
+                              Text(
+                            '${child.count} مطلب',
+                          ),
+
+                          trailing:
+                              const Icon(
+                            Icons.chevron_left,
+                          ),
+
+                          onTap: () {
+
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    CategoryPostsPage(
+                                  category:
+                                      child,
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -1106,40 +2142,79 @@ jobs:
             }
           }
 
-          class CategoryPostsPage extends StatelessWidget {
+
+          // =========================================================
+          // مطالب دسته‌بندی
+          // =========================================================
+
+          class CategoryPostsPage
+              extends StatelessWidget {
+
             final CategoryItem category;
+
 
             const CategoryPostsPage({
               super.key,
               required this.category,
             });
 
+
             @override
-            Widget build(BuildContext context) {
+            Widget build(
+              BuildContext context,
+            ) {
+
               return Scaffold(
-                appBar: AppBar(
-                  title: Text(category.name),
+
+                appBar:
+                    AppBar(
+                  title:
+                      Text(
+                    category.name,
+                  ),
                 ),
-                body: FutureBuilder<List<PostItem>>(
-                  future: fetchCategoryPosts(category.id),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState ==
-                        ConnectionState.waiting) {
+
+
+                body:
+                    FutureBuilder<
+                        List<PostItem>>(
+
+                  future:
+                      fetchCategoryPosts(
+                    category.id,
+                  ),
+
+                  builder:
+                      (context, snapshot) {
+
+                    if (snapshot
+                            .connectionState ==
+                        ConnectionState
+                            .waiting) {
+
                       return const Center(
-                        child: CircularProgressIndicator(),
+                        child:
+                            CircularProgressIndicator(),
                       );
                     }
 
+
                     if (snapshot.hasError) {
+
                       return _ErrorCard(
                         message:
                             'مطالب این دسته دریافت نشد.',
+
                         onRetry: () {
-                          Navigator.of(context).pushReplacement(
+
+                          Navigator.of(
+                            context,
+                          ).pushReplacement(
                             MaterialPageRoute(
                               builder: (_) =>
                                   CategoryPostsPage(
-                                category: category,
+                                category:
+                                    category,
                               ),
                             ),
                           );
@@ -1147,24 +2222,42 @@ jobs:
                       );
                     }
 
-                    final posts = snapshot.data ?? [];
+
+                    final posts =
+                        snapshot.data ?? [];
+
 
                     if (posts.isEmpty) {
+
                       return const _InfoCard(
                         text:
                             'در این دسته هنوز مطلبی وجود ندارد.',
                       );
                     }
 
+
                     return ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: posts.length,
-                      itemBuilder: (_, index) {
+
+                      padding:
+                          const EdgeInsets.all(16),
+
+                      itemCount:
+                          posts.length,
+
+                      itemBuilder:
+                          (_, index) {
+
                         return Padding(
+
                           padding:
-                              const EdgeInsets.only(bottom: 12),
-                          child: PostCard(
-                            post: posts[index],
+                              const EdgeInsets.only(
+                            bottom: 12,
+                          ),
+
+                          child:
+                              PostCard(
+                            post:
+                                posts[index],
                           ),
                         );
                       },
@@ -1175,71 +2268,145 @@ jobs:
             }
           }
 
-          class StorePage extends StatelessWidget {
-            const StorePage({super.key});
+
+          // =========================================================
+          // فروشگاه
+          // =========================================================
+
+          class StorePage
+              extends StatelessWidget {
+
+            const StorePage({
+              super.key,
+            });
+
 
             @override
-            Widget build(BuildContext context) {
+            Widget build(
+              BuildContext context,
+            ) {
+
               return Scaffold(
-                appBar: AppBar(
-                  title: const Text('فروشگاه'),
+
+                appBar:
+                    AppBar(
+                  title:
+                      const Text(
+                    'فروشگاه',
+                  ),
                 ),
-                body: ListView(
-                  padding: const EdgeInsets.all(18),
+
+
+                body:
+                    ListView(
+
+                  padding:
+                      const EdgeInsets.all(18),
+
                   children: [
+
                     Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
+
+                      padding:
+                          const EdgeInsets.all(24),
+
+                      decoration:
+                          BoxDecoration(
+
+                        gradient:
+                            const LinearGradient(
                           colors: [
                             primaryColor,
                             secondaryColor,
                           ],
                         ),
+
                         borderRadius:
-                            BorderRadius.circular(24),
+                            BorderRadius.circular(
+                          24,
+                        ),
                       ),
-                      child: const Column(
+
+
+                      child:
+                          const Column(
+
                         children: [
+
                           Icon(
                             Icons.storefront,
                             size: 60,
-                            color: goldColor,
+                            color:
+                                goldColor,
                           ),
-                          SizedBox(height: 15),
+
+                          SizedBox(
+                            height: 15,
+                          ),
+
                           Text(
                             'فروشگاه تربیت بدنی و علوم ورزشی',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.white,
+                            textAlign:
+                                TextAlign.center,
+                            style:
+                                TextStyle(
+                              color:
+                                  Colors.white,
                               fontSize: 21,
-                              fontWeight: FontWeight.bold,
+                              fontWeight:
+                                  FontWeight.bold,
                             ),
                           ),
-                          SizedBox(height: 12),
+
+                          SizedBox(
+                            height: 12,
+                          ),
+
                           Text(
                             'طرح درس، پاورپوینت و فایل‌های تخصصی رشته تربیت بدنی',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.white70,
+                            textAlign:
+                                TextAlign.center,
+                            style:
+                                TextStyle(
+                              color:
+                                  Colors.white70,
                               height: 1.7,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 20),
+
+
+                    const SizedBox(
+                      height: 20,
+                    ),
+
+
                     FilledButton.icon(
+
                       onPressed: () =>
-                          openUrl('$siteUrl/shop/'),
-                      icon: const Icon(
+                          openUrl(
+                        '$siteUrl/shop/',
+                      ),
+
+                      icon:
+                          const Icon(
                         Icons.shopping_cart_outlined,
                       ),
-                      label: const Padding(
-                        padding: EdgeInsets.all(13),
-                        child: Text(
+
+                      label:
+                          const Padding(
+                        padding:
+                            EdgeInsets.all(13),
+
+                        child:
+                            Text(
                           'ورود به فروشگاه',
-                          style: TextStyle(fontSize: 16),
+                          style:
+                              TextStyle(
+                            fontSize: 16,
+                          ),
                         ),
                       ),
                     ),
@@ -1249,68 +2416,146 @@ jobs:
             }
           }
 
-          class TelegramPage extends StatelessWidget {
-            const TelegramPage({super.key});
+
+          // =========================================================
+          // تلگرام
+          // =========================================================
+
+          class TelegramPage
+              extends StatelessWidget {
+
+            const TelegramPage({
+              super.key,
+            });
+
 
             @override
-            Widget build(BuildContext context) {
+            Widget build(
+              BuildContext context,
+            ) {
+
               return Scaffold(
-                appBar: AppBar(
-                  title: const Text('تلگرام'),
+
+                appBar:
+                    AppBar(
+                  title:
+                      const Text(
+                    'تلگرام',
+                  ),
                 ),
-                body: ListView(
-                  padding: const EdgeInsets.all(18),
+
+
+                body:
+                    ListView(
+
+                  padding:
+                      const EdgeInsets.all(18),
+
                   children: [
+
                     Container(
-                      padding: const EdgeInsets.all(26),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
+
+                      padding:
+                          const EdgeInsets.all(26),
+
+                      decoration:
+                          BoxDecoration(
+
+                        color:
+                            Colors.white,
+
                         borderRadius:
-                            BorderRadius.circular(24),
-                        border: Border.all(
-                          color: Colors.grey.shade200,
+                            BorderRadius.circular(
+                          24,
+                        ),
+
+                        border:
+                            Border.all(
+                          color:
+                              Colors.grey.shade200,
                         ),
                       ),
-                      child: const Column(
+
+
+                      child:
+                          const Column(
+
                         children: [
+
                           Icon(
                             Icons.send,
                             size: 65,
-                            color: primaryColor,
+                            color:
+                                primaryColor,
                           ),
-                          SizedBox(height: 18),
+
+                          SizedBox(
+                            height: 18,
+                          ),
+
                           Text(
                             'کانال تلگرام تربیت بدنی و علوم ورزشی',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
+                            textAlign:
+                                TextAlign.center,
+                            style:
+                                TextStyle(
                               fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: primaryColor,
+                              fontWeight:
+                                  FontWeight.bold,
+                              color:
+                                  primaryColor,
                             ),
                           ),
-                          SizedBox(height: 12),
+
+                          SizedBox(
+                            height: 12,
+                          ),
+
                           Text(
                             'مطالب تخصصی، اخبار، منابع و اطلاع‌رسانی‌های جدید',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.black54,
+                            textAlign:
+                                TextAlign.center,
+                            style:
+                                TextStyle(
+                              color:
+                                  Colors.black54,
                               height: 1.7,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 20),
+
+
+                    const SizedBox(
+                      height: 20,
+                    ),
+
+
                     FilledButton.icon(
-                      onPressed: () => openUrl(
+
+                      onPressed: () =>
+                          openUrl(
                         'https://t.me/itarbiatbadani',
                       ),
-                      icon: const Icon(Icons.send),
-                      label: const Padding(
-                        padding: EdgeInsets.all(13),
-                        child: Text(
+
+                      icon:
+                          const Icon(
+                        Icons.send,
+                      ),
+
+                      label:
+                          const Padding(
+                        padding:
+                            EdgeInsets.all(13),
+
+                        child:
+                            Text(
                           'ورود به کانال تلگرام',
-                          style: TextStyle(fontSize: 16),
+                          style:
+                              TextStyle(
+                            fontSize: 16,
+                          ),
                         ),
                       ),
                     ),
@@ -1320,47 +2565,117 @@ jobs:
             }
           }
 
-          class MorePage extends StatelessWidget {
-            const MorePage({super.key});
+
+          // =========================================================
+          // بیشتر
+          // =========================================================
+
+          class MorePage
+              extends StatelessWidget {
+
+            const MorePage({
+              super.key,
+            });
+
 
             @override
-            Widget build(BuildContext context) {
+            Widget build(
+              BuildContext context,
+            ) {
+
               return Scaffold(
-                appBar: AppBar(
-                  title: const Text('بیشتر'),
+
+                appBar:
+                    AppBar(
+                  title:
+                      const Text(
+                    'بیشتر',
+                  ),
                 ),
-                body: ListView(
-                  padding: const EdgeInsets.all(16),
+
+
+                body:
+                    ListView(
+
+                  padding:
+                      const EdgeInsets.all(16),
+
                   children: [
+
                     const _AboutCard(),
-                    const SizedBox(height: 16),
-                    _MoreItem(
-                      icon: Icons.language,
-                      title: 'وب‌سایت',
-                      subtitle: 'itarbiatbadani.ir',
-                      onTap: () => openUrl(siteUrl),
+
+                    const SizedBox(
+                      height: 16,
                     ),
+
+
                     _MoreItem(
-                      icon: Icons.camera_alt_outlined,
-                      title: 'اینستاگرام',
-                      subtitle: '@itarbiatbadani',
-                      onTap: () => openUrl(
+
+                      icon:
+                          Icons.language,
+
+                      title:
+                          'وب‌سایت',
+
+                      subtitle:
+                          'itarbiatbadani.ir',
+
+                      onTap: () =>
+                          openUrl(
+                        siteUrl,
+                      ),
+                    ),
+
+
+                    _MoreItem(
+
+                      icon:
+                          Icons.camera_alt_outlined,
+
+                      title:
+                          'اینستاگرام',
+
+                      subtitle:
+                          '@itarbiatbadani',
+
+                      onTap: () =>
+                          openUrl(
                         'https://instagram.com/itarbiatbadani',
                       ),
                     ),
+
+
                     _MoreItem(
-                      icon: Icons.send_outlined,
-                      title: 'کانال تلگرام',
-                      subtitle: '@itarbiatbadani',
-                      onTap: () => openUrl(
+
+                      icon:
+                          Icons.send_outlined,
+
+                      title:
+                          'کانال تلگرام',
+
+                      subtitle:
+                          '@itarbiatbadani',
+
+                      onTap: () =>
+                          openUrl(
                         'https://t.me/itarbiatbadani',
                       ),
                     ),
+
+
                     _MoreItem(
-                      icon: Icons.support_agent_outlined,
-                      title: 'ارتباط با ما',
-                      subtitle: '@ivarzeshiadmin',
-                      onTap: () => openUrl(
+
+                      icon:
+                          Icons.support_agent_outlined,
+
+                      title:
+                          'ارتباط با ما',
+
+                      subtitle:
+                          '@ivarzeshiadmin',
+
+                      onTap: () =>
+                          openUrl(
                         'https://t.me/ivarzeshiadmin',
                       ),
                     ),
@@ -1370,44 +2685,83 @@ jobs:
             }
           }
 
-          class _AboutCard extends StatelessWidget {
+
+          // =========================================================
+          // درباره
+          // =========================================================
+
+          class _AboutCard
+              extends StatelessWidget {
+
             const _AboutCard();
 
+
             @override
-            Widget build(BuildContext context) {
+            Widget build(
+              BuildContext context,
+            ) {
+
               return Container(
-                padding: const EdgeInsets.all(22),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
+
+                padding:
+                    const EdgeInsets.all(22),
+
+                decoration:
+                    BoxDecoration(
+
+                  gradient:
+                      const LinearGradient(
                     colors: [
                       primaryColor,
                       secondaryColor,
                     ],
                   ),
-                  borderRadius: BorderRadius.circular(22),
+
+                  borderRadius:
+                      BorderRadius.circular(22),
                 ),
-                child: const Column(
+
+
+                child:
+                    const Column(
+
                   children: [
+
                     Icon(
                       Icons.sports,
-                      color: goldColor,
+                      color:
+                          goldColor,
                       size: 50,
                     ),
-                    SizedBox(height: 12),
+
+                    SizedBox(
+                      height: 12,
+                    ),
+
                     Text(
                       'تربیت بدنی و علوم ورزشی',
-                      style: TextStyle(
-                        color: Colors.white,
+                      style:
+                          TextStyle(
+                        color:
+                            Colors.white,
                         fontSize: 21,
-                        fontWeight: FontWeight.bold,
+                        fontWeight:
+                            FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: 8),
+
+                    SizedBox(
+                      height: 8,
+                    ),
+
                     Text(
                       'محمد عیسی زهی، کارشناسی ارشد مدیریت ورزشی',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white70,
+                      textAlign:
+                          TextAlign.center,
+                      style:
+                          TextStyle(
+                        color:
+                            Colors.white70,
                         height: 1.7,
                       ),
                     ),
@@ -1417,79 +2771,170 @@ jobs:
             }
           }
 
-          class _MoreItem extends StatelessWidget {
+
+          // =========================================================
+          // آیتم بیشتر
+          // =========================================================
+
+          class _MoreItem
+              extends StatelessWidget {
+
             final IconData icon;
+
             final String title;
+
             final String subtitle;
+
             final VoidCallback onTap;
 
+
             const _MoreItem({
+
               required this.icon,
+
               required this.title,
+
               required this.subtitle,
+
               required this.onTap,
             });
 
+
             @override
-            Widget build(BuildContext context) {
+            Widget build(
+              BuildContext context,
+            ) {
+
               return Card(
+
                 elevation: 0,
-                margin: const EdgeInsets.only(bottom: 10),
-                child: ListTile(
-                  onTap: onTap,
-                  leading: CircleAvatar(
+
+                margin:
+                    const EdgeInsets.only(
+                  bottom: 10,
+                ),
+
+
+                child:
+                    ListTile(
+
+                  onTap:
+                      onTap,
+
+                  leading:
+                      CircleAvatar(
+
                     backgroundColor:
-                        primaryColor.withOpacity(.1),
-                    child: Icon(
+                        primaryColor.withValues(
+                      alpha: .1,
+                    ),
+
+                    child:
+                        Icon(
                       icon,
-                      color: primaryColor,
+                      color:
+                          primaryColor,
                     ),
                   ),
-                  title: Text(
+
+                  title:
+                      Text(
                     title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
+                    style:
+                        const TextStyle(
+                      fontWeight:
+                          FontWeight.bold,
                     ),
                   ),
-                  subtitle: Text(subtitle),
+
+                  subtitle:
+                      Text(
+                    subtitle,
+                  ),
+
                   trailing:
-                      const Icon(Icons.chevron_left),
+                      const Icon(
+                    Icons.chevron_left,
+                  ),
                 ),
               );
             }
           }
 
-          class _ErrorCard extends StatelessWidget {
+
+          // =========================================================
+          // خطا
+          // =========================================================
+
+          class _ErrorCard
+              extends StatelessWidget {
+
             final String message;
+
             final VoidCallback onRetry;
 
+
             const _ErrorCard({
+
               required this.message,
+
               required this.onRetry,
             });
 
+
             @override
-            Widget build(BuildContext context) {
+            Widget build(
+              BuildContext context,
+            ) {
+
               return Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
+
+                child:
+                    Padding(
+
+                  padding:
+                      const EdgeInsets.all(20),
+
+                  child:
+                      Column(
+
                     children: [
+
                       const Icon(
                         Icons.cloud_off_outlined,
                         size: 42,
-                        color: Colors.grey,
+                        color:
+                            Colors.grey,
                       ),
-                      const SizedBox(height: 10),
+
+                      const SizedBox(
+                        height: 10,
+                      ),
+
                       Text(
                         message,
-                        textAlign: TextAlign.center,
+                        textAlign:
+                            TextAlign.center,
                       ),
-                      const SizedBox(height: 14),
+
+                      const SizedBox(
+                        height: 14,
+                      ),
+
                       OutlinedButton.icon(
-                        onPressed: onRetry,
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('تلاش مجدد'),
+
+                        onPressed:
+                            onRetry,
+
+                        icon:
+                            const Icon(
+                          Icons.refresh,
+                        ),
+
+                        label:
+                            const Text(
+                          'تلاش مجدد',
+                        ),
                       ),
                     ],
                   ),
@@ -1498,63 +2943,136 @@ jobs:
             }
           }
 
-          class _InfoCard extends StatelessWidget {
+
+          // =========================================================
+          // پیام اطلاعاتی
+          // =========================================================
+
+          class _InfoCard
+              extends StatelessWidget {
+
             final String text;
+
 
             const _InfoCard({
               required this.text,
             });
 
+
             @override
-            Widget build(BuildContext context) {
+            Widget build(
+              BuildContext context,
+            ) {
+
               return Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(22),
-                  child: Center(
-                    child: Text(
+
+                child:
+                    Padding(
+
+                  padding:
+                      const EdgeInsets.all(22),
+
+                  child:
+                      Center(
+
+                    child:
+                        Text(
                       text,
-                      textAlign: TextAlign.center,
+                      textAlign:
+                          TextAlign.center,
                     ),
                   ),
                 ),
               );
             }
           }
+
           DART
+
+
+      # =========================================================
+      # اصلاح APIهای منسوخ Flutter
+      # =========================================================
+
+      - name: Fix deprecated Flutter APIs
+        working-directory: app
+        run: |
+          sed -i 's/withOpacity(\([^)]*\))/withValues(alpha: \1)/g' lib/main.dart
+
+
+      # =========================================================
+      # حذف تست پیش‌فرض Flutter
+      # =========================================================
 
       - name: Remove default tests
         run: |
           rm -rf app/test
+
+
+      # =========================================================
+      # دریافت وابستگی‌ها
+      # =========================================================
 
       - name: Get dependencies
         working-directory: app
         run: |
           flutter pub get
 
+
+      # =========================================================
+      # ساخت آیکون
+      # =========================================================
+
       - name: Generate launcher icons
         working-directory: app
         run: |
           dart run flutter_launcher_icons
+
+
+      # =========================================================
+      # بررسی کد
+      # =========================================================
 
       - name: Analyze
         working-directory: app
         run: |
           flutter analyze
 
+
+      # =========================================================
+      # ساخت APK
+      # =========================================================
+
       - name: Build APK
         working-directory: app
         run: |
           flutter build apk --release
 
+
+      # =========================================================
+      # کپی APK
+      # =========================================================
+
       - name: Copy APK
         run: |
           mkdir -p release
-          cp app/build/app/outputs/flutter-apk/app-release.apk \
-             release/itarbiatbadani.apk
+
+          cp \
+            app/build/app/outputs/flutter-apk/app-release.apk \
+            release/itarbiatbadani.apk
+
+
+      # =========================================================
+      # آپلود APK
+      # =========================================================
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
+
         with:
           name: itarbiatbadani-modern-apk
-          path: release/itarbiatbadani.apk
+
+          path:
+            release/itarbiatbadani.apk
+
           retention-days: 30
