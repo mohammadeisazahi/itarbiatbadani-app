@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -23,6 +23,12 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
+
+      - name: Enable Web
+        run: flutter config --enable-web
+
+      - name: Create Flutter Web files
+        run: flutter create --platforms web .
 
       - name: Get dependencies
         run: flutter pub get
