@@ -12,6 +12,7 @@ permissions:
   id-token: write
 
 jobs:
+
   build:
     runs-on: ubuntu-latest
 
@@ -24,25 +25,23 @@ jobs:
         with:
           channel: stable
 
-      - name: Enable Web
+      - name: Enable Flutter Web
         run: flutter config --enable-web
 
-      - name: Create Flutter Web files
+      - name: Create Web Support
         run: flutter create --platforms web .
 
-      - name: Get dependencies
+      - name: Get Packages
         run: flutter pub get
 
-      - name: Build Web
+      - name: Build Flutter Web
         run: flutter build web --release --base-href "/itarbiatbadani_app/"
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload artifact
+      - name: Upload Web Artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: build/web
+
 
   deploy:
     needs: build
@@ -50,13 +49,13 @@ jobs:
 
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
 
     permissions:
       pages: write
       id-token: write
 
     steps:
-      - name: Deploy to GitHub Pages
+
+      - name: Deploy Pages
         id: deployment
         uses: actions/deploy-pages@v4
