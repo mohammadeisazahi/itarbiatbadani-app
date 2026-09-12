@@ -19,6 +19,12 @@ jobs:
         with:
           node-version: 20
 
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
 
@@ -26,12 +32,12 @@ jobs:
         run: |
           mkdir -p twa
           cd twa
-          bubblewrap init --manifest https://mohammadeisazahi.github.io/itarbiatbadani_app/manifest.json
+          yes | bubblewrap init --manifest https://mohammadeisazahi.github.io/itarbiatbadani_app/manifest.json
 
       - name: Build APK
         run: |
           cd twa
-          bubblewrap build --skipPwaValidation
+          yes | bubblewrap build
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
