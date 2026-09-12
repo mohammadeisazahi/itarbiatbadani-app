@@ -77,10 +77,12 @@ class _HomePageState extends State<HomePage> {
       return articles;
     }
 
-    final category = categories[selectedCategory];
+    final String category = categories[selectedCategory];
 
     return articles
-        .where((article) => article.category == category)
+        .where(
+          (article) => article.category == category,
+        )
         .toList();
   }
 
@@ -105,7 +107,12 @@ class _HomePageState extends State<HomePage> {
                 child: _buildSectionTitle(),
               ),
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                padding: const EdgeInsets.fromLTRB(
+                  16,
+                  0,
+                  16,
+                  24,
+                ),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
@@ -127,7 +134,12 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+      padding: const EdgeInsets.fromLTRB(
+        16,
+        16,
+        16,
+        14,
+      ),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -151,7 +163,11 @@ class _HomePageState extends State<HomePage> {
             child: Image.network(
               'https://itarbiatbadani.ir/wp-content/uploads/2025/07/1000073463.png',
               fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) {
+              errorBuilder: (
+                context,
+                error,
+                stackTrace,
+              ) {
                 return const Icon(
                   Icons.sports_soccer,
                   color: Color(0xFF0A3D62),
@@ -186,7 +202,7 @@ class _HomePageState extends State<HomePage> {
           ),
           IconButton(
             onPressed: () async {
-              final uri = Uri.parse(
+              final Uri uri = Uri.parse(
                 'https://itarbiatbadani.ir',
               );
 
@@ -226,8 +242,12 @@ class _HomePageState extends State<HomePage> {
               });
             },
             child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              padding: const EdgeInsets.symmetric(horizontal: 18),
+              margin: const EdgeInsets.symmetric(
+                horizontal: 4,
+              ),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 18,
+              ),
               decoration: BoxDecoration(
                 color: selected
                     ? const Color(0xFF0A3D62)
@@ -261,7 +281,12 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildHero() {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+      margin: const EdgeInsets.fromLTRB(
+        16,
+        8,
+        16,
+        20,
+      ),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -331,7 +356,12 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildSectionTitle() {
     return const Padding(
-      padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        0,
+        16,
+        12,
+      ),
       child: Row(
         children: [
           Expanded(
@@ -357,7 +387,7 @@ class _HomePageState extends State<HomePage> {
   Widget _buildArticleCard(Article article) {
     return GestureDetector(
       onTap: () async {
-        final uri = Uri.parse(
+        final Uri uri = Uri.parse(
           'https://itarbiatbadani.ir',
         );
 
@@ -367,7 +397,9 @@ class _HomePageState extends State<HomePage> {
         );
       },
       child: Container(
-        margin: const EdgeInsets.only(bottom: 14),
+        margin: const EdgeInsets.only(
+          bottom: 14,
+        ),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -391,7 +423,11 @@ class _HomePageState extends State<HomePage> {
                 width: 120,
                 height: 120,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
+                errorBuilder: (
+                  context,
+                  error,
+                  stackTrace,
+                ) {
                   return Container(
                     width: 120,
                     height: 120,
@@ -409,7 +445,8 @@ class _HomePageState extends State<HomePage> {
               child: Padding(
                 padding: const EdgeInsets.all(14),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
                   children: [
                     Text(
                       article.category,
