@@ -16,10 +16,7 @@ const String logoUrl =
     '$siteUrl/wp-content/uploads/2025/07/1000073463.png';
 
 const String telegramUrl = 'https://t.me/itarbiatbadani';
-
-// اگر آدرس دقیق کانال بله متفاوت است، فقط این خط را تغییر دهید.
 const String baleUrl = 'https://ble.ir/itarbiatbadani';
-
 const String instagramUrl = 'https://instagram.com/itarbiatbadani';
 const String contactUrl = 'https://t.me/ivarzeshiadmin';
 const String storeUrl = '$siteUrl/shop/';
@@ -234,17 +231,17 @@ class WordPressApi {
 ========================================================= */
 
 Future<void> openUrl(String url) async {
+  if (url.isEmpty) {
+    return;
+  }
+
   final uri = Uri.parse(url);
 
   try {
-    final launched = await launchUrl(
+    await launchUrl(
       uri,
       mode: LaunchMode.externalApplication,
     );
-
-    if (!launched) {
-      throw Exception('باز کردن لینک انجام نشد');
-    }
   } catch (_) {}
 }
 
@@ -469,9 +466,9 @@ class _QuickServices extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return const Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: const [
+      children: [
         SectionTitle(
           title: 'خدمات ما',
           icon: Icons.grid_view_rounded,
@@ -583,7 +580,9 @@ class ServiceCard extends StatelessWidget {
           ? () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('این بخش به‌زودی فعال می‌شود.'),
+                  content: Text(
+                    'این بخش به‌زودی فعال می‌شود.',
+                  ),
                 ),
               );
             }
@@ -719,9 +718,7 @@ class PostCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       borderRadius: BorderRadius.circular(16),
-      onTap: () => openUrl(
-        '$siteUrl/?p=${post.id}',
-      ),
+      onTap: () => openUrl('$siteUrl/?p=${post.id}'),
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
@@ -916,52 +913,77 @@ class CategoriesPage extends StatelessWidget {
                 ],
               ),
             ),
-            ...parents.map(
-              (parent) {
-                final subCategories =
-                    children[parent.id] ?? [];
+            ...parents.map((parent) {
+              final subCategories =
+                  children[parent.id] ?? [];
 
-                if (subCategories.isEmpty) {
-                  return _CategoryTile(
-                    category: parent,
-                  );
-                }
-
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: ExpansionTile(
-                    leading: CategoryIcon(
-                      name: parent.name,
-                    ),
-                    title: Text(
-                      parent.name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    subtitle: Text(
-                      '${parent.count} نوشته',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    children: subCategories
-                        .map(
-                          (child) => _CategoryTile(
-                            category: child,
-                            child: true,
-                          ),
-                        )
-                        .toList(),
-                  ),
+              if (subCategories.isEmpty) {
+                return _CategoryTile(
+                  category: parent,
                 );
-              },
-            ),
+              }
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.grey.shade200,
+                  ),
+                ),
+                child: ExpansionTile(
+                  leading: CategoryIcon(
+                    name: parent.name,
+                  ),
+                  title: Text(
+                    parent.name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  subtitle: Text(
+                    '${parent.count} نوشته',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  children: subCategories
+                      .map(
+                        (child) => ListTile(
+                          contentPadding:
+                              const EdgeInsets.symmetric(
+                            horizontal: 20,
+                          ),
+                          leading: CategoryIcon(
+                            name: child.name,
+                            small: true,
+                          ),
+                          title: Text(child.name),
+                          subtitle: Text(
+                            '${child.count} نوشته',
+                            style: const TextStyle(
+                              fontSize: 11,
+                            ),
+                          ),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    CategoryPostsPage(
+                                  category: child,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      )
+                      .toList(),
+                ),
+              );
+            }),
           ],
         );
       },
@@ -971,37 +993,28 @@ class CategoriesPage extends StatelessWidget {
 
 class _CategoryTile extends StatelessWidget {
   final CategoryModel category;
-  final bool child;
 
   const _CategoryTile({
     required this.category,
-    this.child = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.only(
-        bottom: child ? 6 : 10,
-      ),
+      margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.grey.shade200,
+        ),
       ),
       child: ListTile(
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: child ? 20 : 14,
-        ),
-        leading: CategoryIcon(
-          name: category.name,
-          small: child,
-        ),
+        leading: CategoryIcon(name: category.name),
         title: Text(
           category.name,
-          style: TextStyle(
-            fontWeight:
-                child ? FontWeight.w600 : FontWeight.bold,
-            fontSize: child ? 14 : 15,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
           ),
         ),
         subtitle: Text(
@@ -1013,7 +1026,6 @@ class _CategoryTile extends StatelessWidget {
         ),
         trailing: const Icon(
           Icons.chevron_left,
-          color: Colors.grey,
         ),
         onTap: () {
           Navigator.push(
@@ -1030,10 +1042,6 @@ class _CategoryTile extends StatelessWidget {
   }
 }
 
-/* =========================================================
-   CATEGORY ICON
-========================================================= */
-
 class CategoryIcon extends StatelessWidget {
   final String name;
   final bool small;
@@ -1044,72 +1052,42 @@ class CategoryIcon extends StatelessWidget {
     this.small = false,
   });
 
-  IconData _icon() {
-    final text = name.toLowerCase();
-
-    if (text.contains('ورزش')) {
-      return Icons.sports_soccer;
-    }
-
-    if (text.contains('تربیت')) {
-      return Icons.fitness_center;
-    }
-
-    if (text.contains('علم')) {
-      return Icons.science_outlined;
-    }
-
-    if (text.contains('دانشگاه')) {
-      return Icons.account_balance;
-    }
-
-    if (text.contains('ارشد')) {
-      return Icons.school;
-    }
-
-    if (text.contains('دکتری')) {
-      return Icons.workspace_premium;
-    }
-
-    if (text.contains('استخدام')) {
-      return Icons.work_outline;
-    }
-
-    if (text.contains('طرح')) {
-      return Icons.assignment_outlined;
-    }
-
-    if (text.contains('پاور')) {
-      return Icons.slideshow_outlined;
-    }
-
-    if (text.contains('آموزش')) {
-      return Icons.menu_book_outlined;
-    }
-
-    if (text.contains('اخبار')) {
-      return Icons.newspaper_outlined;
-    }
-
-    return Icons.folder_outlined;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final size = small ? 38.0 : 44.0;
-    final iconSize = small ? 20.0 : 23.0;
+    IconData icon = Icons.folder_outlined;
+
+    final value = name.toLowerCase();
+
+    if (value.contains('ورزش') ||
+        value.contains('تمرین')) {
+      icon = Icons.fitness_center_outlined;
+    } else if (value.contains('دانشگاه') ||
+        value.contains('تحصیل')) {
+      icon = Icons.school_outlined;
+    } else if (value.contains('تغذیه')) {
+      icon = Icons.restaurant_outlined;
+    } else if (value.contains('کتاب') ||
+        value.contains('منبع')) {
+      icon = Icons.menu_book_outlined;
+    } else if (value.contains('طرح درس')) {
+      icon = Icons.assignment_outlined;
+    } else if (value.contains('پاور')) {
+      icon = Icons.slideshow_outlined;
+    } else if (value.contains('اخبار')) {
+      icon = Icons.newspaper_outlined;
+    }
 
     return Container(
-      width: size,
-      height: size,
+      width: small ? 38 : 44,
+      height: small ? 38 : 44,
       decoration: BoxDecoration(
         color: primaryColor.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Icon(
-        _icon(),
+        icon,
         color: primaryColor,
-        size: iconSize,
+        size: small ? 21 : 24,
       ),
     );
   }
@@ -1152,10 +1130,10 @@ class CategoryPostsPage extends StatelessWidget {
             if (snapshot.hasError) {
               return const Center(
                 child: Padding(
-                  padding: EdgeInsets.all(24),
+                  padding: EdgeInsets.all(20),
                   child: ErrorBox(
                     message:
-                        'دریافت مطالب این دسته‌بندی با مشکل مواجه شد.',
+                        'دریافت مطالب این دسته با مشکل مواجه شد.',
                   ),
                 ),
               );
@@ -1167,21 +1145,19 @@ class CategoryPostsPage extends StatelessWidget {
               return const Center(
                 child: EmptyBox(
                   message:
-                      'در این دسته‌بندی نوشته‌ای وجود ندارد.',
+                      'مطلبی در این دسته‌بندی وجود ندارد.',
                 ),
               );
             }
 
-            return ListView.builder(
+            return ListView.separated(
               padding: const EdgeInsets.all(16),
               itemCount: posts.length,
+              separatorBuilder: (_, __) =>
+                  const SizedBox(height: 12),
               itemBuilder: (context, index) {
-                return Padding(
-                  padding:
-                      const EdgeInsets.only(bottom: 12),
-                  child: PostCard(
-                    post: posts[index],
-                  ),
+                return PostCard(
+                  post: posts[index],
                 );
               },
             );
@@ -1222,21 +1198,21 @@ class StorePage extends StatelessWidget {
               Icon(
                 Icons.storefront,
                 color: accentColor,
-                size: 55,
+                size: 54,
               ),
-              SizedBox(height: 12),
+              SizedBox(height: 14),
               Text(
                 'فروشگاه تربیت بدنی و علوم ورزشی',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 19,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              SizedBox(height: 8),
+              SizedBox(height: 10),
               Text(
-                'طرح درس، پاورپوینت و فایل‌های آموزشی',
+                'طرح درس، پاورپوینت و فایل‌های تخصصی',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white70,
@@ -1247,53 +1223,23 @@ class StorePage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 18),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              children: [
-                const Icon(
-                  Icons.shopping_bag_outlined,
-                  size: 42,
-                  color: primaryColor,
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'ورود به فروشگاه',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 17,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'برای مشاهده محصولات و خرید، وارد فروشگاه سایت شوید.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.grey,
-                    height: 1.6,
-                  ),
-                ),
-                const SizedBox(height: 18),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: () => openUrl(storeUrl),
-                    icon: const Icon(
-                      Icons.open_in_new,
-                    ),
-                    label: const Text(
-                      'مشاهده فروشگاه',
-                    ),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: primaryColor,
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 13,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+        ElevatedButton.icon(
+          onPressed: () => openUrl(storeUrl),
+          icon: const Icon(Icons.shopping_cart_outlined),
+          label: const Padding(
+            padding: EdgeInsets.symmetric(vertical: 14),
+            child: Text(
+              'ورود به فروشگاه',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: primaryColor,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
             ),
           ),
         ),
@@ -1314,7 +1260,7 @@ class TelegramPage extends StatelessWidget {
     return SocialChannelPage(
       title: 'کانال تلگرام',
       description:
-          'برای مشاهده جدیدترین مطالب، اطلاعیه‌ها و مطالب آموزشی در کانال تلگرام همراه ما باشید.',
+          'برای دریافت جدیدترین مطالب، اخبار و محتوای تخصصی تربیت بدنی و علوم ورزشی به کانال ما بپیوندید.',
       icon: Icons.send,
       buttonText: 'ورود به کانال تلگرام',
       url: telegramUrl,
@@ -1334,7 +1280,7 @@ class BalePage extends StatelessWidget {
     return SocialChannelPage(
       title: 'کانال بله',
       description:
-          'برای دریافت مطالب و اطلاعیه‌های تربیت بدنی و علوم ورزشی در کانال بله همراه ما باشید.',
+          'برای دسترسی به مطالب و اطلاعیه‌های سایت در پیام‌رسان بله وارد کانال شوید.',
       icon: Icons.chat_outlined,
       buttonText: 'ورود به کانال بله',
       url: baleUrl,
@@ -1343,7 +1289,7 @@ class BalePage extends StatelessWidget {
 }
 
 /* =========================================================
-   SOCIAL CHANNEL PAGE
+   SOCIAL CHANNEL
 ========================================================= */
 
 class SocialChannelPage extends StatelessWidget {
@@ -1364,66 +1310,74 @@ class SocialChannelPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        const SizedBox(height: 30),
-        Container(
-          width: 110,
-          height: 110,
-          margin: const EdgeInsets.symmetric(
-            horizontal: 100,
-          ),
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(22),
+        child: Container(
+          padding: const EdgeInsets.all(26),
           decoration: BoxDecoration(
-            color: primaryColor,
-            borderRadius: BorderRadius.circular(32),
-            boxShadow: [
-              BoxShadow(
-                color: primaryColor.withValues(alpha: 0.22),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: Colors.grey.shade200,
+            ),
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: 82,
+                height: 82,
+                decoration: BoxDecoration(
+                  color: primaryColor.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Icon(
+                  icon,
+                  color: primaryColor,
+                  size: 44,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 21,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                description,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.grey,
+                  height: 1.8,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => openUrl(url),
+                  icon: const Icon(Icons.open_in_new),
+                  label: Text(buttonText),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 15,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
-          child: Icon(
-            icon,
-            color: accentColor,
-            size: 55,
-          ),
         ),
-        const SizedBox(height: 24),
-        Text(
-          title,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 23,
-            fontWeight: FontWeight.bold,
-            color: primaryColor,
-          ),
-        ),
-        const SizedBox(height: 14),
-        Text(
-          description,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: Colors.grey,
-            fontSize: 14,
-            height: 1.8,
-          ),
-        ),
-        const SizedBox(height: 28),
-        FilledButton.icon(
-          onPressed: () => openUrl(url),
-          icon: const Icon(Icons.open_in_new),
-          label: Text(buttonText),
-          style: FilledButton.styleFrom(
-            backgroundColor: primaryColor,
-            padding: const EdgeInsets.symmetric(
-              vertical: 15,
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -1441,83 +1395,47 @@ class MorePage extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: [
         const AboutCard(),
-        const SizedBox(height: 18),
-
+        const SizedBox(height: 16),
         MoreItem(
           icon: Icons.language,
           title: 'وب‌سایت',
           subtitle: 'itarbiatbadani.ir',
           onTap: () => openUrl(siteUrl),
         ),
-
         MoreItem(
           icon: Icons.send,
           title: 'کانال تلگرام',
           subtitle: '@itarbiatbadani',
           onTap: () => openUrl(telegramUrl),
         ),
-
         MoreItem(
           icon: Icons.chat_outlined,
           title: 'کانال بله',
           subtitle: 'کانال تربیت بدنی و علوم ورزشی',
           onTap: () => openUrl(baleUrl),
         ),
-
         MoreItem(
           icon: Icons.camera_alt_outlined,
           title: 'اینستاگرام',
           subtitle: '@itarbiatbadani',
           onTap: () => openUrl(instagramUrl),
         ),
-
         MoreItem(
-          icon: Icons.support_agent,
+          icon: Icons.support_agent_outlined,
           title: 'ارتباط و خرید',
           subtitle: '@ivarzeshiadmin',
           onTap: () => openUrl(contactUrl),
         ),
-
         MoreItem(
           icon: Icons.storefront_outlined,
           title: 'فروشگاه',
-          subtitle: 'مشاهده محصولات آموزشی',
+          subtitle: 'مشاهده محصولات',
           onTap: () => openUrl(storeUrl),
-        ),
-
-        const SizedBox(height: 18),
-
-        const Center(
-          child: Text(
-            'محمد عیسی زهی، کارشناسی ارشد مدیریت ورزشی',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: 11,
-            ),
-          ),
-        ),
-
-        const SizedBox(height: 8),
-
-        const Center(
-          child: Text(
-            'تربیت بدنی و علوم ورزشی',
-            style: TextStyle(
-              color: primaryColor,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-            ),
-          ),
         ),
       ],
     );
   }
 }
-
-/* =========================================================
-   ABOUT CARD
-========================================================= */
 
 class AboutCard extends StatelessWidget {
   const AboutCard({super.key});
@@ -1535,50 +1453,39 @@ class AboutCard extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Row(
+      child: const Column(
         children: [
-          Container(
-            width: 62,
-            height: 62,
-            padding: const EdgeInsets.all(7),
-            decoration: BoxDecoration(
+          Icon(
+            Icons.sports,
+            color: accentColor,
+            size: 46,
+          ),
+          SizedBox(height: 12),
+          Text(
+            'تربیت بدنی و علوم ورزشی',
+            textAlign: TextAlign.center,
+            style: TextStyle(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Image.network(
-              logoUrl,
-              fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) {
-                return const Icon(
-                  Icons.sports,
-                  color: primaryColor,
-                );
-              },
+              fontSize: 19,
+              fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(width: 14),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'تربیت بدنی و علوم ورزشی',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 17,
-                  ),
-                ),
-                SizedBox(height: 6),
-                Text(
-                  'مرجع تخصصی آموزش، منابع و مطالب علوم ورزشی',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                    height: 1.5,
-                  ),
-                ),
-              ],
+          SizedBox(height: 8),
+          Text(
+            'مرجع تخصصی تربیت بدنی و علوم ورزشی',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 12,
+            ),
+          ),
+          SizedBox(height: 14),
+          Text(
+            'محمد عیسی زهی، کارشناسی ارشد مدیریت ورزشی',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 12,
             ),
           ),
         ],
@@ -1586,10 +1493,6 @@ class AboutCard extends StatelessWidget {
     );
   }
 }
-
-/* =========================================================
-   MORE ITEM
-========================================================= */
 
 class MoreItem extends StatelessWidget {
   final IconData icon;
@@ -1607,16 +1510,20 @@ class MoreItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 5,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.grey.shade200,
         ),
+      ),
+      child: ListTile(
+        onTap: onTap,
         leading: Container(
-          width: 44,
-          height: 44,
+          width: 45,
+          height: 45,
           decoration: BoxDecoration(
             color: primaryColor.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(13),
@@ -1630,28 +1537,25 @@ class MoreItem extends StatelessWidget {
           title,
           style: const TextStyle(
             fontWeight: FontWeight.bold,
-            fontSize: 14,
           ),
         ),
         subtitle: Text(
           subtitle,
           style: const TextStyle(
-            color: Colors.grey,
             fontSize: 11,
+            color: Colors.grey,
           ),
         ),
         trailing: const Icon(
           Icons.chevron_left,
-          color: Colors.grey,
         ),
-        onTap: onTap,
       ),
     );
   }
 }
 
 /* =========================================================
-   SECTION TITLE
+   HELPERS
 ========================================================= */
 
 class SectionTitle extends StatelessWidget {
@@ -1686,18 +1590,13 @@ class SectionTitle extends StatelessWidget {
           title,
           style: const TextStyle(
             fontWeight: FontWeight.bold,
-            fontSize: 17,
-            color: Color(0xFF202A33),
+            fontSize: 18,
           ),
         ),
       ],
     );
   }
 }
-
-/* =========================================================
-   ERROR BOX
-========================================================= */
 
 class ErrorBox extends StatelessWidget {
   final String message;
@@ -1723,25 +1622,23 @@ class ErrorBox extends StatelessWidget {
       child: Column(
         children: [
           const Icon(
-            Icons.cloud_off_outlined,
+            Icons.error_outline,
             color: Colors.redAccent,
             size: 42,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           Text(
             message,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              color: Colors.grey,
-              height: 1.7,
+              height: 1.6,
             ),
           ),
           if (onRetry != null) ...[
             const SizedBox(height: 14),
-            OutlinedButton.icon(
+            OutlinedButton(
               onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
-              label: const Text('تلاش دوباره'),
+              child: const Text('تلاش مجدد'),
             ),
           ],
         ],
@@ -1749,10 +1646,6 @@ class ErrorBox extends StatelessWidget {
     );
   }
 }
-
-/* =========================================================
-   EMPTY BOX
-========================================================= */
 
 class EmptyBox extends StatelessWidget {
   final String message;
@@ -1766,7 +1659,6 @@ class EmptyBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(24),
-      margin: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -1775,8 +1667,8 @@ class EmptyBox extends StatelessWidget {
         children: [
           const Icon(
             Icons.inbox_outlined,
-            color: Colors.grey,
             size: 42,
+            color: Colors.grey,
           ),
           const SizedBox(height: 10),
           Text(
@@ -1792,36 +1684,30 @@ class EmptyBox extends StatelessWidget {
   }
 }
 
-/* =========================================================
-   HELPERS
-========================================================= */
-
 String cleanHtml(String text) {
   return text
-      .replaceAll(RegExp(r'<[^>]*>'), ' ')
+      .replaceAll(RegExp(r'<[^>]*>'), '')
       .replaceAll('&nbsp;', ' ')
       .replaceAll('&amp;', '&')
       .replaceAll('&quot;', '"')
       .replaceAll('&#8217;', '’')
+      .replaceAll('&#8220;', '“')
+      .replaceAll('&#8221;', '”')
       .replaceAll('&#8211;', '–')
-      .replaceAll(RegExp(r'\s+'), ' ')
+      .replaceAll('&#8212;', '—')
       .trim();
 }
 
 String formatDate(String date) {
-  if (date.isEmpty) {
-    return '';
+  if (date.length < 10) {
+    return date;
   }
 
-  try {
-    final parsed = DateTime.parse(date);
+  final parts = date.substring(0, 10).split('-');
 
-    final year = parsed.year.toString();
-    final month = parsed.month.toString().padLeft(2, '0');
-    final day = parsed.day.toString().padLeft(2, '0');
-
-    return '$year/$month/$day';
-  } catch (_) {
-    return date.split('T').first;
+  if (parts.length != 3) {
+    return date;
   }
+
+  return '${parts[2]}/${parts[1]}/${parts[0]}';
 }
