@@ -131,6 +131,7 @@ class WordPressApi {
 
   static Future<List<CategoryModel>> categories() async {
     final result = <CategoryModel>[];
+
     var page = 1;
 
     while (true) {
@@ -194,9 +195,7 @@ class WordPressApi {
 }
 
 Future<void> openUrl(String url) async {
-  if (url.isEmpty) {
-    return;
-  }
+  if (url.isEmpty) return;
 
   final uri = Uri.parse(url);
 
@@ -329,7 +328,8 @@ class _HomePageState extends State<HomePage> {
 
                   if (snapshot.hasError) {
                     return ErrorBox(
-                      message: 'دریافت نوشته‌ها با مشکل مواجه شد.',
+                      message:
+                          'دریافت نوشته‌ها با مشکل مواجه شد.',
                       retry: refresh,
                     );
                   }
@@ -464,44 +464,41 @@ class _CategoryStrip extends StatelessWidget {
         ),
         scrollDirection: Axis.horizontal,
         itemCount: items.length,
-        separatorBuilder: (_, __) {
-          return const SizedBox(width: 8);
-        },
-        itemBuilder: (_, i) {
-          return Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 14,
-            ),
-            decoration: BoxDecoration(
-              color: i == 0
-                  ? primaryColor
-                  : const Color(0xFFF1F3F5),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  items[i][1] as IconData,
-                  size: 17,
+        separatorBuilder: (_, __) =>
+            const SizedBox(width: 8),
+        itemBuilder: (_, i) => Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 14,
+          ),
+          decoration: BoxDecoration(
+            color: i == 0
+                ? primaryColor
+                : const Color(0xFFF1F3F5),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                items[i][1] as IconData,
+                size: 17,
+                color: i == 0
+                    ? Colors.white
+                    : primaryColor,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                items[i][0] as String,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
                   color: i == 0
                       ? Colors.white
-                      : primaryColor,
+                      : const Color(0xFF263238),
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  items[i][0] as String,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: i == 0
-                        ? Colors.white
-                        : const Color(0xFF263238),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -534,9 +531,9 @@ class _HomeNews extends StatelessWidget {
             icon: Icons.article_outlined,
           ),
           const SizedBox(height: 12),
-          ...posts.skip(1).map(
-            (p) => PostCard(post: p),
-          ),
+          ...posts
+              .skip(1)
+              .map((p) => PostCard(post: p)),
         ],
       ),
     );
@@ -671,7 +668,9 @@ class PostCard extends StatelessWidget {
                   height: 88,
                   child: post.imageUrl.isEmpty
                       ? Container(
-                          color: primaryColor.withValues(alpha: .08),
+                          color: primaryColor.withValues(
+                            alpha: .08,
+                          ),
                           child: const Icon(
                             Icons.article,
                             color: primaryColor,
@@ -680,11 +679,14 @@ class PostCard extends StatelessWidget {
                       : CachedNetworkImage(
                           imageUrl: post.imageUrl,
                           fit: BoxFit.cover,
-                          errorWidget: (_, __, ___) {
-                            return const Icon(
-                              Icons.broken_image_outlined,
-                            );
-                          },
+                          errorWidget: (
+                            _,
+                            __,
+                            ___,
+                          ) =>
+                              const Icon(
+                            Icons.broken_image_outlined,
+                          ),
                         ),
                 ),
               ),
@@ -871,9 +873,7 @@ class _CategoryTile extends StatelessWidget {
             fontWeight: FontWeight.w800,
           ),
         ),
-        subtitle: Text(
-          '${category.count} مطلب',
-        ),
+        subtitle: Text('${category.count} مطلب'),
         children: [
           ListTile(
             leading: const Icon(
@@ -883,16 +883,14 @@ class _CategoryTile extends StatelessWidget {
             title: Text(
               'همه مطالب ${category.name}',
             ),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => CategoryPostsPage(
-                    category: category,
-                  ),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => CategoryPostsPage(
+                  category: category,
                 ),
-              );
-            },
+              ),
+            ),
           ),
           ...children.map(
             (child) => ListTile(
@@ -902,16 +900,14 @@ class _CategoryTile extends StatelessWidget {
               ),
               title: Text(child.name),
               trailing: Text('${child.count}'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => CategoryPostsPage(
-                      category: child,
-                    ),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => CategoryPostsPage(
+                    category: child,
                   ),
-                );
-              },
+                ),
+              ),
             ),
           ),
         ],
@@ -985,11 +981,9 @@ class CategoryPostsPage extends StatelessWidget {
           return ListView.builder(
             padding: const EdgeInsets.all(14),
             itemCount: posts.length,
-            itemBuilder: (_, i) {
-              return PostCard(
-                post: posts[i],
-              );
-            },
+            itemBuilder: (_, i) => PostCard(
+              post: posts[i],
+            ),
           );
         },
       ),
@@ -1035,15 +1029,10 @@ class StorePage extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               FilledButton.icon(
-                onPressed: () {
-                  openUrl('$siteUrl/shop/');
-                },
-                icon: const Icon(
-                  Icons.storefront,
-                ),
-                label: const Text(
-                  'ورود به فروشگاه',
-                ),
+                onPressed: () =>
+                    openUrl('$siteUrl/shop/'),
+                icon: const Icon(Icons.storefront),
+                label: const Text('ورود به فروشگاه'),
                 style: FilledButton.styleFrom(
                   backgroundColor: primaryColor,
                 ),
@@ -1135,9 +1124,7 @@ class SocialChannelPage extends StatelessWidget {
             FilledButton.icon(
               onPressed: () => openUrl(url),
               icon: Icon(icon),
-              label: const Text(
-                'ورود به کانال',
-              ),
+              label: const Text('ورود به کانال'),
               style: FilledButton.styleFrom(
                 backgroundColor: primaryColor,
               ),
@@ -1185,14 +1172,12 @@ class MorePage extends StatelessWidget {
             icon: Icons.chat_outlined,
             title: 'بله',
             subtitle: 'کانال بله',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const BalePage(),
-                ),
-              );
-            },
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const BalePage(),
+              ),
+            ),
           ),
         ],
       ),
@@ -1244,7 +1229,7 @@ class AboutCard extends StatelessWidget {
                   ),
                   SizedBox(height: 5),
                   Text(
-                    'مرجع تخصصی تربیت بدنی و علوم ورزشی',
+                    'محمد عیسی زهی، کارشناسی ارشد مدیریت ورزشی',
                     style: TextStyle(
                       color: Colors.white70,
                       fontSize: 11,
@@ -1375,9 +1360,7 @@ class ErrorBox extends StatelessWidget {
               const SizedBox(height: 12),
               OutlinedButton(
                 onPressed: retry,
-                child: const Text(
-                  'تلاش مجدد',
-                ),
+                child: const Text('تلاش مجدد'),
               ),
             ],
           ],
