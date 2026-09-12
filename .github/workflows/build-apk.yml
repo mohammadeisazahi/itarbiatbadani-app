@@ -1,6 +1,6 @@
 name: Build Android APK
 
-on:
+'on':
   workflow_dispatch:
   push:
     branches:
@@ -17,7 +17,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.35.4"
+          flutter-version: '3.35.4'
           channel: stable
           cache: true
 
@@ -29,16 +29,16 @@ jobs:
             --platforms android \
             app
 
-      - name: Add packages
+      - name: Add required packages
         working-directory: app
         run: |
           flutter pub add http
           flutter pub add url_launcher
           flutter pub add webview_flutter
           flutter pub add cached_network_image
-          flutter pub add flutter_launcher_icons
+          flutter pub add flutter_launcher_icons --dev
 
-      - name: Download logo
+      - name: Download website logo
         run: |
           mkdir -p app/assets
           curl -L \
@@ -48,7 +48,8 @@ jobs:
       - name: Configure launcher icon
         working-directory: app
         run: |
-          cat > flutter_launcher_icons.yaml <<'EOF'
+          cat >> pubspec.yaml <<'EOF'
+
           flutter_launcher_icons:
             android: true
             ios: false
@@ -57,49 +58,25 @@ jobs:
             adaptive_icon_foreground: "assets/logo.png"
           EOF
 
-      - name: Write Android app
+      - name: Replace main.dart
         working-directory: app
         run: |
-          mkdir -p lib
-
           cat > lib/main.dart <<'DART'
-          import 'dart:convert';
-
-          import 'package:cached_network_image/cached_network_image.dart';
           import 'package:flutter/material.dart';
           import 'package:http/http.dart' as http;
           import 'package:url_launcher/url_launcher.dart';
-          import 'package:webview_flutter/webview_flutter.dart';
+          import 'dart:convert';
+
+          const String siteUrl = 'https://itarbiatbadani.ir';
+          const String telegramUrl = 'https://t.me/itarbiatbadani';
+          const String instagramUrl =
+              'https://instagram.com/itarbiatbadani';
 
           const Color navy = Color(0xFF0A3D62);
           const Color blue = Color(0xFF3C6382);
           const Color gold = Color(0xFFFBC531);
 
-          const String siteUrl = 'https://itarbiatbadani.ir';
-          const String shopUrl = '$siteUrl/shop/';
-          const String accountUrl = '$siteUrl/my-account/';
-          const String telegramUrl = 'https://t.me/itarbiatbadani';
-          const String instagramUrl =
-              'https://instagram.com/itarbiatbadani';
-          const String contactUrl =
-              'https://t.me/ivarzeshiadmin';
-
-          const String logoUrl =
-              '$siteUrl/wp-content/uploads/2025/07/1000073463.png';
-
-          Future<void> openUrl(String url) async {
-            final uri = Uri.parse(url);
-
-            if (await canLaunchUrl(uri)) {
-              await launchUrl(
-                uri,
-                mode: LaunchMode.externalApplication,
-              );
-            }
-          }
-
           void main() {
-            WidgetsFlutterBinding.ensureInitialized();
             runApp(const ItarbiatBadaniApp());
           }
 
@@ -115,13 +92,14 @@ jobs:
                   useMaterial3: true,
                   colorScheme: ColorScheme.fromSeed(
                     seedColor: navy,
+                    primary: navy,
+                    secondary: gold,
                   ),
-                  scaffoldBackgroundColor:
-                      const Color(0xFFF7F8FA),
+                  scaffoldBackgroundColor: Colors.white,
+                  fontFamily: 'sans',
                   appBarTheme: const AppBarTheme(
-                    backgroundColor: Colors.white,
-                    foregroundColor: navy,
-                    elevation: 0,
+                    backgroundColor: navy,
+                    foregroundColor: Colors.white,
                     centerTitle: true,
                   ),
                 ),
@@ -134,12 +112,10 @@ jobs:
             const MainNavigation({super.key});
 
             @override
-            State<MainNavigation> createState() =>
-                _MainNavigationState();
+            State<MainNavigation> createState() => _MainNavigationState();
           }
 
-          class _MainNavigationState
-              extends State<MainNavigation> {
+          class _MainNavigationState extends State<MainNavigation> {
             int currentIndex = 0;
 
             final List<Widget> pages = const [
@@ -189,12 +165,23 @@ jobs:
                       ),
                       NavigationDestination(
                         icon: Icon(Icons.more_horiz),
-                        selectedIcon: Icon(Icons.more),
+                        selectedIcon: Icon(Icons.more_horiz),
                         label: 'بیشتر',
                       ),
                     ],
                   ),
                 ),
+              );
+            }
+          }
+
+          Future<void> openUrl(String url) async {
+            final uri = Uri.parse(url);
+
+            if (await canLaunchUrl(uri)) {
+              await launchUrl(
+                uri,
+                mode: LaunchMode.externalApplication,
               );
             }
           }
@@ -216,28 +203,24 @@ jobs:
             }
 
             Future<List<dynamic>> fetchPosts() async {
-              final uri = Uri.parse(
-                '$siteUrl/wp-json/wp/v2/posts'
-                '?per_page=10&_embed'
-                '&orderby=date&order=desc',
+              final response = await http.get(
+                Uri.parse(
+                  '$siteUrl/wp-json/wp/v2/posts?per_page=10&_embed',
+                ),
               );
-
-              final response = await http.get(uri);
 
               if (response.statusCode != 200) {
                 throw Exception('خطا در دریافت نوشته‌ها');
               }
 
-              return jsonDecode(response.body)
-                  as List<dynamic>;
+              return jsonDecode(response.body) as List<dynamic>;
             }
 
-            Future<void> refresh() async {
-              setState(() {
-                postsFuture = fetchPosts();
-              });
-
-              await postsFuture;
+            String stripHtml(String text) {
+              return text
+                  .replaceAll(RegExp(r'<[^>]*>'), '')
+                  .replaceAll('&nbsp;', ' ')
+                  .trim();
             }
 
             @override
@@ -248,128 +231,85 @@ jobs:
                     'تربیت بدنی و علوم ورزشی',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 17,
                     ),
                   ),
-                  actions: [
-                    IconButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                const SearchPage(),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.search),
-                    ),
-                  ],
                 ),
                 body: RefreshIndicator(
-                  onRefresh: refresh,
+                  onRefresh: () async {
+                    setState(() {
+                      postsFuture = fetchPosts();
+                    });
+                    await postsFuture;
+                  },
                   child: FutureBuilder<List<dynamic>>(
                     future: postsFuture,
                     builder: (context, snapshot) {
                       if (snapshot.connectionState ==
                           ConnectionState.waiting) {
                         return const Center(
-                          child:
-                              CircularProgressIndicator(),
+                          child: CircularProgressIndicator(),
                         );
                       }
 
                       if (snapshot.hasError) {
                         return Center(
-                          child: FilledButton(
-                            onPressed: refresh,
-                            child:
-                                const Text('تلاش دوباره'),
-                          ),
-                        );
-                      }
-
-                      final posts =
-                          snapshot.data ?? [];
-
-                      return ListView(
-                        padding:
-                            const EdgeInsets.all(16),
-                        children: [
-                          Container(
-                            padding:
-                                const EdgeInsets.all(22),
-                            decoration:
-                                BoxDecoration(
-                              gradient:
-                                  const LinearGradient(
-                                colors: [
-                                  navy,
-                                  blue,
-                                ],
-                                begin:
-                                    Alignment.topRight,
-                                end:
-                                    Alignment.bottomLeft,
-                              ),
-                              borderRadius:
-                                  BorderRadius.circular(24),
-                            ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
                             child: Column(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                Image.network(
-                                  logoUrl,
-                                  height: 70,
-                                  width: 70,
-                                  errorBuilder:
-                                      (_, __, ___) =>
-                                          const Icon(
-                                    Icons.sports,
-                                    size: 65,
-                                    color: gold,
-                                  ),
+                                const Icon(
+                                  Icons.error_outline,
+                                  size: 50,
+                                  color: Colors.red,
                                 ),
                                 const SizedBox(height: 12),
                                 const Text(
-                                  'مرجع تخصصی تربیت بدنی و علوم ورزشی',
-                                  textAlign:
-                                      TextAlign.center,
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 21,
-                                    fontWeight:
-                                        FontWeight.bold,
-                                    height: 1.5,
-                                  ),
+                                  'دریافت مطالب با مشکل مواجه شد.',
+                                  textAlign: TextAlign.center,
                                 ),
-                                const SizedBox(height: 8),
-                                const Text(
-                                  'مطالب تخصصی، آموزشی و ورزشی',
-                                  style: TextStyle(
-                                    color:
-                                        Colors.white70,
-                                    fontSize: 14,
-                                  ),
+                                const SizedBox(height: 12),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      postsFuture = fetchPosts();
+                                    });
+                                  },
+                                  child: const Text('تلاش دوباره'),
                                 ),
                               ],
                             ),
                           ),
-                          const SizedBox(height: 22),
-                          const Text(
-                            'جدیدترین نوشته‌ها',
-                            style: TextStyle(
-                              fontSize: 21,
-                              fontWeight:
-                                  FontWeight.bold,
-                              color: navy,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          ...posts.map(
-                            (post) =>
-                                PostCard(post: post),
-                          ),
-                        ],
+                        );
+                      }
+
+                      final posts = snapshot.data ?? [];
+
+                      if (posts.isEmpty) {
+                        return const Center(
+                          child: Text('هنوز مطلبی منتشر نشده است.'),
+                        );
+                      }
+
+                      return ListView.builder(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.all(12),
+                        itemCount: posts.length,
+                        itemBuilder: (context, index) {
+                          final post = posts[index];
+
+                          final title =
+                              stripHtml(post['title']['rendered'] ?? '');
+
+                          final excerpt =
+                              stripHtml(post['excerpt']['rendered'] ?? '');
+
+                          return PostCard(
+                            title: title,
+                            excerpt: excerpt,
+                            url: post['link'] ?? siteUrl,
+                          );
+                        },
                       );
                     },
                   ),
@@ -379,140 +319,52 @@ jobs:
           }
 
           class PostCard extends StatelessWidget {
-            final dynamic post;
+            final String title;
+            final String excerpt;
+            final String url;
 
             const PostCard({
               super.key,
-              required this.post,
+              required this.title,
+              required this.excerpt,
+              required this.url,
             });
-
-            String title() =>
-                post['title']?['rendered']
-                    ?.toString() ??
-                '';
-
-            String image() {
-              try {
-                return post['_embedded']
-                        ['wp:featuredmedia'][0]
-                    ['source_url']
-                    ?.toString() ??
-                    '';
-              } catch (_) {
-                return '';
-              }
-            }
-
-            String excerpt() {
-              try {
-                return (post['excerpt']
-                            ['rendered']
-                            ?.toString() ??
-                        '')
-                    .replaceAll(
-                      RegExp(r'<[^>]*>'),
-                      '',
-                    )
-                    .replaceAll('&nbsp;', ' ')
-                    .trim();
-              } catch (_) {
-                return '';
-              }
-            }
 
             @override
             Widget build(BuildContext context) {
-              final postTitle = title();
-              final postImage = image();
-              final postExcerpt = excerpt();
-
               return Card(
-                margin:
-                    const EdgeInsets.only(bottom: 14),
-                child: InkWell(
-                  onTap: () {
-                    final link =
-                        post['link']?.toString();
-
-                    if (link != null &&
-                        link.isNotEmpty) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => WebPage(
-                            title: postTitle,
-                            url: link,
-                          ),
+                margin: const EdgeInsets.only(bottom: 12),
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: navy,
                         ),
-                      );
-                    }
-                  },
-                  child: Padding(
-                    padding:
-                        const EdgeInsets.all(10),
-                    child: Row(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
-                      children: [
-                        ClipRRect(
-                          borderRadius:
-                              BorderRadius.circular(14),
-                          child: postImage.isNotEmpty
-                              ? CachedNetworkImage(
-                                  imageUrl: postImage,
-                                  width: 105,
-                                  height: 105,
-                                  fit: BoxFit.cover,
-                                )
-                              : Container(
-                                  width: 105,
-                                  height: 105,
-                                  color: Colors
-                                      .grey.shade200,
-                                  child: const Icon(
-                                    Icons.sports,
-                                    color: navy,
-                                  ),
-                                ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment:
-                                CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                postTitle,
-                                maxLines: 3,
-                                overflow:
-                                    TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontWeight:
-                                      FontWeight.bold,
-                                  fontSize: 16,
-                                  height: 1.5,
-                                  color: navy,
-                                ),
-                              ),
-                              if (postExcerpt.isNotEmpty)
-                                const SizedBox(height: 8),
-                              if (postExcerpt.isNotEmpty)
-                                Text(
-                                  postExcerpt,
-                                  maxLines: 3,
-                                  overflow:
-                                      TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: Colors.grey,
-                                    height: 1.5,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                            ],
-                          ),
+                      ),
+                      if (excerpt.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          excerpt,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
-                    ),
+                      const SizedBox(height: 12),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: FilledButton(
+                          onPressed: () => openUrl(url),
+                          child: const Text('مطالعه مطلب'),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               );
@@ -523,14 +375,11 @@ jobs:
             const CategoriesPage({super.key});
 
             @override
-            State<CategoriesPage> createState() =>
-                _CategoriesPageState();
+            State<CategoriesPage> createState() => _CategoriesPageState();
           }
 
-          class _CategoriesPageState
-              extends State<CategoriesPage> {
-            late Future<List<dynamic>>
-                categoriesFuture;
+          class _CategoriesPageState extends State<CategoriesPage> {
+            late Future<List<dynamic>> categoriesFuture;
 
             @override
             void initState() {
@@ -541,30 +390,22 @@ jobs:
             Future<List<dynamic>> fetchCategories() async {
               final response = await http.get(
                 Uri.parse(
-                  '$siteUrl/wp-json/wp/v2/categories'
-                  '?per_page=100&hide_empty=true'
-                  '&orderby=count&order=desc',
+                  '$siteUrl/wp-json/wp/v2/categories?per_page=100',
                 ),
               );
 
               if (response.statusCode != 200) {
-                throw Exception();
+                throw Exception('خطا در دریافت دسته‌بندی‌ها');
               }
 
-              return jsonDecode(response.body)
-                  as List<dynamic>;
+              return jsonDecode(response.body) as List<dynamic>;
             }
 
             @override
             Widget build(BuildContext context) {
               return Scaffold(
                 appBar: AppBar(
-                  title: const Text(
-                    'دسته‌بندی‌ها',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  title: const Text('دسته‌بندی‌ها'),
                 ),
                 body: FutureBuilder<List<dynamic>>(
                   future: categoriesFuture,
@@ -572,72 +413,53 @@ jobs:
                     if (snapshot.connectionState ==
                         ConnectionState.waiting) {
                       return const Center(
-                        child:
-                            CircularProgressIndicator(),
+                        child: CircularProgressIndicator(),
                       );
                     }
 
                     if (snapshot.hasError) {
                       return const Center(
-                        child:
-                            Text('دریافت دسته‌بندی‌ها انجام نشد.'),
+                        child: Text(
+                          'دریافت دسته‌بندی‌ها با مشکل مواجه شد.',
+                        ),
                       );
                     }
 
-                    final categories =
-                        snapshot.data ?? [];
+                    final categories = snapshot.data ?? [];
 
-                    return ListView.builder(
-                      padding:
-                          const EdgeInsets.all(16),
+                    return ListView.separated(
+                      padding: const EdgeInsets.all(12),
                       itemCount: categories.length,
+                      separatorBuilder: (_, __) =>
+                          const SizedBox(height: 8),
                       itemBuilder: (context, index) {
-                        final category =
-                            categories[index];
+                        final category = categories[index];
 
                         return Card(
-                          margin:
-                              const EdgeInsets.only(
-                            bottom: 10,
-                          ),
                           child: ListTile(
-                            leading: CircleAvatar(
+                            leading: const CircleAvatar(
                               backgroundColor: navy,
-                              child: Text(
-                                '${category['count'] ?? 0}',
-                                style:
-                                    const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                ),
+                              child: Icon(
+                                Icons.folder_outlined,
+                                color: Colors.white,
                               ),
                             ),
                             title: Text(
-                              category['name']
-                                      ?.toString() ??
-                                  '',
-                              style:
-                                  const TextStyle(
-                                fontWeight:
-                                    FontWeight.bold,
+                              category['name'] ?? '',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                             trailing:
-                                const Icon(
-                              Icons.arrow_back_ios,
-                              size: 16,
-                            ),
+                                const Icon(Icons.arrow_back_ios, size: 16),
                             onTap: () {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) =>
-                                      CategoryPostsPage(
-                                    categoryId:
-                                        category['id'],
+                                  builder: (_) => CategoryPostsPage(
+                                    categoryId: category['id'],
                                     categoryName:
-                                        category['name']
-                                            .toString(),
+                                        category['name'] ?? '',
                                   ),
                                 ),
                               );
@@ -652,8 +474,7 @@ jobs:
             }
           }
 
-          class CategoryPostsPage
-              extends StatefulWidget {
+          class CategoryPostsPage extends StatefulWidget {
             final int categoryId;
             final String categoryName;
 
@@ -682,30 +503,29 @@ jobs:
               final response = await http.get(
                 Uri.parse(
                   '$siteUrl/wp-json/wp/v2/posts'
-                  '?per_page=50'
-                  '&categories=${widget.categoryId}'
-                  '&_embed&orderby=date&order=desc',
+                  '?categories=${widget.categoryId}&per_page=20',
                 ),
               );
 
               if (response.statusCode != 200) {
-                throw Exception();
+                throw Exception('خطا در دریافت مطالب');
               }
 
-              return jsonDecode(response.body)
-                  as List<dynamic>;
+              return jsonDecode(response.body) as List<dynamic>;
+            }
+
+            String stripHtml(String text) {
+              return text
+                  .replaceAll(RegExp(r'<[^>]*>'), '')
+                  .replaceAll('&nbsp;', ' ')
+                  .trim();
             }
 
             @override
             Widget build(BuildContext context) {
               return Scaffold(
                 appBar: AppBar(
-                  title: Text(
-                    widget.categoryName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  title: Text(widget.categoryName),
                 ),
                 body: FutureBuilder<List<dynamic>>(
                   future: postsFuture,
@@ -713,31 +533,42 @@ jobs:
                     if (snapshot.connectionState ==
                         ConnectionState.waiting) {
                       return const Center(
-                        child:
-                            CircularProgressIndicator(),
+                        child: CircularProgressIndicator(),
                       );
                     }
 
                     if (snapshot.hasError) {
                       return const Center(
+                        child: Text('خطا در دریافت مطالب'),
+                      );
+                    }
+
+                    final posts = snapshot.data ?? [];
+
+                    if (posts.isEmpty) {
+                      return const Center(
                         child: Text(
-                          'دریافت مطالب انجام نشد.',
+                          'مطلبی در این دسته‌بندی وجود ندارد.',
                         ),
                       );
                     }
 
-                    final posts =
-                        snapshot.data ?? [];
+                    return ListView.builder(
+                      padding: const EdgeInsets.all(12),
+                      itemCount: posts.length,
+                      itemBuilder: (context, index) {
+                        final post = posts[index];
 
-                    return ListView(
-                      padding:
-                          const EdgeInsets.all(16),
-                      children: posts
-                          .map(
-                            (post) =>
-                                PostCard(post: post),
-                          )
-                          .toList(),
+                        return PostCard(
+                          title: stripHtml(
+                            post['title']['rendered'] ?? '',
+                          ),
+                          excerpt: stripHtml(
+                            post['excerpt']['rendered'] ?? '',
+                          ),
+                          url: post['link'] ?? siteUrl,
+                        );
+                      },
                     );
                   },
                 ),
@@ -748,168 +579,57 @@ jobs:
           class StorePage extends StatelessWidget {
             const StorePage({super.key});
 
+            final String shopUrl = '$siteUrl/shop/';
+            final String accountUrl = '$siteUrl/my-account/';
+
             @override
             Widget build(BuildContext context) {
               return Scaffold(
                 appBar: AppBar(
-                  title: const Text(
-                    'فروشگاه',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  title: const Text('فروشگاه'),
                 ),
                 body: ListView(
-                  padding:
-                      const EdgeInsets.all(18),
+                  padding: const EdgeInsets.all(20),
                   children: [
-                    Container(
-                      padding:
-                          const EdgeInsets.all(25),
-                      decoration:
-                          BoxDecoration(
-                        gradient:
-                            const LinearGradient(
-                          colors: [navy, blue],
-                          begin:
-                              Alignment.topRight,
-                          end:
-                              Alignment.bottomLeft,
-                        ),
-                        borderRadius:
-                            BorderRadius.circular(24),
-                      ),
-                      child: const Column(
-                        children: [
-                          Icon(
-                            Icons.storefront,
-                            color: gold,
-                            size: 58,
-                          ),
-                          SizedBox(height: 18),
-                          Text(
-                            'فروشگاه تربیت بدنی و علوم ورزشی',
-                            textAlign:
-                                TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 21,
-                              fontWeight:
-                                  FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(height: 12),
-                          Text(
-                            'برای خرید فایل‌ها ابتدا وارد حساب کاربری شوید یا حساب جدید بسازید.',
-                            textAlign:
-                                TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.white70,
-                              height: 1.7,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
+                    const Icon(
+                      Icons.storefront,
+                      size: 80,
+                      color: navy,
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'فروشگاه تربیت بدنی و علوم ورزشی',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.bold,
+                        color: navy,
                       ),
                     ),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.icon(
-                        onPressed: () =>
-                            openUrl(accountUrl),
-                        icon: const Icon(
-                          Icons.person_add_alt_1,
-                        ),
-                        label: const Text(
-                          'ورود / ایجاد حساب کاربری',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight:
-                                FontWeight.bold,
-                          ),
-                        ),
-                        style:
-                            FilledButton.styleFrom(
-                          backgroundColor: navy,
-                          minimumSize:
-                              const Size.fromHeight(
-                            56,
-                          ),
-                        ),
-                      ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'برای خرید فایل‌ها و مدیریت خریدهای خود از فروشگاه سایت استفاده کنید.',
+                      textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 14),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () =>
-                            openUrl(shopUrl),
-                        icon: const Icon(
-                          Icons.shopping_bag_outlined,
-                        ),
-                        label: const Text(
-                          'ورود به فروشگاه',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight:
-                                FontWeight.bold,
-                          ),
-                        ),
-                        style:
-                            OutlinedButton.styleFrom(
-                          foregroundColor: navy,
-                          minimumSize:
-                              const Size.fromHeight(
-                            56,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Card(
-                      child: Padding(
-                        padding:
-                            const EdgeInsets.all(18),
-                        child: Column(
-                          children: const [
-                            Icon(
-                              Icons.download_done,
-                              color: navy,
-                              size: 40,
-                            ),
-                            SizedBox(height: 10),
-                            Text(
-                              'فایل‌های خریداری‌شده',
-                              style: TextStyle(
-                                fontWeight:
-                                    FontWeight.bold,
-                                fontSize: 17,
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              'بعد از خرید، فایل‌های شما در بخش «دانلودها»ی حساب کاربری قرار می‌گیرند.',
-                              textAlign:
-                                  TextAlign.center,
-                              style: TextStyle(
-                                color: Colors.grey,
-                                height: 1.7,
-                              ),
-                            ),
-                          ],
-                        ),
+                    const SizedBox(height: 30),
+                    FilledButton.icon(
+                      onPressed: () => openUrl(accountUrl),
+                      icon: const Icon(Icons.person),
+                      label: const Text(
+                        'ورود / ایجاد حساب کاربری',
                       ),
                     ),
                     const SizedBox(height: 12),
-                    TextButton.icon(
-                      onPressed: () =>
-                          openUrl(accountUrl),
-                      icon:
-                          const Icon(Icons.download),
-                      label: const Text(
-                        'مشاهده دانلودهای من',
-                      ),
+                    OutlinedButton.icon(
+                      onPressed: () => openUrl(shopUrl),
+                      icon: const Icon(Icons.store),
+                      label: const Text('ورود به فروشگاه'),
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      onPressed: () => openUrl(accountUrl),
+                      icon: const Icon(Icons.download),
+                      label: const Text('مشاهده دانلودهای من'),
                     ),
                   ],
                 ),
@@ -924,46 +644,42 @@ jobs:
             Widget build(BuildContext context) {
               return Scaffold(
                 appBar: AppBar(
-                  title: const Text(
-                    'تلگرام',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  title: const Text('تلگرام'),
                 ),
                 body: Center(
                   child: Padding(
-                    padding:
-                        const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(24),
                     child: Column(
-                      mainAxisAlignment:
-                          MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         const Icon(
                           Icons.telegram,
                           size: 90,
-                          color: navy,
+                          color: Color(0xFF229ED9),
                         ),
                         const SizedBox(height: 20),
                         const Text(
                           'کانال تربیت بدنی و علوم ورزشی',
-                          textAlign:
-                              TextAlign.center,
+                          textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 21,
-                            fontWeight:
-                                FontWeight.bold,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          '@itarbiatbadani',
+                          style: TextStyle(
+                            fontSize: 18,
                             color: navy,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                         const SizedBox(height: 25),
                         FilledButton.icon(
-                          onPressed: () =>
-                              openUrl(telegramUrl),
-                          icon:
-                              const Icon(Icons.telegram),
-                          label:
-                              const Text('عضویت در کانال'),
+                          onPressed: () => openUrl(telegramUrl),
+                          icon: const Icon(Icons.telegram),
+                          label: const Text('ورود به کانال تلگرام'),
                         ),
                       ],
                     ),
@@ -976,275 +692,91 @@ jobs:
           class MorePage extends StatelessWidget {
             const MorePage({super.key});
 
+            final String accountUrl = '$siteUrl/my-account/';
+            final String shopUrl = '$siteUrl/shop/';
+
             @override
             Widget build(BuildContext context) {
               return Scaffold(
                 appBar: AppBar(
-                  title: const Text(
-                    'بیشتر',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  title: const Text('بیشتر'),
                 ),
                 body: ListView(
-                  padding:
-                      const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(12),
                   children: [
-                    item(
-                      context,
-                      Icons.language,
-                      'وب‌سایت',
-                      siteUrl,
+                    ListTile(
+                      leading: const Icon(Icons.language, color: navy),
+                      title: const Text('وب‌سایت'),
+                      subtitle: const Text('itarbiatbadani.ir'),
+                      onTap: () => openUrl(siteUrl),
                     ),
-                    item(
-                      context,
-                      Icons.storefront,
-                      'فروشگاه',
-                      shopUrl,
+                    const Divider(),
+                    ListTile(
+                      leading: const Icon(Icons.store, color: navy),
+                      title: const Text('فروشگاه'),
+                      onTap: () => openUrl(shopUrl),
                     ),
-                    item(
-                      context,
-                      Icons.person,
-                      'حساب کاربری',
-                      accountUrl,
+                    const Divider(),
+                    ListTile(
+                      leading: const Icon(Icons.person, color: navy),
+                      title: const Text('حساب کاربری'),
+                      onTap: () => openUrl(accountUrl),
                     ),
-                    item(
-                      context,
-                      Icons.telegram,
-                      'کانال تلگرام',
-                      telegramUrl,
+                    const Divider(),
+                    ListTile(
+                      leading:
+                          const Icon(Icons.telegram, color: Color(0xFF229ED9)),
+                      title: const Text('کانال تلگرام'),
+                      onTap: () => openUrl(telegramUrl),
                     ),
-                    item(
-                      context,
-                      Icons.camera_alt_outlined,
-                      'اینستاگرام',
-                      instagramUrl,
+                    const Divider(),
+                    ListTile(
+                      leading:
+                          const Icon(Icons.camera_alt, color: Colors.pink),
+                      title: const Text('اینستاگرام'),
+                      onTap: () => openUrl(instagramUrl),
                     ),
-                    item(
-                      context,
-                      Icons.support_agent,
-                      'ارتباط و خرید',
-                      contactUrl,
+                    const Divider(),
+                    ListTile(
+                      leading: const Icon(Icons.contact_page, color: navy),
+                      title: const Text('ارتباط با ما'),
+                      subtitle: const Text('@ivarzeshiadmin'),
+                      onTap: () => openUrl(
+                        'https://t.me/ivarzeshiadmin',
+                      ),
+                    ),
+                    const SizedBox(height: 25),
+                    const Text(
+                      'تربیت بدنی و علوم ورزشی',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: navy,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    const Text(
+                      'محمد عیسی زهی، کارشناسی ارشد مدیریت ورزشی',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.grey,
+                      ),
                     ),
                   ],
-                ),
-              );
-            }
-
-            Widget item(
-              BuildContext context,
-              IconData icon,
-              String title,
-              String url,
-            ) {
-              return Card(
-                margin:
-                    const EdgeInsets.only(bottom: 10),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: navy,
-                    child: Icon(
-                      icon,
-                      color: Colors.white,
-                    ),
-                  ),
-                  title: Text(
-                    title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  trailing:
-                      const Icon(Icons.arrow_back_ios,
-                          size: 16),
-                  onTap: () => openUrl(url),
-                ),
-              );
-            }
-          }
-
-          class SearchPage extends StatefulWidget {
-            const SearchPage({super.key});
-
-            @override
-            State<SearchPage> createState() =>
-                _SearchPageState();
-          }
-
-          class _SearchPageState
-              extends State<SearchPage> {
-            final controller =
-                TextEditingController();
-
-            Future<List<dynamic>> search(
-              String query,
-            ) async {
-              if (query.trim().isEmpty) {
-                return [];
-              }
-
-              final response = await http.get(
-                Uri.parse(
-                  '$siteUrl/wp-json/wp/v2/posts'
-                  '?search=${Uri.encodeQueryComponent(query)}'
-                  '&per_page=20&_embed',
-                ),
-              );
-
-              if (response.statusCode != 200) {
-                throw Exception();
-              }
-
-              return jsonDecode(response.body)
-                  as List<dynamic>;
-            }
-
-            @override
-            Widget build(BuildContext context) {
-              return Scaffold(
-                appBar: AppBar(
-                  title: const Text('جستجو'),
-                ),
-                body: Padding(
-                  padding:
-                      const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      TextField(
-                        controller: controller,
-                        textInputAction:
-                            TextInputAction.search,
-                        onSubmitted: (_) =>
-                            setState(() {}),
-                        decoration:
-                            const InputDecoration(
-                          hintText:
-                              'عنوان مطلب را جستجو کنید...',
-                          prefixIcon:
-                              Icon(Icons.search),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Expanded(
-                        child:
-                            FutureBuilder<List<dynamic>>(
-                          future:
-                              search(controller.text),
-                          builder:
-                              (context, snapshot) {
-                            if (controller.text
-                                .trim()
-                                .isEmpty) {
-                              return const Center(
-                                child: Text(
-                                  'عبارت موردنظر را وارد کنید.',
-                                ),
-                              );
-                            }
-
-                            if (snapshot
-                                    .connectionState ==
-                                ConnectionState.waiting) {
-                              return const Center(
-                                child:
-                                    CircularProgressIndicator(),
-                              );
-                            }
-
-                            if (snapshot.hasError) {
-                              return const Center(
-                                child:
-                                    Text('جستجو انجام نشد.'),
-                              );
-                            }
-
-                            return ListView(
-                              children:
-                                  (snapshot.data ?? [])
-                                      .map(
-                                        (post) =>
-                                            PostCard(
-                                          post: post,
-                                        ),
-                                      )
-                                      .toList(),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }
-          }
-
-          class WebPage extends StatefulWidget {
-            final String title;
-            final String url;
-
-            const WebPage({
-              super.key,
-              required this.title,
-              required this.url,
-            });
-
-            @override
-            State<WebPage> createState() =>
-                _WebPageState();
-          }
-
-          class _WebPageState
-              extends State<WebPage> {
-            late final WebViewController controller;
-
-            @override
-            void initState() {
-              super.initState();
-
-              controller =
-                  WebViewController()
-                    ..setJavaScriptMode(
-                      JavaScriptMode.unrestricted,
-                    )
-                    ..loadRequest(
-                      Uri.parse(widget.url),
-                    );
-            }
-
-            @override
-            Widget build(BuildContext context) {
-              return Scaffold(
-                appBar: AppBar(
-                  title: Text(
-                    widget.title,
-                    maxLines: 1,
-                    overflow:
-                        TextOverflow.ellipsis,
-                  ),
-                  actions: [
-                    IconButton(
-                      onPressed: () =>
-                          openUrl(widget.url),
-                      icon:
-                          const Icon(Icons.open_in_browser),
-                    ),
-                  ],
-                ),
-                body: WebViewWidget(
-                  controller: controller,
                 ),
               );
             }
           }
           DART
 
-      - name: Get dependencies
+      - name: Remove default Flutter test
+        run: rm -rf app/test
+
+      - name: Install dependencies
         working-directory: app
         run: flutter pub get
 
-      - name: Generate launcher icon
+      - name: Generate launcher icons
         working-directory: app
         run: dart run flutter_launcher_icons
 
