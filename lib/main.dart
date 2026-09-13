@@ -230,7 +230,6 @@ List<int> _gregorianToJalali(int gy, int gm, int gd) {
 /* ==================== API ==================== */
 
 class WordPressApi {
-  // گرفتن جدیدترین نوشته‌ها
   static Future<List<dynamic>> getLatestPosts({int perPage = 6}) async {
     final response = await http.get(
       Uri.parse('$apiUrl/posts?per_page=$perPage&_embed'),
@@ -242,8 +241,8 @@ class WordPressApi {
     }
   }
 
-  // گرفتن نوشته‌های یک دسته خاص
-  static Future<List<dynamic>> getPostsByCategory(int categoryId, {int perPage = 20}) async {
+  static Future<List<dynamic>> getPostsByCategory(int categoryId,
+      {int perPage = 20}) async {
     final response = await http.get(
       Uri.parse('$apiUrl/posts?categories=$categoryId&per_page=$perPage&_embed'),
     );
@@ -1004,4 +1003,63 @@ class CategoriesPage extends StatelessWidget {
   }
 }
 
-/* ==================== CATEGORY TILE =
+/* ==================== CATEGORY TILE ==================== */
+
+class CategoryTile extends StatelessWidget {
+  final CategoryItem category;
+  const CategoryTile({super.key, required this.category});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CategoryPostsPage(category: category),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 11),
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: panelColor,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.white.withOpacity(0.06)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: goldColor.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(category.icon, color: goldColor, size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                category.name,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: textColor, fontSize: 14, fontWeight: FontWeight.bold, height: 1.4),
+              ),
+            ),
+            const Icon(Icons.arrow_back_ios, color: mutedColor, size: 16),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/* ==================== CATEGORY POSTS PAGE ==================== */
+
+class CategoryPostsPage extends StatefulWidget {
+  final CategoryItem category;
+  const CategoryPostsPage({super.key, required this.category});
+
+  @override
