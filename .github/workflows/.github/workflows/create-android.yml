@@ -1,0 +1,39 @@
+name: Create Android Scaffold
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  create-android:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.5'
+          channel: stable
+          cache: true
+
+      - name: Create android folder
+        run: |
+          flutter create --platforms=android --project-name itarbiatbadani --org ir .
+
+      - name: Configure app label
+        run: |
+          sed -i 's/android:label="[^"]*"/android:label="تربیت بدنی و علوم ورزشی"/' \
+            android/app/src/main/AndroidManifest.xml
+
+      - name: Commit and push android folder
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add android/
+          git commit -m "Add android folder [skip ci]" || echo "No changes to commit"
+          git push
