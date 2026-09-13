@@ -200,32 +200,41 @@ class CatsPage extends StatelessWidget {
   const CatsPage({super.key});
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          _header(context, 'دسته‌بندی مطالب'),
-          Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(children: cats.map((c) => _catTile(c)).toList()),
-          ),
-        ],
-      ),
+    return ListView(
+      padding: EdgeInsets.zero,
+      children: [
+        _header(context, 'دسته‌بندی مطالب'),
+        Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(children: cats.map((c) => _catTile(c)).toList()),
+        ),
+      ],
     );
   }
 }
 
-class NewsPage extends StatelessWidget {
+class NewsPage extends StatefulWidget {
   const NewsPage({super.key});
   @override
+  State<NewsPage> createState() => _NewsPageState();
+}
+
+class _NewsPageState extends State<NewsPage> {
+  late final WebViewController _c;
+  @override
+  void initState() {
+    super.initState();
+    _c = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..loadRequest(Uri.parse('$site/category/sports-news-and-events/'));
+  }
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('اخبار و رویدادها')),
-      body: WebViewWidget(
-        controller: WebViewController()
-          ..setJavaScriptMode(JavaScriptMode.unrestricted)
-          ..loadRequest(Uri.parse('$site/category/sports-news-and-events/')),
-      ),
+    return Column(
+      children: [
+        AppBar(title: const Text('اخبار و رویدادها'), backgroundColor: bgC),
+        Expanded(child: WebViewWidget(controller: _c)),
+      ],
     );
   }
 }
@@ -234,9 +243,15 @@ class AccountPage extends StatelessWidget {
   const AccountPage({super.key});
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('حساب من')),
-      body: const Center(child: Text('صفحه حساب کاربری به زودی...', style: TextStyle(color: txtC))),
+    return Column(
+      children: [
+        AppBar(title: const Text('حساب من'), backgroundColor: bgC),
+        const Expanded(
+          child: Center(
+            child: Text('صفحه حساب کاربری به زودی...', style: TextStyle(color: txtC)),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -436,9 +451,9 @@ Widget _catTile(Cat c) {
 
 Widget _social() {
   final items = [
-    ['تلگرام', Icons.send, 'https://t.me/itarbiatbadani'],
-    ['اینستاگرام', Icons.camera_alt, 'https://instagram.com/itarbiatbadani'],
-    ['بله', Icons.chat_bubble_outline, 'https://ble.ir/itarbiatbadani'],
+    ['تلگرام', Icons.telegram, 'https://t.me/itarbiatbadani'],
+    ['اینستاگرام', Icons.instagram, 'https://instagram.com/itarbiatbadani'],
+    ['بله', Icons.comment, 'https://ble.ir/itarbiatbadani'],
     ['فروشگاه', Icons.shopping_cart, '$site/shop/'],
   ];
   return Column(children: [
