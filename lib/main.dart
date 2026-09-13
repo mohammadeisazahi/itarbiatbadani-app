@@ -5,20 +5,14 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
-
-// ایمپورت کردن فایل‌های جانبی (باید ساخته شوند)
-import 'api/wordpress_api.dart';
-import 'pages/article_webview_page.dart';
-import 'pages/search_page.dart';
-import 'pages/news_page.dart';
-import 'pages/account_page.dart';
-import 'pages/sub_categories_page.dart';
-import 'widgets/error_box.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 /* ==================== CONSTANTS ==================== */
 
 const String siteUrl = 'https://itarbiatbadani.ir';
+const String apiUrl = '$siteUrl/wp-json/wp/v2';
 const String logoAsset = 'assets/images/logo.png';
 const String logoNetwork =
     '$siteUrl/wp-content/uploads/2025/07/1000073463.png';
@@ -140,6 +134,32 @@ List<int> _gregorianToJalali(int gy, int gm, int gd) {
   return [jy, jm, jd];
 }
 
+/* ==================== API ==================== */
+
+class WordPressApi {
+  static Future<List<dynamic>> getPosts({int perPage = 10}) async {
+    final response = await http.get(
+      Uri.parse('$apiUrl/posts?per_page=$perPage&_embed'),
+    );
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to load posts: ${response.statusCode}');
+    }
+  }
+
+  static Future<List<dynamic>> getCategories() async {
+    final response = await http.get(
+      Uri.parse('$apiUrl/categories?per_page=100'),
+    );
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to load categories: ${response.statusCode}');
+    }
+  }
+}
+
 /* ==================== APP ==================== */
 
 void main() {
@@ -198,11 +218,11 @@ class _MainPageState extends State<MainPage> {
   static const int _shopIndex = 3;
 
   final List<Widget> pages = const [
-    HomePage(),         // 0 - خانه
-    CategoriesPage(),   // 1 - دسته‌ها
-    NewsPage(),         // 2 - اخبار
-    SizedBox.shrink(),  // 3 - فروشگاه
-    AccountPage(),      // 4 - حساب من
+    HomePage(),
+    CategoriesPage(),
+    NewsPage(),
+    SizedBox.shrink(),
+    AccountPage(),
   ];
 
   @override
@@ -291,10 +311,7 @@ class AppHeader extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(23),
-                border: Border.all(
-                  color: goldColor.withOpacity(0.4),
-                  width: 1.5,
-                ),
+                border: Border.all(color: goldColor.withOpacity(0.4), width: 1.5),
               ),
               child: ClipOval(
                 child: Image.asset(
@@ -315,12 +332,7 @@ class AppHeader extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.right,
-                style: const TextStyle(
-                  color: textColor,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  height: 1.4,
-                ),
+                style: const TextStyle(color: textColor, fontSize: 14, fontWeight: FontWeight.bold, height: 1.4),
               ),
             ),
             const Spacer(),
@@ -396,10 +408,7 @@ class _HomePageState extends State<HomePage> {
           ),
           const SliverToBoxAdapter(child: ServicesSection()),
           const SliverToBoxAdapter(
-            child: SectionTitle(
-              title: 'جدیدترین نوشته‌ها',
-              icon: Icons.article_outlined,
-            ),
+            child: SectionTitle(title: 'جدیدترین نوشته‌ها', icon: Icons.article_outlined),
           ),
           SliverToBoxAdapter(
             child: FutureBuilder<List<dynamic>>(
@@ -410,30 +419,21 @@ class _HomePageState extends State<HomePage> {
                 }
                 if (snapshot.hasError) {
                   return ErrorBox(
-                    message: 'دریافت مطالب با مشکل مواجه شد.\n'
-                        'لطفاً اتصال اینترنت را بررسی کنید.\n'
-                        '${snapshot.error}',
+                    message: 'دریافت مطالب با مشکل مواجه شد.\n${snapshot.error}',
                     onRetry: refresh,
                   );
                 }
                 final posts = snapshot.data ?? [];
-                if (posts.isEmpty) {
-                  return const _EmptyBox(text: 'مطلبی پیدا نشد.');
-                }
+                if (posts.isEmpty) return const _EmptyBox(text: 'مطلبی پیدا نشد.');
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 14),
-                  child: Column(
-                    children: posts.map((post) => PostCard(post: post)).toList(),
-                  ),
+                  child: Column(children: posts.map((post) => PostCard(post: post)).toList()),
                 );
               },
             ),
           ),
           const SliverToBoxAdapter(
-            child: SectionTitle(
-              title: 'دسته‌بندی مطالب',
-              icon: Icons.grid_view_rounded,
-            ),
+            child: SectionTitle(title: 'دسته‌بندی مطالب', icon: Icons.grid_view_rounded),
           ),
           SliverToBoxAdapter(
             child: FutureBuilder<List<dynamic>>(
@@ -450,9 +450,7 @@ class _HomePageState extends State<HomePage> {
                 }
                 final categories = snapshot.data ?? [];
                 final mainCategories = categories.where((c) => c['parent'] == 0).toList();
-                if (mainCategories.isEmpty) {
-                  return const _EmptyBox(text: 'دسته‌ای پیدا نشد.');
-                }
+                if (mainCategories.isEmpty) return const _EmptyBox(text: 'دسته‌ای پیدا نشد.');
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 14),
                   child: GridView.builder(
@@ -465,9 +463,7 @@ class _HomePageState extends State<HomePage> {
                       mainAxisSpacing: 10,
                       childAspectRatio: 1.15,
                     ),
-                    itemBuilder: (context, index) {
-                      return _HomeCategoryCard(category: mainCategories[index]);
-                    },
+                    itemBuilder: (context, index) => _HomeCategoryCard(category: mainCategories[index]),
                   ),
                 );
               },
@@ -563,9 +559,7 @@ class _HeroSection extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           const Text(
-            'دسترسی سریع به جدیدترین اخبار، منابع علمی، طرح درس، '
-            'پاورپوینت‌های آموزشی و مطالب تخصصی تربیت بدنی و علوم ورزشی — '
-            'همه در یک اپلیکیشن ساده و سریع.',
+            'دسترسی سریع به جدیدترین اخبار، منابع علمی، طرح درس، پاورپوینت‌های آموزشی و مطالب تخصصی تربیت بدنی و علوم ورزشی — همه در یک اپلیکیشن ساده و سریع.',
             textAlign: TextAlign.right,
             style: TextStyle(color: Color(0xffc5d4df), fontSize: 13, height: 1.9),
           ),
@@ -959,7 +953,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
   }
 }
 
-/* ==================== CATEGORY TILE (تکمیل شده) ==================== */
+/* ==================== CATEGORY TILE ==================== */
 
 class CategoryTile extends StatelessWidget {
   final dynamic category;
@@ -1019,6 +1013,147 @@ class CategoryTile extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/* ==================== NEWS PAGE ==================== */
+
+class NewsPage extends StatelessWidget {
+  const NewsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(
+        child: Text('صفحه اخبار', style: TextStyle(color: Colors.white)),
+      ),
+    );
+  }
+}
+
+/* ==================== ACCOUNT PAGE ==================== */
+
+class AccountPage extends StatelessWidget {
+  const AccountPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(
+        child: Text('حساب من', style: TextStyle(color: Colors.white)),
+      ),
+    );
+  }
+}
+
+/* ==================== SEARCH PAGE ==================== */
+
+class SearchPage extends StatelessWidget {
+  const SearchPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(
+        child: Text('صفحه جستجو', style: TextStyle(color: Colors.white)),
+      ),
+    );
+  }
+}
+
+/* ==================== SUB CATEGORIES PAGE ==================== */
+
+class SubCategoriesPage extends StatelessWidget {
+  final int categoryId;
+  final String categoryName;
+
+  const SubCategoriesPage({
+    super.key,
+    required this.categoryId,
+    required this.categoryName,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(categoryName)),
+      body: const Center(
+        child: Text('زیر دسته‌ها', style: TextStyle(color: Colors.white)),
+      ),
+    );
+  }
+}
+
+/* ==================== ERROR BOX ==================== */
+
+class ErrorBox extends StatelessWidget {
+  final String message;
+  final VoidCallback? onRetry;
+
+  const ErrorBox({
+    super.key,
+    required this.message,
+    this.onRetry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, color: Colors.red, size: 40),
+          const SizedBox(height: 10),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white70),
+          ),
+          if (onRetry != null) ...[
+            const SizedBox(height: 15),
+            ElevatedButton(
+              onPressed: onRetry,
+              child: const Text('تلاش مجدد'),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/* ==================== ARTICLE WEBVIEW PAGE ==================== */
+
+class ArticleWebViewPage extends StatefulWidget {
+  final String url;
+
+  const ArticleWebViewPage({
+    super.key,
+    required this.url,
+  });
+
+  @override
+  State<ArticleWebViewPage> createState() => _ArticleWebViewPageState();
+}
+
+class _ArticleWebViewPageState extends State<ArticleWebViewPage> {
+  late final WebViewController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..loadRequest(Uri.parse(widget.url));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('مقاله')),
+      body: WebViewWidget(controller: controller),
     );
   }
 }
