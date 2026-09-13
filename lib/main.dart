@@ -3,7 +3,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 
 const String site = 'https://itarbiatbadani.ir';
 const String api = '$site/wp-json/wp/v2';
@@ -41,6 +40,7 @@ const cats = <Cat>[
 ];
 
 Future<void> openUrl(String url) async {
+  if (url.isEmpty) return;
   final uri = Uri.parse(url);
   if (await canLaunchUrl(uri)) {
     await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -70,8 +70,8 @@ String pImg(dynamic p) {
   return '';
 }
 
-Future<List> getPosts({int perPage = 6}) async {
-  final r = await http.get(Uri.parse('$api/posts?per_page=$perPage&_embed'));
+Future<List> getPosts() async {
+  final r = await http.get(Uri.parse('$api/posts?per_page=6&_embed'));
   if (r.statusCode == 200) return json.decode(r.body);
   throw Exception('خطای ${r.statusCode}');
 }
@@ -85,20 +85,10 @@ class App extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'تربیت بدنی و علوم ورزشی',
-      locale: const Locale('fa', 'IR'),
-      supportedLocales: const [Locale('fa', 'IR')],
       theme: ThemeData(
         brightness: Brightness.dark,
         scaffoldBackgroundColor: bgC,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: gold,
-          brightness: Brightness.dark,
-        ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: bgC,
-          foregroundColor: txtC,
-          elevation: 0,
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: gold, brightness: Brightness.dark),
       ),
       builder: (c, ch) => Directionality(
         textDirection: TextDirection.rtl,
@@ -131,54 +121,26 @@ class _RootState extends State<Root> {
           AccountPage(),
         ],
       ),
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: Color(0xff081925),
-          border: Border(top: BorderSide(color: Color(0x22ffffff))),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _i,
-          onTap: (i) {
-            if (i == 3) {
-              openUrl('$site/shop/');
-              return;
-            }
-            setState(() => _i = i);
-          },
-          backgroundColor: const Color(0xff081925),
-          selectedItemColor: gold,
-          unselectedItemColor: mutC,
-          type: BottomNavigationBarType.fixed,
-          elevation: 0,
-          showUnselectedLabels: true,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home),
-              label: 'خانه',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.category_outlined),
-              activeIcon: Icon(Icons.category),
-              label: 'دسته‌ها',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.newspaper_outlined),
-              activeIcon: Icon(Icons.newspaper),
-              label: 'اخبار',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.shopping_cart_outlined),
-              activeIcon: Icon(Icons.shopping_cart),
-              label: 'فروشگاه',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
-              label: 'حساب من',
-            ),
-          ],
-        ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _i,
+        onTap: (i) {
+          if (i == 3) {
+            openUrl('$site/shop/');
+            return;
+          }
+          setState(() => _i = i);
+        },
+        backgroundColor: const Color(0xff081925),
+        selectedItemColor: gold,
+        unselectedItemColor: mutC,
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'خانه'),
+          BottomNavigationBarItem(icon: Icon(Icons.category_outlined), label: 'دسته‌ها'),
+          BottomNavigationBarItem(icon: Icon(Icons.newspaper_outlined), label: 'اخبار'),
+          BottomNavigationBarItem(icon: Icon(Icons.shopping_cart_outlined), label: 'فروشگاه'),
+          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'حساب من'),
+        ],
       ),
     );
   }
@@ -195,10 +157,10 @@ class _HomeState extends State<Home> {
   @override
   void initState() {
     super.initState();
-    _f = getPosts(perPage: 6);
+    _f = getPosts();
   }
   Future<void> _refresh() async {
-    setState(() => _f = getPosts(perPage: 6));
+    setState(() => _f = getPosts());
     try { await _f; } catch (_) {}
   }
   @override
@@ -224,10 +186,7 @@ class _HomeState extends State<Home> {
                   return const _Loading();
                 }
                 if (s.hasError) {
-                  return _ErrorBox(
-                    'دریافت مطالب با مشکل مواجه شد.\n${s.error}',
-                    _refresh,
-                  );
+                  return _ErrorBox('خطا در دریافت مطالب.\n${s.error}', _refresh);
                 }
                 final posts = s.data ?? [];
                 if (posts.isEmpty) return const _Empty('مطلبی پیدا نشد.');
@@ -262,35 +221,31 @@ class CatsPage extends StatelessWidget {
         _header(context, 'دسته‌بندی مطالب'),
         Padding(
           padding: const EdgeInsets.all(14),
-          child: Column(children: cats.map((c) => _catTile(c)).toList()),
+          child: Column(
+            children: cats.map((c) => _catTile(context, c)).toList(),
+          ),
         ),
       ],
     );
   }
 }
 
-class NewsPage extends StatefulWidget {
+class NewsPage extends StatelessWidget {
   const NewsPage({super.key});
   @override
-  State<NewsPage> createState() => _NewsPageState();
-}
-
-class _NewsPageState extends State<NewsPage> {
-  WebViewController? _c;
-  @override
-  void initState() {
-    super.initState();
-    _c = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..loadRequest(Uri.parse('$site/category/sports-news-and-events/'));
-  }
-  @override
   Widget build(BuildContext context) {
-    if (_c == null) return const _Loading();
     return Column(
       children: [
         AppBar(title: const Text('اخبار و رویدادها'), backgroundColor: bgC),
-        Expanded(child: WebViewWidget(controller: _c!)),
+        Expanded(
+          child: Center(
+            child: ElevatedButton.icon(
+              onPressed: () => openUrl('$site/category/sports-news-and-events/'),
+              icon: const Icon(Icons.open_in_browser),
+              label: const Text('مشاهده اخبار در مرورگر'),
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -305,47 +260,10 @@ class AccountPage extends StatelessWidget {
         AppBar(title: const Text('حساب من'), backgroundColor: bgC),
         const Expanded(
           child: Center(
-            child: Text(
-              'صفحه حساب کاربری به زودی...',
-              style: TextStyle(color: txtC),
-            ),
+            child: Text('به زودی...', style: TextStyle(color: txtC)),
           ),
         ),
       ],
-    );
-  }
-}
-
-class ArticlePage extends StatefulWidget {
-  final String url;
-  final String? title;
-  const ArticlePage({super.key, required this.url, this.title});
-  @override
-  State<ArticlePage> createState() => _ArticlePageState();
-}
-
-class _ArticlePageState extends State<ArticlePage> {
-  late final WebViewController _c;
-  bool _l = true;
-  @override
-  void initState() {
-    super.initState();
-    _c = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setNavigationDelegate(NavigationDelegate(
-        onPageStarted: (_) => setState(() => _l = true),
-        onPageFinished: (_) => setState(() => _l = false),
-      ))
-      ..loadRequest(Uri.parse(widget.url));
-  }
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(widget.title ?? 'مشاهده مطلب')),
-      body: Stack(children: [
-        WebViewWidget(controller: _c),
-        if (_l) const Center(child: CircularProgressIndicator(color: gold)),
-      ]),
     );
   }
 }
@@ -359,47 +277,41 @@ Widget _header(BuildContext context, [String t = 'تربیت بدنی و علو�
         color: bgC,
         border: Border(bottom: BorderSide(color: Color(0x17ffffff))),
       ),
-      child: Row(children: [
-        Container(
-          width: 46,
-          height: 46,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(23),
-            border: Border.all(color: gold.withOpacity(0.4), width: 1.5),
-          ),
-          child: ClipOval(
-            child: Image.asset(
-              logo,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Image.network(
-                logoNet,
+      child: Row(
+        children: [
+          Container(
+            width: 46, height: 46,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(23),
+              border: Border.all(color: gold.withOpacity(0.4), width: 1.5),
+            ),
+            child: ClipOval(
+              child: Image.asset(
+                logo,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const Icon(Icons.sports, color: gold),
+                errorBuilder: (_, __, ___) => Image.network(
+                  logoNet,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const Icon(Icons.sports, color: gold),
+                ),
               ),
             ),
           ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            t,
-            textAlign: TextAlign.right,
-            style: const TextStyle(
-              color: txtC,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              t,
+              textAlign: TextAlign.right,
+              style: const TextStyle(color: txtC, fontSize: 14, fontWeight: FontWeight.bold),
             ),
           ),
-        ),
-        IconButton(
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const SearchPage()),
+          IconButton(
+            onPressed: () => openUrl('$site/?s='),
+            icon: const Icon(Icons.search, color: gold, size: 27),
           ),
-          icon: const Icon(Icons.search, color: gold, size: 27),
-        ),
-      ]),
+        ],
+      ),
     ),
   );
 }
@@ -420,60 +332,44 @@ Widget _hero() {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              border: Border.all(color: gold.withOpacity(0.5), width: 2),
-            ),
-            child: ClipOval(
-              child: Image.asset(
-                logo,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const Icon(
-                  Icons.sports_soccer,
-                  color: gold,
-                  size: 30,
+        Row(
+          children: [
+            Container(
+              width: 60, height: 60,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                border: Border.all(color: gold.withOpacity(0.5), width: 2),
+              ),
+              child: ClipOval(
+                child: Image.asset(
+                  logo,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const Icon(Icons.sports_soccer, color: gold, size: 30),
                 ),
               ),
             ),
-          ),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Text(
-              'تربیت بدنی و علوم ورزشی',
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                color: gold,
-                fontSize: 17,
-                fontWeight: FontWeight.bold,
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                'تربیت بدنی و علوم ورزشی',
+                textAlign: TextAlign.right,
+                style: TextStyle(color: gold, fontSize: 17, fontWeight: FontWeight.bold),
               ),
             ),
-          ),
-        ]),
+          ],
+        ),
         const SizedBox(height: 16),
         const Text(
           'اپلیکیشن رسمی مرجع ورزش',
           textAlign: TextAlign.right,
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            height: 1.6,
-          ),
+          style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, height: 1.6),
         ),
         const SizedBox(height: 10),
         const Text(
           'دسترسی سریع به جدیدترین اخبار، منابع علمی، طرح درس، پاورپوینت‌های آموزشی و مطالب تخصصی.',
           textAlign: TextAlign.right,
-          style: TextStyle(
-            color: Color(0xffc5d4df),
-            fontSize: 13,
-            height: 1.9,
-          ),
+          style: TextStyle(color: Color(0xffc5d4df), fontSize: 13, height: 1.9),
         ),
       ],
     ),
@@ -492,61 +388,53 @@ Widget _services() {
     ['طرح درس', Icons.assignment_outlined, '$site/product-category/%d8%b7%d8%b1%d8%ad-%d8%af%d8%b1%d8%b3/'],
     ['پاورپوینت', Icons.slideshow_outlined, '$site/product-category/powerpoint/'],
   ];
-  return Column(children: [
-    const _SectionTitle('خدمات ما', Icons.apps),
-    SizedBox(
-      height: 112,
-      child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        scrollDirection: Axis.horizontal,
-        itemCount: items.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 10),
-        itemBuilder: (c, i) => GestureDetector(
-          onTap: () => openUrl(items[i][2] as String),
-          child: Container(
-            width: 112,
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: pnl,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.white.withOpacity(0.06)),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(items[i][1] as IconData, color: gold, size: 30),
-                const SizedBox(height: 8),
-                Text(
-                  items[i][0] as String,
-                  maxLines: 2,
-                  textAlign: TextAlign.center,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: txtC,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    height: 1.5,
+  return Column(
+    children: [
+      const _SectionTitle('خدمات ما', Icons.apps),
+      SizedBox(
+        height: 112,
+        child: ListView.separated(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          scrollDirection: Axis.horizontal,
+          itemCount: items.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 10),
+          itemBuilder: (c, i) => GestureDetector(
+            onTap: () => openUrl(items[i][2] as String),
+            child: Container(
+              width: 112,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: pnl,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.white.withOpacity(0.06)),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(items[i][1] as IconData, color: gold, size: 30),
+                  const SizedBox(height: 8),
+                  Text(
+                    items[i][0] as String,
+                    maxLines: 2,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: txtC, fontSize: 12, fontWeight: FontWeight.bold, height: 1.5),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
       ),
-    ),
-    const SizedBox(height: 10),
-  ]);
+      const SizedBox(height: 10),
+    ],
+  );
 }
 
 Widget _post(BuildContext context, dynamic p) {
   final i = pImg(p);
   return GestureDetector(
-    onTap: () => Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ArticlePage(url: pLink(p), title: pTitle(p)),
-      ),
-    ),
+    onTap: () => openUrl(pLink(p)),
     child: Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
@@ -554,48 +442,44 @@ Widget _post(BuildContext context, dynamic p) {
         borderRadius: BorderRadius.circular(15),
         border: Border.all(color: Colors.white.withOpacity(0.06)),
       ),
-      child: Row(children: [
-        ClipRRect(
-          borderRadius: const BorderRadius.only(
-            topRight: Radius.circular(15),
-            bottomRight: Radius.circular(15),
-          ),
-          child: SizedBox(
-            width: 125,
-            height: 110,
-            child: i.isNotEmpty
-                ? CachedNetworkImage(
-                    imageUrl: i,
-                    fit: BoxFit.cover,
-                    errorWidget: (_, __, ___) => Container(
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: const BorderRadius.only(
+              topRight: Radius.circular(15),
+              bottomRight: Radius.circular(15),
+            ),
+            child: SizedBox(
+              width: 125, height: 110,
+              child: i.isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: i,
+                      fit: BoxFit.cover,
+                      errorWidget: (_, __, ___) => Container(
+                        color: pnl2,
+                        child: const Icon(Icons.article_outlined, color: gold, size: 40),
+                      ),
+                    )
+                  : Container(
                       color: pnl2,
                       child: const Icon(Icons.article_outlined, color: gold, size: 40),
                     ),
-                  )
-                : Container(
-                    color: pnl2,
-                    child: const Icon(Icons.article_outlined, color: gold, size: 40),
-                  ),
+            ),
           ),
-        ),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.all(13),
-            child: Text(
-              pTitle(p),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.right,
-              style: const TextStyle(
-                color: txtC,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                height: 1.7,
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(13),
+              child: Text(
+                pTitle(p),
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.right,
+                style: const TextStyle(color: txtC, fontSize: 14, fontWeight: FontWeight.bold, height: 1.7),
               ),
             ),
           ),
-        ),
-      ]),
+        ],
+      ),
     ),
   );
 }
@@ -614,10 +498,7 @@ Widget _catGrid() {
         childAspectRatio: 1.15,
       ),
       itemBuilder: (c, i) => GestureDetector(
-        onTap: () => Navigator.push(
-          c,
-          MaterialPageRoute(builder: (_) => CatPostsPage(c: cats[i])),
-        ),
+        onTap: () => openUrl('$site/category/${cats[i].s}/'),
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -629,8 +510,7 @@ Widget _catGrid() {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 46,
-                height: 46,
+                width: 46, height: 46,
                 decoration: BoxDecoration(
                   color: gold.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(12),
@@ -645,12 +525,7 @@ Widget _catGrid() {
                     maxLines: 2,
                     textAlign: TextAlign.center,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: txtC,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      height: 1.5,
-                    ),
+                    style: const TextStyle(color: txtC, fontSize: 12, fontWeight: FontWeight.bold, height: 1.5),
                   ),
                 ),
               ),
@@ -662,25 +537,21 @@ Widget _catGrid() {
   );
 }
 
-Widget _catTile(Cat c) {
-  return Builder(
-    builder: (ctx) => GestureDetector(
-      onTap: () => Navigator.push(
-        ctx,
-        MaterialPageRoute(builder: (_) => CatPostsPage(c: c)),
+Widget _catTile(BuildContext context, Cat c) {
+  return GestureDetector(
+    onTap: () => openUrl('$site/category/${c.s}/'),
+    child: Container(
+      margin: const EdgeInsets.only(bottom: 11),
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: pnl,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withOpacity(0.06)),
       ),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 11),
-        padding: const EdgeInsets.all(15),
-        decoration: BoxDecoration(
-          color: pnl,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withOpacity(0.06)),
-        ),
-        child: Row(children: [
+      child: Row(
+        children: [
           Container(
-            width: 42,
-            height: 42,
+            width: 42, height: 42,
             decoration: BoxDecoration(
               color: gold.withOpacity(0.12),
               borderRadius: BorderRadius.circular(10),
@@ -693,16 +564,11 @@ Widget _catTile(Cat c) {
               c.n,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: txtC,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                height: 1.4,
-              ),
+              style: const TextStyle(color: txtC, fontSize: 14, fontWeight: FontWeight.bold, height: 1.4),
             ),
           ),
           const Icon(Icons.arrow_back_ios, color: mutC, size: 16),
-        ]),
+        ],
       ),
     ),
   );
@@ -715,131 +581,46 @@ Widget _social() {
     ['بله', Icons.chat_outlined, 'https://ble.ir/itarbiatbadani'],
     ['فروشگاه', Icons.shopping_cart, '$site/shop/'],
   ];
-  return Column(children: [
-    const _SectionTitle('ارتباط با ما', Icons.connect_without_contact),
-    Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: items.length,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
-          childAspectRatio: 3.2,
-        ),
-        itemBuilder: (c, i) => GestureDetector(
-          onTap: () => openUrl(items[i][2] as String),
-          child: Container(
-            decoration: BoxDecoration(
-              color: pnl,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white.withOpacity(0.06)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(items[i][1] as IconData, color: gold, size: 18),
-                const SizedBox(width: 8),
-                Text(
-                  items[i][0] as String,
-                  style: const TextStyle(
-                    color: txtC,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
+  return Column(
+    children: [
+      const _SectionTitle('ارتباط با ما', Icons.connect_without_contact),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        child: GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: items.length,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+            childAspectRatio: 3.2,
           ),
-        ),
-      ),
-    ),
-  ]);
-}
-
-class CatPostsPage extends StatefulWidget {
-  final Cat c;
-  const CatPostsPage({super.key, required this.c});
-  @override
-  State<CatPostsPage> createState() => _CatPostsPageState();
-}
-
-class _CatPostsPageState extends State<CatPostsPage> {
-  late final WebViewController _c;
-  bool _l = true;
-  @override
-  void initState() {
-    super.initState();
-    _c = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setNavigationDelegate(NavigationDelegate(
-        onPageStarted: (_) => setState(() => _l = true),
-        onPageFinished: (_) => setState(() => _l = false),
-      ))
-      ..loadRequest(Uri.parse('$site/category/${widget.c.s}/'));
-  }
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(widget.c.n)),
-      body: Stack(children: [
-        WebViewWidget(controller: _c),
-        if (_l) const Center(child: CircularProgressIndicator(color: gold)),
-      ]),
-    );
-  }
-}
-
-class SearchPage extends StatefulWidget {
-  const SearchPage({super.key});
-  @override
-  State<SearchPage> createState() => _SearchPageState();
-}
-
-class _SearchPageState extends State<SearchPage> {
-  final _ctrl = TextEditingController();
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('جستجو')),
-      body: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(children: [
-          TextField(
-            controller: _ctrl,
-            style: const TextStyle(color: txtC),
-            decoration: InputDecoration(
-              hintText: 'عبارت مورد نظر...',
-              hintStyle: const TextStyle(color: mutC),
-              filled: true,
-              fillColor: pnl,
-              border: OutlineInputBorder(
+          itemBuilder: (c, i) => GestureDetector(
+            onTap: () => openUrl(items[i][2] as String),
+            child: Container(
+              decoration: BoxDecoration(
+                color: pnl,
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
+                border: Border.all(color: Colors.white.withOpacity(0.06)),
               ),
-              suffixIcon: IconButton(
-                icon: const Icon(Icons.search, color: gold),
-                onPressed: () {
-                  if (_ctrl.text.trim().isEmpty) return;
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ArticlePage(
-                        url: '$site/?s=${Uri.encodeComponent(_ctrl.text)}',
-                        title: 'نتایج جستجو',
-                      ),
-                    ),
-                  );
-                },
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(items[i][1] as IconData, color: gold, size: 18),
+                  const SizedBox(width: 8),
+                  Text(
+                    items[i][0] as String,
+                    style: const TextStyle(color: txtC, fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                ],
               ),
             ),
           ),
-        ]),
+        ),
       ),
-    );
-  }
+    ],
+  );
 }
 
 class _SectionTitle extends StatelessWidget {
@@ -850,30 +631,24 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 18, 14, 12),
-      child: Row(children: [
-        Container(
-          width: 4,
-          height: 25,
-          decoration: BoxDecoration(
-            color: gold,
-            borderRadius: BorderRadius.circular(5),
+      child: Row(
+        children: [
+          Container(
+            width: 4, height: 25,
+            decoration: BoxDecoration(color: gold, borderRadius: BorderRadius.circular(5)),
           ),
-        ),
-        const SizedBox(width: 9),
-        Icon(i, color: gold, size: 22),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            t,
-            textAlign: TextAlign.right,
-            style: const TextStyle(
-              color: txtC,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+          const SizedBox(width: 9),
+          Icon(i, color: gold, size: 22),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              t,
+              textAlign: TextAlign.right,
+              style: const TextStyle(color: txtC, fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
-        ),
-      ]),
+        ],
+      ),
     );
   }
 }
@@ -893,9 +668,7 @@ class _Empty extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.all(30),
-        child: Center(
-          child: Text(t, style: const TextStyle(color: mutC)),
-        ),
+        child: Center(child: Text(t, style: const TextStyle(color: mutC))),
       );
 }
 
@@ -912,11 +685,7 @@ class _ErrorBox extends StatelessWidget {
         children: [
           const Icon(Icons.error_outline, color: Colors.red, size: 40),
           const SizedBox(height: 10),
-          Text(
-            m,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white70),
-          ),
+          Text(m, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70)),
           if (r != null) ...[
             const SizedBox(height: 15),
             ElevatedButton(onPressed: r, child: const Text('تلاش مجدد')),
