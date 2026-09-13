@@ -5,12 +5,14 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 /* ==================== CONSTANTS ==================== */
 
 const String siteUrl = 'https://itarbiatbadani.ir';
+const String apiUrl = '$siteUrl/wp-json/wp/v2';
 const String logoAsset = 'assets/images/logo.png';
 const String logoNetwork =
     '$siteUrl/wp-content/uploads/2025/07/1000073463.png';
@@ -28,13 +30,13 @@ const Color lineColor = Color(0x17ffffff);
 class CategoryItem {
   final int id;
   final String name;
-  final String url;
+  final String slug;
   final IconData icon;
 
   const CategoryItem({
     required this.id,
     required this.name,
-    required this.url,
+    required this.slug,
     required this.icon,
   });
 }
@@ -43,138 +45,86 @@ const List<CategoryItem> staticCategories = [
   CategoryItem(
     id: 1,
     name: 'رشته تربیت بدنی و علوم ورزشی',
-    url: '$siteUrl/category/physical-education-sport-sciences/',
+    slug: 'physical-education-sport-sciences',
     icon: Icons.sports_soccer,
   ),
   CategoryItem(
     id: 2,
     name: 'علوم ورزشی',
-    url: '$siteUrl/category/sports-science/',
+    slug: 'sports-science',
     icon: Icons.science_outlined,
   ),
   CategoryItem(
     id: 3,
     name: 'منابع آزمون‌های علوم ورزشی',
-    url: '$siteUrl/category/sports-science-exam-resources/',
+    slug: 'sports-science-exam-resources',
     icon: Icons.menu_book_outlined,
   ),
   CategoryItem(
     id: 4,
     name: 'تغذیه ورزشی',
-    url: '$siteUrl/category/sports-nutrition/',
+    slug: 'sports-nutrition',
     icon: Icons.restaurant_outlined,
   ),
   CategoryItem(
     id: 5,
     name: 'اخبار و رویدادها',
-    url: '$siteUrl/category/sports-news-and-events/',
+    slug: 'sports-news-and-events',
     icon: Icons.newspaper_outlined,
   ),
   CategoryItem(
     id: 6,
     name: 'ورزش همگانی، سلامت و تندرستی',
-    url: '$siteUrl/category/public-exercise-health-and-wellness/',
+    slug: 'public-exercise-health-and-wellness',
     icon: Icons.favorite_outline,
   ),
   CategoryItem(
     id: 7,
     name: 'پژوهش در تربیت بدنی',
-    url: '$siteUrl/category/research-in-physical-education/',
+    slug: 'research-in-physical-education',
     icon: Icons.search_outlined,
   ),
   CategoryItem(
     id: 8,
     name: 'تربیت بدنی و آموزش',
-    url: '$siteUrl/category/physical-education-and-training/',
+    slug: 'physical-education-and-training',
     icon: Icons.school_outlined,
   ),
   CategoryItem(
     id: 9,
     name: 'معرفی منابع و کتب مرجع',
-    url: '$siteUrl/category/introduction-to-sources-and-reference-books/',
+    slug: 'introduction-to-sources-and-reference-books',
     icon: Icons.library_books_outlined,
   ),
   CategoryItem(
     id: 10,
     name: 'اصول ورزش و فعالیت بدنی',
-    url: '$siteUrl/category/principles-of-exercise-and-physical-activity/',
+    slug: 'principles-of-exercise-and-physical-activity',
     icon: Icons.fitness_center_outlined,
   ),
   CategoryItem(
     id: 11,
     name: 'آزمون‌های استخدامی',
-    url: '$siteUrl/category/employment-tests/',
+    slug: 'employment-tests',
     icon: Icons.assignment_outlined,
   ),
   CategoryItem(
     id: 12,
     name: 'معرفی رشته‌های ورزشی',
-    url: '$siteUrl/category/introduction-to-sports-disciplines/',
+    slug: 'introduction-to-sports-disciplines',
     icon: Icons.sports_handball_outlined,
   ),
   CategoryItem(
     id: 13,
     name: 'ورزش برای گروه‌ها و نیازهای ویژه',
-    url: '$siteUrl/category/exercise-for-special-groups-and-needs/',
+    slug: 'exercise-for-special-groups-and-needs',
     icon: Icons.accessibility_new_outlined,
   ),
   CategoryItem(
     id: 14,
     name: 'فناوری و نوآوری در ورزش',
-    url: '$siteUrl/category/technology-and-innovation-in-sports-sports-science/',
+    slug: 'technology-and-innovation-in-sports-sports-science',
     icon: Icons.memory_outlined,
-  ),
-];
-
-/* ==================== STATIC SUGGESTED POSTS ==================== */
-
-class SuggestedPost {
-  final String title;
-  final String url;
-  final IconData icon;
-
-  const SuggestedPost({
-    required this.title,
-    required this.url,
-    required this.icon,
-  });
-}
-
-const List<SuggestedPost> suggestedPosts = [
-  SuggestedPost(
-    title: 'معرفی رشته تربیت بدنی و علوم ورزشی',
-    url: '$siteUrl/introduction-to-the-field-of-physical-education-and-sports-sciences/',
-    icon: Icons.info_outline,
-  ),
-  SuggestedPost(
-    title: 'گرایش‌های کارشناسی ارشد',
-    url: '$siteUrl/%da%af%d8%b1%d8%a7%db%8c%d8%b4%d9%87%d8%a7%db%8c-%da%a9%d8%a7%d8%b1%d8%b4%d9%86%d8%a7%d8%b3%db%8c-%d8%a7%d8%b1%d8%b4%d8%af-%d8%aa%d8%b1%d8%a8%db%8c%d8%aa-%d8%a8%d8%af%d9%86%db%8c-%d9%88/',
-    icon: Icons.school_outlined,
-  ),
-  SuggestedPost(
-    title: 'منابع آزمون دکتری علوم ورزشی',
-    url: '$siteUrl/sports-science-phd-exam-resources/',
-    icon: Icons.library_books_outlined,
-  ),
-  SuggestedPost(
-    title: 'منابع کارشناسی ارشد',
-    url: '$siteUrl/master-of-sports-science-resources/',
-    icon: Icons.menu_book_outlined,
-  ),
-  SuggestedPost(
-    title: 'منابع کنکور دکتری تربیت بدنی',
-    url: '$siteUrl/manabe-konkur-doctori-tarbiat-badani/',
-    icon: Icons.book_outlined,
-  ),
-  SuggestedPost(
-    title: 'دانشگاه‌های برتر علوم ورزشی',
-    url: '$siteUrl/physical-education-sports-science/',
-    icon: Icons.account_balance,
-  ),
-  SuggestedPost(
-    title: 'بازار کار تربیت بدنی',
-    url: '$siteUrl/job-market-in-physical-education-and-sports-sciences/',
-    icon: Icons.work_outline,
   ),
 ];
 
@@ -188,14 +138,121 @@ Future<void> openUrl(String url) async {
   }
 }
 
-void openWebView(BuildContext context, String url, {String? title}) {
-  if (url.isEmpty) return;
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => ArticleWebViewPage(url: url, title: title),
-    ),
-  );
+String cleanHtml(String value) {
+  return value
+      .replaceAll(RegExp(r'<[^>]*>'), '')
+      .replaceAll('&nbsp;', ' ')
+      .replaceAll('&amp;', '&')
+      .replaceAll('&quot;', '"')
+      .replaceAll('&#8217;', '’')
+      .replaceAll('&#8216;', '‘')
+      .replaceAll('&#8220;', '“')
+      .replaceAll('&#8221;', '”')
+      .replaceAll('&#8230;', '…')
+      .trim();
+}
+
+String postTitle(dynamic post) {
+  try {
+    return cleanHtml(post['title']['rendered'] ?? 'بدون عنوان');
+  } catch (_) {
+    return 'بدون عنوان';
+  }
+}
+
+String postLink(dynamic post) {
+  try {
+    return post['link'] ?? '';
+  } catch (_) {
+    return '';
+  }
+}
+
+String postImage(dynamic post) {
+  try {
+    final media = post['_embedded']?['wp:featuredmedia'];
+    if (media is List && media.isNotEmpty) {
+      return media[0]['source_url'] ?? '';
+    }
+  } catch (_) {}
+  return '';
+}
+
+String formatDate(String? iso) {
+  if (iso == null || iso.isEmpty) return '';
+  try {
+    final dt = DateTime.parse(iso).toLocal();
+    const months = [
+      'فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور',
+      'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند',
+    ];
+    final j = _gregorianToJalali(dt.year, dt.month, dt.day);
+    return '${j[2]} ${months[j[1] - 1]} ${j[0]}';
+  } catch (_) {
+    return '';
+  }
+}
+
+List<int> _gregorianToJalali(int gy, int gm, int gd) {
+  const gdm = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  const jdm = [31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29];
+
+  var gy2 = (gm > 2) ? (gy + 1) : gy;
+  var days = 355666 + (365 * gy) + ((gy2 + 3) ~/ 4) - ((gy2 + 99) ~/ 100) + ((gy2 + 399) ~/ 400) + gd;
+
+  for (var i = 0; i < gm - 1; i++) {
+    days += gdm[i];
+  }
+
+  var jy = -1595 + (33 * (days ~/ 12053));
+  days %= 12053;
+  jy += 4 * (days ~/ 1461);
+  days %= 1461;
+
+  if (days > 365) {
+    jy += (days - 1) ~/ 365;
+    days = (days - 1) % 365;
+  }
+
+  var jm = 0;
+  var jd = days + 1;
+  for (var i = 0; i < 12; i++) {
+    if (jd <= jdm[i]) {
+      jm = i + 1;
+      break;
+    }
+    jd -= jdm[i];
+  }
+
+  return [jy, jm, jd];
+}
+
+/* ==================== API ==================== */
+
+class WordPressApi {
+  // گرفتن جدیدترین نوشته‌ها
+  static Future<List<dynamic>> getLatestPosts({int perPage = 6}) async {
+    final response = await http.get(
+      Uri.parse('$apiUrl/posts?per_page=$perPage&_embed'),
+    );
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('خطا در دریافت مطالب: ${response.statusCode}');
+    }
+  }
+
+  // گرفتن نوشته‌های یک دسته خاص
+  static Future<List<dynamic>> getPostsByCategory(int categoryId, {int perPage = 20}) async {
+    final response = await http.get(
+      Uri.parse('$apiUrl/posts?categories=$categoryId&per_page=$perPage&_embed'),
+    );
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('خطا در دریافت مطالب دسته: ${response.statusCode}');
+    }
+  }
 }
 
 /* ==================== APP ==================== */
@@ -395,8 +452,22 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  late Future<List<dynamic>> postsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    postsFuture = WordPressApi.getLatestPosts(perPage: 6);
+  }
+
   Future<void> refresh() async {
-    await Future.delayed(const Duration(milliseconds: 500));
+    final posts = WordPressApi.getLatestPosts(perPage: 6);
+    setState(() {
+      postsFuture = posts;
+    });
+    try {
+      await posts;
+    } catch (_) {}
   }
 
   @override
@@ -426,24 +497,42 @@ class _HomePageState extends State<HomePage> {
           ),
           const SliverToBoxAdapter(child: ServicesSection()),
 
-          /* ===== مطالب پیشنهادی (جایگزین جدیدترین نوشته‌ها) ===== */
+          /* ===== جدیدترین نوشته‌ها ===== */
           const SliverToBoxAdapter(
             child: SectionTitle(
-              title: 'مطالب پیشنهادی',
+              title: 'جدیدترین نوشته‌ها',
               icon: Icons.article_outlined,
             ),
           ),
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: Column(
-                children: suggestedPosts
-                    .map((post) => _SuggestedPostCard(post: post))
-                    .toList(),
-              ),
+            child: FutureBuilder<List<dynamic>>(
+              future: postsFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const _LoadingBox();
+                }
+                if (snapshot.hasError) {
+                  return ErrorBox(
+                    message: 'دریافت مطالب با مشکل مواجه شد.\n${snapshot.error}',
+                    onRetry: refresh,
+                  );
+                }
+                final posts = snapshot.data ?? [];
+                if (posts.isEmpty) {
+                  return const _EmptyBox(text: 'مطلبی پیدا نشد.');
+                }
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  child: Column(
+                    children: posts
+                        .map((post) => PostCard(post: post))
+                        .toList(),
+                  ),
+                );
+              },
             ),
           ),
-          /* =================================================== */
+          /* ============================== */
 
           const SliverToBoxAdapter(
             child: SectionTitle(title: 'دسته‌بندی مطالب', icon: Icons.grid_view_rounded),
@@ -475,53 +564,27 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-/* ==================== SUGGESTED POST CARD ==================== */
+/* ==================== LOADING / EMPTY ==================== */
 
-class _SuggestedPostCard extends StatelessWidget {
-  final SuggestedPost post;
-  const _SuggestedPostCard({required this.post});
-
+class _LoadingBox extends StatelessWidget {
+  const _LoadingBox();
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => openWebView(context, post.url, title: post.title),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: panelColor,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withOpacity(0.06)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: goldColor.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(post.icon, color: goldColor, size: 22),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                post.title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: textColor,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  height: 1.5,
-                ),
-              ),
-            ),
-            const Icon(Icons.arrow_back_ios, color: mutedColor, size: 16),
-          ],
-        ),
-      ),
+    return const Padding(
+      padding: EdgeInsets.all(35),
+      child: Center(child: CircularProgressIndicator(color: goldColor)),
+    );
+  }
+}
+
+class _EmptyBox extends StatelessWidget {
+  final String text;
+  const _EmptyBox({required this.text});
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(30),
+      child: Center(child: Text(text, style: const TextStyle(color: mutedColor))),
     );
   }
 }
@@ -700,6 +763,94 @@ class SectionTitle extends StatelessWidget {
   }
 }
 
+/* ==================== POST CARD ==================== */
+
+class PostCard extends StatelessWidget {
+  final dynamic post;
+  const PostCard({super.key, required this.post});
+
+  @override
+  Widget build(BuildContext context) {
+    final image = postImage(post);
+    final title = postTitle(post);
+    final date = formatDate(post['date']);
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ArticleWebViewPage(
+              url: postLink(post),
+              title: title,
+            ),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        decoration: BoxDecoration(
+          color: panelColor,
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: Colors.white.withOpacity(0.06)),
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(15),
+                bottomRight: Radius.circular(15),
+              ),
+              child: SizedBox(
+                width: 125,
+                height: 110,
+                child: image.isNotEmpty
+                    ? CachedNetworkImage(
+                        imageUrl: image,
+                        fit: BoxFit.cover,
+                        placeholder: (_, __) => const Center(
+                          child: SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: goldColor),
+                          ),
+                        ),
+                        errorWidget: (_, __, ___) => const Icon(Icons.image_not_supported_outlined, color: mutedColor, size: 35),
+                      )
+                    : Container(
+                        color: panelColor2,
+                        child: const Icon(Icons.article_outlined, color: goldColor, size: 40),
+                      ),
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(13),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.right,
+                      style: const TextStyle(color: textColor, fontSize: 14, fontWeight: FontWeight.bold, height: 1.7),
+                    ),
+                    if (date.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(date, style: const TextStyle(color: mutedColor, fontSize: 11)),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /* ==================== HOME CATEGORY CARD ==================== */
 
 class _HomeCategoryCard extends StatelessWidget {
@@ -709,7 +860,14 @@ class _HomeCategoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => openWebView(context, category.url, title: category.name),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CategoryPostsPage(category: category),
+          ),
+        );
+      },
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -846,172 +1004,4 @@ class CategoriesPage extends StatelessWidget {
   }
 }
 
-/* ==================== CATEGORY TILE ==================== */
-
-class CategoryTile extends StatelessWidget {
-  final CategoryItem category;
-  const CategoryTile({super.key, required this.category});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => openWebView(context, category.url, title: category.name),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 11),
-        padding: const EdgeInsets.all(15),
-        decoration: BoxDecoration(
-          color: panelColor,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withOpacity(0.06)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: goldColor.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(category.icon, color: goldColor, size: 22),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                category.name,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: textColor, fontSize: 14, fontWeight: FontWeight.bold, height: 1.4),
-              ),
-            ),
-            const Icon(Icons.arrow_back_ios, color: mutedColor, size: 16),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/* ==================== NEWS PAGE ==================== */
-
-class NewsPage extends StatelessWidget {
-  const NewsPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('اخبار و رویدادها'),
-        backgroundColor: backgroundColor,
-      ),
-      body: const Center(
-        child: Text(
-          'صفحه اخبار به زودی...',
-          style: TextStyle(color: textColor, fontSize: 16),
-        ),
-      ),
-    );
-  }
-}
-
-/* ==================== ACCOUNT PAGE ==================== */
-
-class AccountPage extends StatelessWidget {
-  const AccountPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('حساب من'),
-        backgroundColor: backgroundColor,
-      ),
-      body: const Center(
-        child: Text(
-          'صفحه حساب کاربری به زودی...',
-          style: TextStyle(color: textColor, fontSize: 16),
-        ),
-      ),
-    );
-  }
-}
-
-/* ==================== SEARCH PAGE ==================== */
-
-class SearchPage extends StatelessWidget {
-  const SearchPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('جستجو'),
-        backgroundColor: backgroundColor,
-      ),
-      body: const Center(
-        child: Text(
-          'صفحه جستجو به زودی...',
-          style: TextStyle(color: textColor, fontSize: 16),
-        ),
-      ),
-    );
-  }
-}
-
-/* ==================== ARTICLE WEBVIEW PAGE ==================== */
-
-class ArticleWebViewPage extends StatefulWidget {
-  final String url;
-  final String? title;
-
-  const ArticleWebViewPage({
-    super.key,
-    required this.url,
-    this.title,
-  });
-
-  @override
-  State<ArticleWebViewPage> createState() => _ArticleWebViewPageState();
-}
-
-class _ArticleWebViewPageState extends State<ArticleWebViewPage> {
-  late final WebViewController controller;
-  bool isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onPageStarted: (_) {
-            setState(() => isLoading = true);
-          },
-          onPageFinished: (_) {
-            setState(() => isLoading = false);
-          },
-        ),
-      )
-      ..loadRequest(Uri.parse(widget.url));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title ?? 'مشاهده مطلب'),
-        backgroundColor: backgroundColor,
-      ),
-      body: Stack(
-        children: [
-          WebViewWidget(controller: controller),
-          if (isLoading)
-            const Center(
-              child: CircularProgressIndicator(color: goldColor),
-            ),
-        ],
-      ),
-    );
-  }
-}
+/* ==================== CATEGORY TILE =
