@@ -5,14 +5,12 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 /* ==================== CONSTANTS ==================== */
 
 const String siteUrl = 'https://itarbiatbadani.ir';
-const String apiUrl = '$siteUrl/wp-json/wp/v2';
 const String logoAsset = 'assets/images/logo.png';
 const String logoNetwork =
     '$siteUrl/wp-content/uploads/2025/07/1000073463.png';
@@ -128,6 +126,58 @@ const List<CategoryItem> staticCategories = [
   ),
 ];
 
+/* ==================== STATIC SUGGESTED POSTS ==================== */
+
+class SuggestedPost {
+  final String title;
+  final String url;
+  final IconData icon;
+
+  const SuggestedPost({
+    required this.title,
+    required this.url,
+    required this.icon,
+  });
+}
+
+const List<SuggestedPost> suggestedPosts = [
+  SuggestedPost(
+    title: 'معرفی رشته تربیت بدنی و علوم ورزشی',
+    url: '$siteUrl/introduction-to-the-field-of-physical-education-and-sports-sciences/',
+    icon: Icons.info_outline,
+  ),
+  SuggestedPost(
+    title: 'گرایش‌های کارشناسی ارشد',
+    url: '$siteUrl/%da%af%d8%b1%d8%a7%db%8c%d8%b4%d9%87%d8%a7%db%8c-%da%a9%d8%a7%d8%b1%d8%b4%d9%86%d8%a7%d8%b3%db%8c-%d8%a7%d8%b1%d8%b4%d8%af-%d8%aa%d8%b1%d8%a8%db%8c%d8%aa-%d8%a8%d8%af%d9%86%db%8c-%d9%88/',
+    icon: Icons.school_outlined,
+  ),
+  SuggestedPost(
+    title: 'منابع آزمون دکتری علوم ورزشی',
+    url: '$siteUrl/sports-science-phd-exam-resources/',
+    icon: Icons.library_books_outlined,
+  ),
+  SuggestedPost(
+    title: 'منابع کارشناسی ارشد',
+    url: '$siteUrl/master-of-sports-science-resources/',
+    icon: Icons.menu_book_outlined,
+  ),
+  SuggestedPost(
+    title: 'منابع کنکور دکتری تربیت بدنی',
+    url: '$siteUrl/manabe-konkur-doctori-tarbiat-badani/',
+    icon: Icons.book_outlined,
+  ),
+  SuggestedPost(
+    title: 'دانشگاه‌های برتر علوم ورزشی',
+    url: '$siteUrl/physical-education-sports-science/',
+    icon: Icons.account_balance,
+  ),
+  SuggestedPost(
+    title: 'بازار کار تربیت بدنی',
+    url: '$siteUrl/job-market-in-physical-education-and-sports-sciences/',
+    icon: Icons.work_outline,
+  ),
+];
+
 /* ==================== HELPERS ==================== */
 
 Future<void> openUrl(String url) async {
@@ -138,116 +188,14 @@ Future<void> openUrl(String url) async {
   }
 }
 
-void openPost(BuildContext context, String url) {
+void openWebView(BuildContext context, String url, {String? title}) {
   if (url.isEmpty) return;
   Navigator.push(
     context,
-    MaterialPageRoute(builder: (_) => ArticleWebViewPage(url: url)),
+    MaterialPageRoute(
+      builder: (_) => ArticleWebViewPage(url: url, title: title),
+    ),
   );
-}
-
-String cleanHtml(String value) {
-  return value
-      .replaceAll(RegExp(r'<[^>]*>'), '')
-      .replaceAll('&nbsp;', ' ')
-      .replaceAll('&amp;', '&')
-      .replaceAll('&quot;', '"')
-      .replaceAll('&#8217;', '’')
-      .replaceAll('&#8216;', '‘')
-      .replaceAll('&#8220;', '“')
-      .replaceAll('&#8221;', '”')
-      .replaceAll('&#8230;', '…')
-      .trim();
-}
-
-String postTitle(dynamic post) {
-  try {
-    return cleanHtml(post['title']['rendered'] ?? 'بدون عنوان');
-  } catch (_) {
-    return 'بدون عنوان';
-  }
-}
-
-String postLink(dynamic post) {
-  try {
-    return post['link'] ?? '';
-  } catch (_) {
-    return '';
-  }
-}
-
-String postImage(dynamic post) {
-  try {
-    final media = post['_embedded']?['wp:featuredmedia'];
-    if (media is List && media.isNotEmpty) {
-      return media[0]['source_url'] ?? '';
-    }
-  } catch (_) {}
-  return '';
-}
-
-String formatDate(String? iso) {
-  if (iso == null || iso.isEmpty) return '';
-  try {
-    final dt = DateTime.parse(iso).toLocal();
-    const months = [
-      'فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور',
-      'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند',
-    ];
-    final j = _gregorianToJalali(dt.year, dt.month, dt.day);
-    return '${j[2]} ${months[j[1] - 1]} ${j[0]}';
-  } catch (_) {
-    return '';
-  }
-}
-
-List<int> _gregorianToJalali(int gy, int gm, int gd) {
-  const gdm = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-  const jdm = [31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29];
-
-  var gy2 = (gm > 2) ? (gy + 1) : gy;
-  var days = 355666 + (365 * gy) + ((gy2 + 3) ~/ 4) - ((gy2 + 99) ~/ 100) + ((gy2 + 399) ~/ 400) + gd;
-
-  for (var i = 0; i < gm - 1; i++) {
-    days += gdm[i];
-  }
-
-  var jy = -1595 + (33 * (days ~/ 12053));
-  days %= 12053;
-  jy += 4 * (days ~/ 1461);
-  days %= 1461;
-
-  if (days > 365) {
-    jy += (days - 1) ~/ 365;
-    days = (days - 1) % 365;
-  }
-
-  var jm = 0;
-  var jd = days + 1;
-  for (var i = 0; i < 12; i++) {
-    if (jd <= jdm[i]) {
-      jm = i + 1;
-      break;
-    }
-    jd -= jdm[i];
-  }
-
-  return [jy, jm, jd];
-}
-
-/* ==================== API ==================== */
-
-class WordPressApi {
-  static Future<List<dynamic>> getPosts({int perPage = 10}) async {
-    final response = await http.get(
-      Uri.parse('$apiUrl/posts?per_page=$perPage&_embed'),
-    );
-    if (response.statusCode == 200) {
-      return json.decode(response.body);
-    } else {
-      throw Exception('Failed to load posts: ${response.statusCode}');
-    }
-  }
 }
 
 /* ==================== APP ==================== */
@@ -447,22 +395,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late Future<List<dynamic>> postsFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    postsFuture = WordPressApi.getPosts(perPage: 6);
-  }
-
   Future<void> refresh() async {
-    final posts = WordPressApi.getPosts(perPage: 6);
-    setState(() {
-      postsFuture = posts;
-    });
-    try {
-      await posts;
-    } catch (_) {}
+    await Future.delayed(const Duration(milliseconds: 500));
   }
 
   @override
@@ -491,31 +425,26 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           const SliverToBoxAdapter(child: ServicesSection()),
+
+          /* ===== مطالب پیشنهادی (جایگزین جدیدترین نوشته‌ها) ===== */
           const SliverToBoxAdapter(
-            child: SectionTitle(title: 'جدیدترین نوشته‌ها', icon: Icons.article_outlined),
-          ),
-          SliverToBoxAdapter(
-            child: FutureBuilder<List<dynamic>>(
-              future: postsFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const _LoadingBox();
-                }
-                if (snapshot.hasError) {
-                  return ErrorBox(
-                    message: 'دریافت مطالب با مشکل مواجه شد.\n${snapshot.error}',
-                    onRetry: refresh,
-                  );
-                }
-                final posts = snapshot.data ?? [];
-                if (posts.isEmpty) return const _EmptyBox(text: 'مطلبی پیدا نشد.');
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  child: Column(children: posts.map((post) => PostCard(post: post)).toList()),
-                );
-              },
+            child: SectionTitle(
+              title: 'مطالب پیشنهادی',
+              icon: Icons.article_outlined,
             ),
           ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              child: Column(
+                children: suggestedPosts
+                    .map((post) => _SuggestedPostCard(post: post))
+                    .toList(),
+              ),
+            ),
+          ),
+          /* =================================================== */
+
           const SliverToBoxAdapter(
             child: SectionTitle(title: 'دسته‌بندی مطالب', icon: Icons.grid_view_rounded),
           ),
@@ -546,27 +475,53 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-/* ==================== LOADING / EMPTY ==================== */
+/* ==================== SUGGESTED POST CARD ==================== */
 
-class _LoadingBox extends StatelessWidget {
-  const _LoadingBox();
+class _SuggestedPostCard extends StatelessWidget {
+  final SuggestedPost post;
+  const _SuggestedPostCard({required this.post});
+
   @override
   Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.all(35),
-      child: Center(child: CircularProgressIndicator(color: goldColor)),
-    );
-  }
-}
-
-class _EmptyBox extends StatelessWidget {
-  final String text;
-  const _EmptyBox({required this.text});
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(30),
-      child: Center(child: Text(text, style: const TextStyle(color: mutedColor))),
+    return GestureDetector(
+      onTap: () => openWebView(context, post.url, title: post.title),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: panelColor,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.white.withOpacity(0.06)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: goldColor.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(post.icon, color: goldColor, size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                post.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: textColor,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  height: 1.5,
+                ),
+              ),
+            ),
+            const Icon(Icons.arrow_back_ios, color: mutedColor, size: 16),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -745,84 +700,6 @@ class SectionTitle extends StatelessWidget {
   }
 }
 
-/* ==================== POST CARD ==================== */
-
-class PostCard extends StatelessWidget {
-  final dynamic post;
-  const PostCard({super.key, required this.post});
-
-  @override
-  Widget build(BuildContext context) {
-    final image = postImage(post);
-    final title = postTitle(post);
-    final date = formatDate(post['date']);
-
-    return GestureDetector(
-      onTap: () => openPost(context, postLink(post)),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 14),
-        decoration: BoxDecoration(
-          color: panelColor,
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: Colors.white.withOpacity(0.06)),
-        ),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topRight: Radius.circular(15),
-                bottomRight: Radius.circular(15),
-              ),
-              child: SizedBox(
-                width: 125,
-                height: 110,
-                child: image.isNotEmpty
-                    ? CachedNetworkImage(
-                        imageUrl: image,
-                        fit: BoxFit.cover,
-                        placeholder: (_, __) => const Center(
-                          child: SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: goldColor),
-                          ),
-                        ),
-                        errorWidget: (_, __, ___) => const Icon(Icons.image_not_supported_outlined, color: mutedColor, size: 35),
-                      )
-                    : Container(
-                        color: panelColor2,
-                        child: const Icon(Icons.article_outlined, color: goldColor, size: 40),
-                      ),
-              ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(13),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.right,
-                      style: const TextStyle(color: textColor, fontSize: 14, fontWeight: FontWeight.bold, height: 1.7),
-                    ),
-                    if (date.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Text(date, style: const TextStyle(color: mutedColor, fontSize: 11)),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 /* ==================== HOME CATEGORY CARD ==================== */
 
 class _HomeCategoryCard extends StatelessWidget {
@@ -832,14 +709,7 @@ class _HomeCategoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ArticleWebViewPage(url: category.url),
-          ),
-        );
-      },
+      onTap: () => openWebView(context, category.url, title: category.name),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -985,14 +855,7 @@ class CategoryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ArticleWebViewPage(url: category.url),
-          ),
-        );
-      },
+      onTap: () => openWebView(context, category.url, title: category.name),
       child: Container(
         margin: const EdgeInsets.only(bottom: 11),
         padding: const EdgeInsets.all(15),
@@ -1095,53 +958,16 @@ class SearchPage extends StatelessWidget {
   }
 }
 
-/* ==================== ERROR BOX ==================== */
-
-class ErrorBox extends StatelessWidget {
-  final String message;
-  final VoidCallback? onRetry;
-
-  const ErrorBox({
-    super.key,
-    required this.message,
-    this.onRetry,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.error_outline, color: Colors.red, size: 40),
-          const SizedBox(height: 10),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white70),
-          ),
-          if (onRetry != null) ...[
-            const SizedBox(height: 15),
-            ElevatedButton(
-              onPressed: onRetry,
-              child: const Text('تلاش مجدد'),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
 /* ==================== ARTICLE WEBVIEW PAGE ==================== */
 
 class ArticleWebViewPage extends StatefulWidget {
   final String url;
+  final String? title;
 
   const ArticleWebViewPage({
     super.key,
     required this.url,
+    this.title,
   });
 
   @override
@@ -1174,7 +1000,7 @@ class _ArticleWebViewPageState extends State<ArticleWebViewPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('مشاهده مطلب'),
+        title: Text(widget.title ?? 'مشاهده مطلب'),
         backgroundColor: backgroundColor,
       ),
       body: Stack(
