@@ -71,11 +71,8 @@ String pImg(dynamic p) {
   return '';
 }
 
-Future<List> getPosts({int perPage = 6, int? cat}) async {
-  final u = cat == null
-      ? '$api/posts?per_page=$perPage&_embed'
-      : '$api/posts?categories=$cat&per_page=$perPage&_embed';
-  final r = await http.get(Uri.parse(u));
+Future<List> getPosts({int perPage = 6}) async {
+  final r = await http.get(Uri.parse('$api/posts?per_page=$perPage&_embed'));
   if (r.statusCode == 200) return json.decode(r.body);
   throw Exception('خطای ${r.statusCode}');
 }
@@ -94,8 +91,15 @@ class App extends StatelessWidget {
       theme: ThemeData(
         brightness: Brightness.dark,
         scaffoldBackgroundColor: bgC,
-        colorScheme: ColorScheme.fromSeed(seedColor: gold, brightness: Brightness.dark),
-        appBarTheme: const AppBarTheme(backgroundColor: bgC, foregroundColor: txtC, elevation: 0),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: gold,
+          brightness: Brightness.dark,
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: bgC,
+          foregroundColor: txtC,
+          elevation: 0,
+        ),
         textTheme: GoogleFonts.vazirmatnTextTheme(),
       ),
       builder: (c, ch) => Directionality(
@@ -115,30 +119,68 @@ class Root extends StatefulWidget {
 
 class _RootState extends State<Root> {
   int _i = 0;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(
         index: _i,
-        children: const [Home(), CatsPage(), NewsPage(), SizedBox(), AccountPage()],
-      ),
-      bottomNavigationBar: NavigationBar(
-        height: 68,
-        backgroundColor: const Color(0xff081925),
-        indicatorColor: gold.withOpacity(0.18),
-        selectedIndex: _i,
-        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-        onDestinationSelected: (i) {
-          if (i == 3) { openUrl('$site/shop/'); return; }
-          setState(() => _i = i);
-        },
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.home_outlined, color: mutC), selectedIcon: Icon(Icons.home, color: gold), label: 'خانه'),
-          NavigationDestination(icon: Icon(Icons.category_outlined, color: mutC), selectedIcon: Icon(Icons.category, color: gold), label: 'دسته‌ها'),
-          NavigationDestination(icon: Icon(Icons.newspaper_outlined, color: mutC), selectedIcon: Icon(Icons.newspaper, color: gold), label: 'اخبار'),
-          NavigationDestination(icon: Icon(Icons.shopping_cart_outlined, color: mutC), selectedIcon: Icon(Icons.shopping_cart, color: gold), label: 'فروشگاه'),
-          NavigationDestination(icon: Icon(Icons.person_outline, color: mutC), selectedIcon: Icon(Icons.person, color: gold), label: 'حساب من'),
+        children: const [
+          Home(),
+          CatsPage(),
+          NewsPage(),
+          SizedBox(),
+          AccountPage(),
         ],
+      ),
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          color: Color(0xff081925),
+          border: Border(top: BorderSide(color: Color(0x22ffffff))),
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _i,
+          onTap: (i) {
+            if (i == 3) {
+              openUrl('$site/shop/');
+              return;
+            }
+            setState(() => _i = i);
+          },
+          backgroundColor: const Color(0xff081925),
+          selectedItemColor: gold,
+          unselectedItemColor: mutC,
+          type: BottomNavigationBarType.fixed,
+          elevation: 0,
+          showUnselectedLabels: true,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home),
+              label: 'خانه',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.category_outlined),
+              activeIcon: Icon(Icons.category),
+              label: 'دسته‌ها',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.newspaper_outlined),
+              activeIcon: Icon(Icons.newspaper),
+              label: 'اخبار',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.shopping_cart_outlined),
+              activeIcon: Icon(Icons.shopping_cart),
+              label: 'فروشگاه',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_outline),
+              activeIcon: Icon(Icons.person),
+              label: 'حساب من',
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -153,7 +195,10 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   Future<List>? _f;
   @override
-  void initState() { super.initState(); _f = getPosts(perPage: 6); }
+  void initState() {
+    super.initState();
+    _f = getPosts(perPage: 6);
+  }
   Future<void> _refresh() async {
     setState(() => _f = getPosts(perPage: 6));
     try { await _f; } catch (_) {}
@@ -170,23 +215,36 @@ class _HomeState extends State<Home> {
           SliverToBoxAdapter(child: _header(context)),
           SliverToBoxAdapter(child: _hero()),
           SliverToBoxAdapter(child: _services()),
-          const SliverToBoxAdapter(child: _SectionTitle('جدیدترین نوشته‌ها', Icons.article_outlined)),
+          const SliverToBoxAdapter(
+            child: _SectionTitle('جدیدترین نوشته‌ها', Icons.article_outlined),
+          ),
           SliverToBoxAdapter(
             child: FutureBuilder<List>(
               future: _f,
               builder: (c, s) {
-                if (s.connectionState == ConnectionState.waiting) return const _Loading();
-                if (s.hasError) return _ErrorBox('دریافت مطالب با مشکل مواجه شد.\n${s.error}', _refresh);
+                if (s.connectionState == ConnectionState.waiting) {
+                  return const _Loading();
+                }
+                if (s.hasError) {
+                  return _ErrorBox(
+                    'دریافت مطالب با مشکل مواجه شد.\n${s.error}',
+                    _refresh,
+                  );
+                }
                 final posts = s.data ?? [];
                 if (posts.isEmpty) return const _Empty('مطلبی پیدا نشد.');
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 14),
-                  child: Column(children: posts.map((p) => _post(context, p)).toList()),
+                  child: Column(
+                    children: posts.map((p) => _post(context, p)).toList(),
+                  ),
                 );
               },
             ),
           ),
-          const SliverToBoxAdapter(child: _SectionTitle('دسته‌بندی مطالب', Icons.grid_view_rounded)),
+          const SliverToBoxAdapter(
+            child: _SectionTitle('دسته‌بندی مطالب', Icons.grid_view_rounded),
+          ),
           SliverToBoxAdapter(child: _catGrid()),
           SliverToBoxAdapter(child: _social()),
           const SliverToBoxAdapter(child: SizedBox(height: 25)),
@@ -248,7 +306,10 @@ class AccountPage extends StatelessWidget {
         AppBar(title: const Text('حساب من'), backgroundColor: bgC),
         const Expanded(
           child: Center(
-            child: Text('صفحه حساب کاربری به زودی...', style: TextStyle(color: txtC)),
+            child: Text(
+              'صفحه حساب کاربری به زودی...',
+              style: TextStyle(color: txtC),
+            ),
           ),
         ),
       ],
@@ -295,16 +356,50 @@ Widget _header(BuildContext context, [String t = 'تربیت بدنی و علو�
     bottom: false,
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: const BoxDecoration(color: bgC, border: Border(bottom: BorderSide(color: Color(0x17ffffff)))),
+      decoration: const BoxDecoration(
+        color: bgC,
+        border: Border(bottom: BorderSide(color: Color(0x17ffffff))),
+      ),
       child: Row(children: [
         Container(
-          width: 46, height: 46,
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(23), border: Border.all(color: gold.withOpacity(0.4), width: 1.5)),
-          child: ClipOval(child: Image.asset(logo, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Image.network(logoNet, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.sports, color: gold)))),
+          width: 46,
+          height: 46,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(23),
+            border: Border.all(color: gold.withOpacity(0.4), width: 1.5),
+          ),
+          child: ClipOval(
+            child: Image.asset(
+              logo,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Image.network(
+                logoNet,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const Icon(Icons.sports, color: gold),
+              ),
+            ),
+          ),
         ),
         const SizedBox(width: 10),
-        Expanded(child: Text(t, textAlign: TextAlign.right, style: const TextStyle(color: txtC, fontSize: 14, fontWeight: FontWeight.bold))),
-        IconButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SearchPage())), icon: const Icon(Icons.search, color: gold, size: 27)),
+        Expanded(
+          child: Text(
+            t,
+            textAlign: TextAlign.right,
+            style: const TextStyle(
+              color: txtC,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        IconButton(
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const SearchPage()),
+          ),
+          icon: const Icon(Icons.search, color: gold, size: 27),
+        ),
       ]),
     ),
   );
@@ -315,25 +410,74 @@ Widget _hero() {
     margin: const EdgeInsets.fromLTRB(14, 18, 14, 10),
     padding: const EdgeInsets.all(22),
     decoration: BoxDecoration(
-      gradient: const LinearGradient(begin: Alignment.topRight, end: Alignment.bottomLeft, colors: [Color(0xff0a3d62), Color(0xff102a3e)]),
+      gradient: const LinearGradient(
+        begin: Alignment.topRight,
+        end: Alignment.bottomLeft,
+        colors: [Color(0xff0a3d62), Color(0xff102a3e)],
+      ),
       borderRadius: BorderRadius.circular(18),
       border: Border.all(color: gold.withOpacity(0.15)),
     ),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [
-        Container(
-          width: 60, height: 60,
-          decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: gold.withOpacity(0.5), width: 2)),
-          child: ClipOval(child: Image.asset(logo, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.sports_soccer, color: gold, size: 30))),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              border: Border.all(color: gold.withOpacity(0.5), width: 2),
+            ),
+            child: ClipOval(
+              child: Image.asset(
+                logo,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const Icon(
+                  Icons.sports_soccer,
+                  color: gold,
+                  size: 30,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              'تربیت بدنی و علوم ورزشی',
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                color: gold,
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ]),
+        const SizedBox(height: 16),
+        const Text(
+          'اپلیکیشن رسمی مرجع ورزش',
+          textAlign: TextAlign.right,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            height: 1.6,
+          ),
         ),
-        const SizedBox(width: 12),
-        const Expanded(child: Text('تربیت بدنی و علوم ورزشی', textAlign: TextAlign.right, style: TextStyle(color: gold, fontSize: 17, fontWeight: FontWeight.bold))),
-      ]),
-      const SizedBox(height: 16),
-      const Text('اپلیکیشن رسمی مرجع ورزش', textAlign: TextAlign.right, style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, height: 1.6)),
-      const SizedBox(height: 10),
-      const Text('دسترسی سریع به جدیدترین اخبار، منابع علمی، طرح درس، پاورپوینت‌های آموزشی و مطالب تخصصی.', textAlign: TextAlign.right, style: TextStyle(color: Color(0xffc5d4df), fontSize: 13, height: 1.9)),
-    ]),
+        const SizedBox(height: 10),
+        const Text(
+          'دسترسی سریع به جدیدترین اخبار، منابع علمی، طرح درس، پاورپوینت‌های آموزشی و مطالب تخصصی.',
+          textAlign: TextAlign.right,
+          style: TextStyle(
+            color: Color(0xffc5d4df),
+            fontSize: 13,
+            height: 1.9,
+          ),
+        ),
+      ],
+    ),
   );
 }
 
@@ -363,12 +507,30 @@ Widget _services() {
           child: Container(
             width: 112,
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: pnl, borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.white.withOpacity(0.06))),
-            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Icon(items[i][1] as IconData, color: gold, size: 30),
-              const SizedBox(height: 8),
-              Text(items[i][0] as String, maxLines: 2, textAlign: TextAlign.center, overflow: TextOverflow.ellipsis, style: const TextStyle(color: txtC, fontSize: 12, fontWeight: FontWeight.bold, height: 1.5)),
-            ]),
+            decoration: BoxDecoration(
+              color: pnl,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.white.withOpacity(0.06)),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(items[i][1] as IconData, color: gold, size: 30),
+                const SizedBox(height: 8),
+                Text(
+                  items[i][0] as String,
+                  maxLines: 2,
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: txtC,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -382,25 +544,56 @@ Widget _post(BuildContext context, dynamic p) {
   return GestureDetector(
     onTap: () => Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => ArticlePage(url: pLink(p), title: pTitle(p))),
+      MaterialPageRoute(
+        builder: (_) => ArticlePage(url: pLink(p), title: pTitle(p)),
+      ),
     ),
     child: Container(
       margin: const EdgeInsets.only(bottom: 14),
-      decoration: BoxDecoration(color: pnl, borderRadius: BorderRadius.circular(15), border: Border.all(color: Colors.white.withOpacity(0.06))),
+      decoration: BoxDecoration(
+        color: pnl,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.white.withOpacity(0.06)),
+      ),
       child: Row(children: [
         ClipRRect(
-          borderRadius: const BorderRadius.only(topRight: Radius.circular(15), bottomRight: Radius.circular(15)),
+          borderRadius: const BorderRadius.only(
+            topRight: Radius.circular(15),
+            bottomRight: Radius.circular(15),
+          ),
           child: SizedBox(
-            width: 125, height: 110,
+            width: 125,
+            height: 110,
             child: i.isNotEmpty
-                ? CachedNetworkImage(imageUrl: i, fit: BoxFit.cover, errorWidget: (_, __, ___) => Container(color: pnl2, child: const Icon(Icons.article_outlined, color: gold, size: 40)))
-                : Container(color: pnl2, child: const Icon(Icons.article_outlined, color: gold, size: 40)),
+                ? CachedNetworkImage(
+                    imageUrl: i,
+                    fit: BoxFit.cover,
+                    errorWidget: (_, __, ___) => Container(
+                      color: pnl2,
+                      child: const Icon(Icons.article_outlined, color: gold, size: 40),
+                    ),
+                  )
+                : Container(
+                    color: pnl2,
+                    child: const Icon(Icons.article_outlined, color: gold, size: 40),
+                  ),
           ),
         ),
         Expanded(
           child: Padding(
             padding: const EdgeInsets.all(13),
-            child: Text(pTitle(p), maxLines: 3, overflow: TextOverflow.ellipsis, textAlign: TextAlign.right, style: const TextStyle(color: txtC, fontSize: 14, fontWeight: FontWeight.bold, height: 1.7)),
+            child: Text(
+              pTitle(p),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                color: txtC,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                height: 1.7,
+              ),
+            ),
           ),
         ),
       ]),
@@ -415,17 +608,55 @@ Widget _catGrid() {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: cats.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 1.15),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+        childAspectRatio: 1.15,
+      ),
       itemBuilder: (c, i) => GestureDetector(
-        onTap: () => Navigator.push(c, MaterialPageRoute(builder: (_) => CatPostsPage(c: cats[i]))),
+        onTap: () => Navigator.push(
+          c,
+          MaterialPageRoute(builder: (_) => CatPostsPage(c: cats[i])),
+        ),
         child: Container(
           padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(color: pnl, borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.white.withOpacity(0.06))),
-          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Container(width: 46, height: 46, decoration: BoxDecoration(color: gold.withOpacity(0.12), borderRadius: BorderRadius.circular(12)), child: Icon(cats[i].i, color: gold, size: 24)),
-            const SizedBox(height: 10),
-            Expanded(child: Center(child: Text(cats[i].n, maxLines: 2, textAlign: TextAlign.center, overflow: TextOverflow.ellipsis, style: const TextStyle(color: txtC, fontSize: 12, fontWeight: FontWeight.bold, height: 1.5)))),
-          ]),
+          decoration: BoxDecoration(
+            color: pnl,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.white.withOpacity(0.06)),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: gold.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(cats[i].i, color: gold, size: 24),
+              ),
+              const SizedBox(height: 10),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    cats[i].n,
+                    maxLines: 2,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: txtC,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     ),
@@ -433,20 +664,49 @@ Widget _catGrid() {
 }
 
 Widget _catTile(Cat c) {
-  return Builder(builder: (ctx) => GestureDetector(
-    onTap: () => Navigator.push(ctx, MaterialPageRoute(builder: (_) => CatPostsPage(c: c))),
-    child: Container(
-      margin: const EdgeInsets.only(bottom: 11),
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(color: pnl, borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.white.withOpacity(0.06))),
-      child: Row(children: [
-        Container(width: 42, height: 42, decoration: BoxDecoration(color: gold.withOpacity(0.12), borderRadius: BorderRadius.circular(10)), child: Icon(c.i, color: gold, size: 22)),
-        const SizedBox(width: 12),
-        Expanded(child: Text(c.n, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: txtC, fontSize: 14, fontWeight: FontWeight.bold, height: 1.4))),
-        const Icon(Icons.arrow_back_ios, color: mutC, size: 16),
-      ]),
+  return Builder(
+    builder: (ctx) => GestureDetector(
+      onTap: () => Navigator.push(
+        ctx,
+        MaterialPageRoute(builder: (_) => CatPostsPage(c: c)),
+      ),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 11),
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: pnl,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.white.withOpacity(0.06)),
+        ),
+        child: Row(children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: gold.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(c.i, color: gold, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              c.n,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: txtC,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                height: 1.4,
+              ),
+            ),
+          ),
+          const Icon(Icons.arrow_back_ios, color: mutC, size: 16),
+        ]),
+      ),
     ),
-  ));
+  );
 }
 
 Widget _social() {
@@ -464,16 +724,35 @@ Widget _social() {
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         itemCount: items.length,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 3.2),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          childAspectRatio: 3.2,
+        ),
         itemBuilder: (c, i) => GestureDetector(
           onTap: () => openUrl(items[i][2] as String),
           child: Container(
-            decoration: BoxDecoration(color: pnl, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white.withOpacity(0.06))),
-            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Icon(items[i][1] as IconData, color: gold, size: 18),
-              const SizedBox(width: 8),
-              Text(items[i][0] as String, style: const TextStyle(color: txtC, fontWeight: FontWeight.bold, fontSize: 13)),
-            ]),
+            decoration: BoxDecoration(
+              color: pnl,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withOpacity(0.06)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(items[i][1] as IconData, color: gold, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  items[i][0] as String,
+                  style: const TextStyle(
+                    color: txtC,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -537,12 +816,23 @@ class _SearchPageState extends State<SearchPage> {
               hintStyle: const TextStyle(color: mutC),
               filled: true,
               fillColor: pnl,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
               suffixIcon: IconButton(
                 icon: const Icon(Icons.search, color: gold),
                 onPressed: () {
                   if (_ctrl.text.trim().isEmpty) return;
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => ArticlePage(url: '$site/?s=${Uri.encodeComponent(_ctrl.text)}', title: 'نتایج جستجو')));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ArticlePage(
+                        url: '$site/?s=${Uri.encodeComponent(_ctrl.text)}',
+                        title: 'نتایج جستجو',
+                      ),
+                    ),
+                  );
                 },
               ),
             ),
@@ -562,11 +852,28 @@ class _SectionTitle extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 18, 14, 12),
       child: Row(children: [
-        Container(width: 4, height: 25, decoration: BoxDecoration(color: gold, borderRadius: BorderRadius.circular(5))),
+        Container(
+          width: 4,
+          height: 25,
+          decoration: BoxDecoration(
+            color: gold,
+            borderRadius: BorderRadius.circular(5),
+          ),
+        ),
         const SizedBox(width: 9),
         Icon(i, color: gold, size: 22),
         const SizedBox(width: 8),
-        Expanded(child: Text(t, textAlign: TextAlign.right, style: const TextStyle(color: txtC, fontSize: 18, fontWeight: FontWeight.bold))),
+        Expanded(
+          child: Text(
+            t,
+            textAlign: TextAlign.right,
+            style: const TextStyle(
+              color: txtC,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
       ]),
     );
   }
@@ -575,14 +882,22 @@ class _SectionTitle extends StatelessWidget {
 class _Loading extends StatelessWidget {
   const _Loading();
   @override
-  Widget build(BuildContext context) => const Padding(padding: EdgeInsets.all(35), child: Center(child: CircularProgressIndicator(color: gold)));
+  Widget build(BuildContext context) => const Padding(
+        padding: EdgeInsets.all(35),
+        child: Center(child: CircularProgressIndicator(color: gold)),
+      );
 }
 
 class _Empty extends StatelessWidget {
   final String t;
   const _Empty(this.t);
   @override
-  Widget build(BuildContext context) => Padding(padding: const EdgeInsets.all(30), child: Center(child: Text(t, style: const TextStyle(color: mutC))));
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.all(30),
+        child: Center(
+          child: Text(t, style: const TextStyle(color: mutC)),
+        ),
+      );
 }
 
 class _ErrorBox extends StatelessWidget {
@@ -593,15 +908,22 @@ class _ErrorBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(20),
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        const Icon(Icons.error_outline, color: Colors.red, size: 40),
-        const SizedBox(height: 10),
-        Text(m, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70)),
-        if (r != null) ...[
-          const SizedBox(height: 15),
-          ElevatedButton(onPressed: r, child: const Text('تلاش مجدد')),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, color: Colors.red, size: 40),
+          const SizedBox(height: 10),
+          Text(
+            m,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white70),
+          ),
+          if (r != null) ...[
+            const SizedBox(height: 15),
+            ElevatedButton(onPressed: r, child: const Text('تلاش مجدد')),
+          ],
         ],
-      ]),
+      ),
     );
   }
 }
