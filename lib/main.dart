@@ -451,9 +451,9 @@ Widget _catTile(Cat c) {
 
 Widget _social() {
   final items = [
-    ['تلگرام', Icons.telegram, 'https://t.me/itarbiatbadani'],
-    ['اینستاگرام', Icons.instagram, 'https://instagram.com/itarbiatbadani'],
-    ['بله', Icons.comment, 'https://ble.ir/itarbiatbadani'],
+    ['تلگرام', Icons.send, 'https://t.me/itarbiatbadani'],
+    ['اینستاگرام', Icons.camera_alt_outlined, 'https://instagram.com/itarbiatbadani'],
+    ['بله', Icons.chat_outlined, 'https://ble.ir/itarbiatbadani'],
     ['فروشگاه', Icons.shopping_cart, '$site/shop/'],
   ];
   return Column(children: [
