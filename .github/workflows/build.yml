@@ -15,10 +15,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: '17'
@@ -29,6 +29,16 @@ jobs:
           flutter-version: '3.24.5'
           channel: stable
           cache: true
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
 
       - name: Verify project files
         run: |
@@ -43,20 +53,6 @@ jobs:
           echo ""
           echo "📄 pubspec.yaml head:"
           head -30 pubspec.yaml
-
-      - name: Create Android scaffold in temp directory
-        run: |
-          mkdir -p /tmp/scaffold
-          cd /tmp/scaffold
-          flutter create \
-            --platforms=android \
-            --project-name itarbiatbadani \
-            --org ir \
-            --no-pub \
-            app
-          cp -r /tmp/scaffold/app/android $GITHUB_WORKSPACE/android
-          echo "✅ android/ created"
-          ls -la $GITHUB_WORKSPACE/android/
 
       - name: Configure Android app label
         run: |
