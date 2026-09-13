@@ -15,10 +15,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Setup Java 17
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
@@ -30,37 +30,18 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
-      - name: Verify project files
+      # ========== ساخت پوشه android به صورت خودکار ==========
+      - name: Create android folder
         run: |
-          echo "📁 Root:"
-          ls -la
-          echo ""
-          echo "📁 lib/:"
-          ls -la lib/
-          echo ""
-          echo "📁 assets/images/:"
-          ls -la assets/images/
-          echo ""
-          echo "📄 pubspec.yaml head:"
-          head -30 pubspec.yaml
+          flutter create --platforms=android --project-name itarbiatbadani --org ir .
+          echo "✅ android folder created"
+          ls -la android/
+      # =====================================================
 
-      - name: Configure Android app label
+      - name: Configure app label
         run: |
           sed -i 's/android:label="[^"]*"/android:label="تربیت بدنی و علوم ورزشی"/' \
             android/app/src/main/AndroidManifest.xml
-          if grep -q "minSdkVersion flutter.minSdkVersion" android/app/build.gradle; then
-            sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/' android/app/build.gradle
-          fi
           echo "✅ Android configured"
 
       - name: Get Flutter dependencies
