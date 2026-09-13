@@ -1,81 +1,90 @@
-name: itarbiatbadani_app
-description: اپلیکیشن تربیت بدنی و علوم ورزشی
-publish_to: "none"
+name: Build Android APK
 
-version: 1.0.0+1
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
 
-environment:
-  sdk: ">=3.0.0 <4.0.0"
+permissions:
+  contents: read
 
-dependencies:
-  flutter:
-    sdk: flutter
+jobs:
+  build:
+    runs-on: ubuntu-latest
 
-  cupertino_icons: ^1.0.8
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  # نمایش تصاویر سایت
-  cached_network_image: ^3.4.1
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
 
-  # ارتباط با وردپرس و دریافت مطالب
-  http: ^1.2.2
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.5'
+          channel: stable
+          cache: true
 
-  # باز کردن لینک‌ها
-  url_launcher: ^6.3.1
+      # ========== ساخت پوشه android ==========
+      - name: Create android folder
+        run: |
+          flutter create --platforms=android --project-name itarbiatbadani --org ir .
+          echo "✅ android folder created"
 
-  # نمایش مقالات داخل خود برنامه
-  webview_flutter: ^4.10.0
+      # ========== پاک کردن کش Flutter و pubspec.lock ==========
+      - name: Clean Flutter cache
+        run: |
+          flutter clean
+          rm -f pubspec.lock
+          rm -rf ~/.pub-cache/hosted/pub.dev/font_awesome_flutter-*
+          echo "✅ Cleaned cache and pubspec.lock"
 
-  # آیکون‌های حرفه‌ای (نسخه سازگار با Flutter 3.24.5)
-  font_awesome_flutter: ^10.6.0   # ← تغییر مهم
+      # ========== تنظیم نام برنامه ==========
+      - name: Configure app label
+        run: |
+          sed -i 's/android:label="[^"]*"/android:label="تربیت بدنی و علوم ورزشی"/' \
+            android/app/src/main/AndroidManifest.xml
 
-  # مدیریت راست‌چین و فونت
-  google_fonts: ^6.2.1
+      # ========== دریافت وابستگی‌های جدید ==========
+      - name: Get Flutter dependencies
+        run: flutter pub get
 
+      # ========== بررسی نسخه نصب‌شده font_awesome_flutter ==========
+      - name: Check font_awesome_flutter version
+        run: |
+          echo "📦 Installed font_awesome_flutter version:"
+          grep -A 2 "font_awesome_flutter" pubspec.lock || echo "Not found in pubspec.lock"
 
-dev_dependencies:
-  flutter_test:
-    sdk: flutter
+      - name: Generate launcher icons
+        continue-on-error: true
+        run: dart run flutter_launcher_icons
 
-  flutter_lints: ^5.0.0
+      - name: Generate native splash
+        continue-on-error: true
+        run: dart run flutter_native_splash:create
 
-  # ساخت خودکار آیکون اپ
-  flutter_launcher_icons: ^0.14.1
+      - name: Build Release APK
+        run: flutter build apk --release --no-tree-shake-icons
 
-  # ساخت خودکار صفحه اسپلش
-  flutter_native_splash: ^2.4.3
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: itarbiatbadani-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
 
-
-flutter:
-
-  uses-material-design: true
-
-  assets:
-    - assets/images/
-
-
-# ==================== آیکون لانچر اپ ====================
-flutter_launcher_icons:
-  android: true
-  ios: false
-  image_path: "assets/images/logo.png"
-  adaptive_icon_background: "#07131f"
-  adaptive_icon_foreground: "assets/images/logo.png"
-  min_sdk_android: 21
-
-
-# ==================== صفحه اسپلش ====================
-flutter_native_splash:
-  color: "#07131f"
-  image: assets/images/logo.png
-  color_dark: "#07131f"
-  image_dark: assets/images/logo.png
-  android_12:
-    color: "#07131f"
-    image: assets/images/logo.png
-    icon_background_color: "#07131f"
-    color_dark: "#07131f"
-    image_dark: assets/images/logo.png
-    icon_background_color_dark: "#07131f"
-  android: true
-  ios: false
-  fullscreen: true
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: |
+            pubspec.lock
+            android/app/build.gradle
+            android/build.gradle
+            android/app/src/main/AndroidManifest.xml
