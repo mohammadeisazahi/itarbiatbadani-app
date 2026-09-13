@@ -17,22 +17,84 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.24.5'
           channel: stable
+          cache: true
 
-      - name: Create Android project
-        run: flutter create --platforms=android .
+      - name: Verify project files
+        run: |
+          echo "📁 Root:"
+          ls -la
+          echo ""
+          echo "📁 lib/:"
+          ls -la lib/
+          echo ""
+          echo "📁 assets/images/:"
+          ls -la assets/images/
+          echo ""
+          echo "📄 pubspec.yaml head:"
+          head -30 pubspec.yaml
 
-      - name: Get dependencies
+      - name: Create Android scaffold in temp directory
+        run: |
+          mkdir -p /tmp/scaffold
+          cd /tmp/scaffold
+          flutter create \
+            --platforms=android \
+            --project-name itarbiatbadani \
+            --org ir \
+            --no-pub \
+            app
+          cp -r /tmp/scaffold/app/android $GITHUB_WORKSPACE/android
+          echo "✅ android/ created"
+          ls -la $GITHUB_WORKSPACE/android/
+
+      - name: Configure Android app label
+        run: |
+          sed -i 's/android:label="[^"]*"/android:label="تربیت بدنی و علوم ورزشی"/' \
+            android/app/src/main/AndroidManifest.xml
+          if grep -q "minSdkVersion flutter.minSdkVersion" android/app/build.gradle; then
+            sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/' android/app/build.gradle
+          fi
+          echo "✅ Android configured"
+
+      - name: Get Flutter dependencies
         run: flutter pub get
 
-      - name: Build Android APK
-        run: flutter build apk --release
+      - name: Generate launcher icons
+        continue-on-error: true
+        run: dart run flutter_launcher_icons
+
+      - name: Generate native splash
+        continue-on-error: true
+        run: dart run flutter_native_splash:create
+
+      - name: Build Release APK
+        run: flutter build apk --release --no-tree-shake-icons
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: itarbiatbadani-app
+          name: itarbiatbadani-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: |
+            pubspec.lock
+            android/app/build.gradle
+            android/build.gradle
+            android/app/src/main/AndroidManifest.xml
