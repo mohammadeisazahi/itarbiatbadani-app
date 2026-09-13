@@ -30,34 +30,48 @@ jobs:
           channel: stable
           cache: true
 
-      # ========== ساخت پوشه android ==========
       - name: Create android folder
         run: |
           flutter create --platforms=android --project-name itarbiatbadani --org ir --no-pub .
           echo "✅ android folder created"
 
-      # ========== پاکسازی کامل کش Pub ==========
-      - name: Clean Pub cache completely
+      - name: Clean Flutter cache
         run: |
           flutter clean
           rm -f pubspec.lock
-          rm -rf ~/.pub-cache/hosted/pub.dev/font_awesome_flutter-*
-          flutter pub cache repair
-          echo "✅ Pub cache cleaned completely"
+          echo "✅ Cleaned cache"
 
-      # ========== تنظیم نام برنامه ==========
-      - name: Configure app label
+      - name: Add INTERNET permission
         run: |
-          sed -i 's/android:label="[^"]*"/android:label="تربیت بدنی و علوم ورزشی"/' \
-            android/app/src/main/AndroidManifest.xml
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          
+          # تغییر نام برنامه
+          sed -i 's/android:label="[^"]*"/android:label="تربیت بدنی و علوم ورزشی"/' $MANIFEST
+          
+          # اضافه کردن دسترسی اینترنت (با Python برای اطمینان)
+          python3 -c "
+          import re
+          path = '$MANIFEST'
+          with open(path, 'r', encoding='utf-8') as f:
+              content = f.read()
+          if 'android.permission.INTERNET' not in content:
+              content = content.replace(
+                  '<application',
+                  '<uses-permission android:name=\"android.permission.INTERNET\" />\n    <application',
+                  1
+              )
+              with open(path, 'w', encoding='utf-8') as f:
+                  f.write(content)
+              print('✅ INTERNET permission added')
+          else:
+              print('✅ INTERNET permission already exists')
+          "
+          
+          echo '📄 محتوای AndroidManifest.xml:'
+          cat $MANIFEST
 
-      # ========== نصب صریح font_awesome_flutter نسخه 10.6.0 ==========
-      - name: Force install font_awesome_flutter 10.6.0
-        run: |
-          flutter pub add font_awesome_flutter:10.6.0
-          flutter pub get
-          echo "📦 Installed version:"
-          grep -A 2 "font_awesome_flutter" pubspec.lock
+      - name: Get Flutter dependencies
+        run: flutter pub get
 
       - name: Generate launcher icons
         continue-on-error: true
@@ -85,5 +99,4 @@ jobs:
           path: |
             pubspec.lock
             android/app/build.gradle
-            android/build.gradle
             android/app/src/main/AndroidManifest.xml
