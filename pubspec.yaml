@@ -25,8 +25,8 @@ dependencies:
   # نمایش مقالات داخل خود برنامه
   webview_flutter: ^4.10.0
 
-  # آیکون‌های حرفه‌ای
-  font_awesome_flutter: ^10.8.0
+  # آیکون‌های حرفه‌ای (نسخه سازگار با Flutter 3.24.5)
+  font_awesome_flutter: ^10.6.0   # ← تغییر مهم
 
   # مدیریت راست‌چین و فونت
   google_fonts: ^6.2.1
