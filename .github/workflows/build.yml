@@ -30,20 +30,28 @@ jobs:
           channel: stable
           cache: true
 
-      # ========== ساخت پوشه android به صورت خودکار ==========
+      # ========== ساخت پوشه android ==========
       - name: Create android folder
         run: |
           flutter create --platforms=android --project-name itarbiatbadani --org ir .
           echo "✅ android folder created"
           ls -la android/
-      # =====================================================
 
+      # ========== پاک کردن وابستگی‌های قدیمی ==========
+      - name: Clean old dependencies
+        run: |
+          rm -f pubspec.lock
+          flutter clean
+          echo "✅ Cleaned old dependencies"
+
+      # ========== تنظیم نام برنامه ==========
       - name: Configure app label
         run: |
           sed -i 's/android:label="[^"]*"/android:label="تربیت بدنی و علوم ورزشی"/' \
             android/app/src/main/AndroidManifest.xml
           echo "✅ Android configured"
 
+      # ========== دریافت وابستگی‌های جدید ==========
       - name: Get Flutter dependencies
         run: flutter pub get
 
