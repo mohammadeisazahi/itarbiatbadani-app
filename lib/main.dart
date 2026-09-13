@@ -495,8 +495,6 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           const SliverToBoxAdapter(child: ServicesSection()),
-
-          /* ===== جدیدترین نوشته‌ها ===== */
           const SliverToBoxAdapter(
             child: SectionTitle(
               title: 'جدیدترین نوشته‌ها',
@@ -531,8 +529,6 @@ class _HomePageState extends State<HomePage> {
               },
             ),
           ),
-          /* ============================== */
-
           const SliverToBoxAdapter(
             child: SectionTitle(title: 'دسته‌بندی مطالب', icon: Icons.grid_view_rounded),
           ),
@@ -1063,3 +1059,11 @@ class CategoryPostsPage extends StatefulWidget {
   const CategoryPostsPage({super.key, required this.category});
 
   @override
+  State<CategoryPostsPage> createState() => _CategoryPostsPageState();
+}
+
+class _CategoryPostsPageState extends State<CategoryPostsPage> {
+  late Future<List<dynamic>> postsFuture;
+
+  @override
+  void initState
