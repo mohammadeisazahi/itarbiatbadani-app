@@ -1,90 +1,56 @@
-name: Build Android APK
+name: itarbiatbadani_app
+description: اپلیکیشن تربیت بدنی و علوم ورزشی
+publish_to: "none"
 
-on:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
+version: 1.0.0+1
 
-permissions:
-  contents: read
+environment:
+  sdk: ">=3.0.0 <4.0.0"
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
+dependencies:
+  flutter:
+    sdk: flutter
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+  cupertino_icons: ^1.0.8
+  cached_network_image: ^3.4.1
+  http: ^1.2.2
+  url_launcher: ^6.3.1
+  webview_flutter: ^4.10.0
+  font_awesome_flutter: ^10.6.0
+  google_fonts: ^6.2.1
 
-      - name: Setup Java 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '17'
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.1
+  flutter_native_splash: ^2.4.3
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.24.5'
-          channel: stable
-          cache: true
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
 
-      # ========== ساخت پوشه android ==========
-      - name: Create android folder
-        run: |
-          flutter create --platforms=android --project-name itarbiatbadani --org ir .
-          echo "✅ android folder created"
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/images/logo.png"
+  adaptive_icon_background: "#07131f"
+  adaptive_icon_foreground: "assets/images/logo.png"
+  min_sdk_android: 21
 
-      # ========== پاک کردن کش Flutter و pubspec.lock ==========
-      - name: Clean Flutter cache
-        run: |
-          flutter clean
-          rm -f pubspec.lock
-          rm -rf ~/.pub-cache/hosted/pub.dev/font_awesome_flutter-*
-          echo "✅ Cleaned cache and pubspec.lock"
-
-      # ========== تنظیم نام برنامه ==========
-      - name: Configure app label
-        run: |
-          sed -i 's/android:label="[^"]*"/android:label="تربیت بدنی و علوم ورزشی"/' \
-            android/app/src/main/AndroidManifest.xml
-
-      # ========== دریافت وابستگی‌های جدید ==========
-      - name: Get Flutter dependencies
-        run: flutter pub get
-
-      # ========== بررسی نسخه نصب‌شده font_awesome_flutter ==========
-      - name: Check font_awesome_flutter version
-        run: |
-          echo "📦 Installed font_awesome_flutter version:"
-          grep -A 2 "font_awesome_flutter" pubspec.lock || echo "Not found in pubspec.lock"
-
-      - name: Generate launcher icons
-        continue-on-error: true
-        run: dart run flutter_launcher_icons
-
-      - name: Generate native splash
-        continue-on-error: true
-        run: dart run flutter_native_splash:create
-
-      - name: Build Release APK
-        run: flutter build apk --release --no-tree-shake-icons
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: itarbiatbadani-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
-          if-no-files-found: error
-
-      - name: Upload build logs on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-logs
-          path: |
-            pubspec.lock
-            android/app/build.gradle
-            android/build.gradle
-            android/app/src/main/AndroidManifest.xml
+flutter_native_splash:
+  color: "#07131f"
+  image: assets/images/logo.png
+  color_dark: "#07131f"
+  image_dark: assets/images/logo.png
+  android_12:
+    color: "#07131f"
+    image: assets/images/logo.png
+    icon_background_color: "#07131f"
+    color_dark: "#07131f"
+    image_dark: assets/images/logo.png
+    icon_background_color_dark: "#07131f"
+  android: true
+  ios: false
+  fullscreen: true
