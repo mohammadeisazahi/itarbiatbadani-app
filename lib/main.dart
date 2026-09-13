@@ -25,6 +25,109 @@ const Color textColor = Color(0xfff4f7fa);
 const Color mutedColor = Color(0xff9fb0bd);
 const Color lineColor = Color(0x17ffffff);
 
+/* ==================== STATIC CATEGORIES ==================== */
+
+class CategoryItem {
+  final int id;
+  final String name;
+  final String url;
+  final IconData icon;
+
+  const CategoryItem({
+    required this.id,
+    required this.name,
+    required this.url,
+    required this.icon,
+  });
+}
+
+const List<CategoryItem> staticCategories = [
+  CategoryItem(
+    id: 1,
+    name: 'رشته تربیت بدنی و علوم ورزشی',
+    url: '$siteUrl/category/physical-education-sport-sciences/',
+    icon: Icons.sports_soccer,
+  ),
+  CategoryItem(
+    id: 2,
+    name: 'علوم ورزشی',
+    url: '$siteUrl/category/sports-science/',
+    icon: Icons.science_outlined,
+  ),
+  CategoryItem(
+    id: 3,
+    name: 'منابع آزمون‌های علوم ورزشی',
+    url: '$siteUrl/category/sports-science-exam-resources/',
+    icon: Icons.menu_book_outlined,
+  ),
+  CategoryItem(
+    id: 4,
+    name: 'تغذیه ورزشی',
+    url: '$siteUrl/category/sports-nutrition/',
+    icon: Icons.restaurant_outlined,
+  ),
+  CategoryItem(
+    id: 5,
+    name: 'اخبار و رویدادها',
+    url: '$siteUrl/category/sports-news-and-events/',
+    icon: Icons.newspaper_outlined,
+  ),
+  CategoryItem(
+    id: 6,
+    name: 'ورزش همگانی، سلامت و تندرستی',
+    url: '$siteUrl/category/public-exercise-health-and-wellness/',
+    icon: Icons.favorite_outline,
+  ),
+  CategoryItem(
+    id: 7,
+    name: 'پژوهش در تربیت بدنی',
+    url: '$siteUrl/category/research-in-physical-education/',
+    icon: Icons.search_outlined,
+  ),
+  CategoryItem(
+    id: 8,
+    name: 'تربیت بدنی و آموزش',
+    url: '$siteUrl/category/physical-education-and-training/',
+    icon: Icons.school_outlined,
+  ),
+  CategoryItem(
+    id: 9,
+    name: 'معرفی منابع و کتب مرجع',
+    url: '$siteUrl/category/introduction-to-sources-and-reference-books/',
+    icon: Icons.library_books_outlined,
+  ),
+  CategoryItem(
+    id: 10,
+    name: 'اصول ورزش و فعالیت بدنی',
+    url: '$siteUrl/category/principles-of-exercise-and-physical-activity/',
+    icon: Icons.fitness_center_outlined,
+  ),
+  CategoryItem(
+    id: 11,
+    name: 'آزمون‌های استخدامی',
+    url: '$siteUrl/category/employment-tests/',
+    icon: Icons.assignment_outlined,
+  ),
+  CategoryItem(
+    id: 12,
+    name: 'معرفی رشته‌های ورزشی',
+    url: '$siteUrl/category/introduction-to-sports-disciplines/',
+    icon: Icons.sports_handball_outlined,
+  ),
+  CategoryItem(
+    id: 13,
+    name: 'ورزش برای گروه‌ها و نیازهای ویژه',
+    url: '$siteUrl/category/exercise-for-special-groups-and-needs/',
+    icon: Icons.accessibility_new_outlined,
+  ),
+  CategoryItem(
+    id: 14,
+    name: 'فناوری و نوآوری در ورزش',
+    url: '$siteUrl/category/technology-and-innovation-in-sports-sports-science/',
+    icon: Icons.memory_outlined,
+  ),
+];
+
 /* ==================== HELPERS ==================== */
 
 Future<void> openUrl(String url) async {
@@ -39,9 +142,7 @@ void openPost(BuildContext context, String url) {
   if (url.isEmpty) return;
   Navigator.push(
     context,
-    MaterialPageRoute(
-      builder: (_) => ArticleWebViewPage(url: url),
-    ),
+    MaterialPageRoute(builder: (_) => ArticleWebViewPage(url: url)),
   );
 }
 
@@ -147,17 +248,6 @@ class WordPressApi {
       throw Exception('Failed to load posts: ${response.statusCode}');
     }
   }
-
-  static Future<List<dynamic>> getCategories() async {
-    final response = await http.get(
-      Uri.parse('$apiUrl/categories?per_page=100'),
-    );
-    if (response.statusCode == 200) {
-      return json.decode(response.body);
-    } else {
-      throw Exception('Failed to load categories: ${response.statusCode}');
-    }
-  }
 }
 
 /* ==================== APP ==================== */
@@ -244,28 +334,28 @@ class _MainPageState extends State<MainPage> {
         },
         destinations: const [
           NavigationDestination(
-            icon: FaIcon(FontAwesomeIcons.house, size: 20, color: mutedColor),
-            selectedIcon: FaIcon(FontAwesomeIcons.house, size: 20, color: goldColor),
+            icon: Icon(Icons.home_outlined, size: 24, color: mutedColor),
+            selectedIcon: Icon(Icons.home, size: 24, color: goldColor),
             label: 'خانه',
           ),
           NavigationDestination(
-            icon: FaIcon(FontAwesomeIcons.layerGroup, size: 20, color: mutedColor),
-            selectedIcon: FaIcon(FontAwesomeIcons.layerGroup, size: 20, color: goldColor),
+            icon: Icon(Icons.category_outlined, size: 24, color: mutedColor),
+            selectedIcon: Icon(Icons.category, size: 24, color: goldColor),
             label: 'دسته‌ها',
           ),
           NavigationDestination(
-            icon: FaIcon(FontAwesomeIcons.newspaper, size: 20, color: mutedColor),
-            selectedIcon: FaIcon(FontAwesomeIcons.newspaper, size: 20, color: goldColor),
+            icon: Icon(Icons.newspaper_outlined, size: 24, color: mutedColor),
+            selectedIcon: Icon(Icons.newspaper, size: 24, color: goldColor),
             label: 'اخبار',
           ),
           NavigationDestination(
-            icon: FaIcon(FontAwesomeIcons.cartShopping, size: 20, color: mutedColor),
-            selectedIcon: FaIcon(FontAwesomeIcons.cartShopping, size: 20, color: goldColor),
+            icon: Icon(Icons.shopping_cart_outlined, size: 24, color: mutedColor),
+            selectedIcon: Icon(Icons.shopping_cart, size: 24, color: goldColor),
             label: 'فروشگاه',
           ),
           NavigationDestination(
-            icon: FaIcon(FontAwesomeIcons.user, size: 20, color: mutedColor),
-            selectedIcon: FaIcon(FontAwesomeIcons.user, size: 20, color: goldColor),
+            icon: Icon(Icons.person_outline, size: 24, color: mutedColor),
+            selectedIcon: Icon(Icons.person, size: 24, color: goldColor),
             label: 'حساب من',
           ),
         ],
@@ -358,26 +448,20 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late Future<List<dynamic>> postsFuture;
-  late Future<List<dynamic>> categoriesFuture;
 
   @override
   void initState() {
     super.initState();
     postsFuture = WordPressApi.getPosts(perPage: 6);
-    categoriesFuture = WordPressApi.getCategories();
   }
 
   Future<void> refresh() async {
     final posts = WordPressApi.getPosts(perPage: 6);
-    final cats = WordPressApi.getCategories();
-
     setState(() {
       postsFuture = posts;
-      categoriesFuture = cats;
     });
-
     try {
-      await Future.wait([posts, cats]);
+      await posts;
     } catch (_) {}
   }
 
@@ -436,37 +520,22 @@ class _HomePageState extends State<HomePage> {
             child: SectionTitle(title: 'دسته‌بندی مطالب', icon: Icons.grid_view_rounded),
           ),
           SliverToBoxAdapter(
-            child: FutureBuilder<List<dynamic>>(
-              future: categoriesFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const _LoadingBox();
-                }
-                if (snapshot.hasError) {
-                  return ErrorBox(
-                    message: 'دریافت دسته‌بندی‌ها انجام نشد.\n${snapshot.error}',
-                    onRetry: refresh,
-                  );
-                }
-                final categories = snapshot.data ?? [];
-                final mainCategories = categories.where((c) => c['parent'] == 0).toList();
-                if (mainCategories.isEmpty) return const _EmptyBox(text: 'دسته‌ای پیدا نشد.');
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  child: GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: mainCategories.length,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                      childAspectRatio: 1.15,
-                    ),
-                    itemBuilder: (context, index) => _HomeCategoryCard(category: mainCategories[index]),
-                  ),
-                );
-              },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              child: GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: staticCategories.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 1.15,
+                ),
+                itemBuilder: (context, index) {
+                  return _HomeCategoryCard(category: staticCategories[index]);
+                },
+              ),
             ),
           ),
           const SliverToBoxAdapter(child: SocialSection()),
@@ -757,20 +826,17 @@ class PostCard extends StatelessWidget {
 /* ==================== HOME CATEGORY CARD ==================== */
 
 class _HomeCategoryCard extends StatelessWidget {
-  final dynamic category;
+  final CategoryItem category;
   const _HomeCategoryCard({required this.category});
 
   @override
   Widget build(BuildContext context) {
-    final name = cleanHtml(category['name'] ?? '');
-    final id = category['id'];
-
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => SubCategoriesPage(categoryId: id, categoryName: name),
+            builder: (_) => ArticleWebViewPage(url: category.url),
           ),
         );
       },
@@ -791,13 +857,13 @@ class _HomeCategoryCard extends StatelessWidget {
                 color: goldColor.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.folder_outlined, color: goldColor, size: 24),
+              child: Icon(category.icon, color: goldColor, size: 24),
             ),
             const SizedBox(height: 10),
             Expanded(
               child: Center(
                 child: Text(
-                  name,
+                  category.name,
                   maxLines: 2,
                   textAlign: TextAlign.center,
                   overflow: TextOverflow.ellipsis,
@@ -874,80 +940,37 @@ class SocialSection extends StatelessWidget {
 
 /* ==================== CATEGORIES PAGE ==================== */
 
-class CategoriesPage extends StatefulWidget {
+class CategoriesPage extends StatelessWidget {
   const CategoriesPage({super.key});
-
-  @override
-  State<CategoriesPage> createState() => _CategoriesPageState();
-}
-
-class _CategoriesPageState extends State<CategoriesPage> {
-  late Future<List<dynamic>> categoriesFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    categoriesFuture = WordPressApi.getCategories();
-  }
-
-  Future<void> _refresh() async {
-    final future = WordPressApi.getCategories();
-    setState(() => categoriesFuture = future);
-    try {
-      await future;
-    } catch (_) {}
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: RefreshIndicator(
-        color: goldColor,
-        backgroundColor: panelColor,
-        onRefresh: _refresh,
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            SliverToBoxAdapter(
-              child: AppHeader(
-                title: 'دسته‌بندی مطالب',
-                onSearch: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const SearchPage()),
-                  );
-                },
+      body: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverToBoxAdapter(
+            child: AppHeader(
+              title: 'دسته‌بندی مطالب',
+              onSearch: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SearchPage()),
+                );
+              },
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                children: staticCategories
+                    .map((c) => CategoryTile(category: c))
+                    .toList(),
               ),
             ),
-            SliverToBoxAdapter(
-              child: FutureBuilder<List<dynamic>>(
-                future: categoriesFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const _LoadingBox();
-                  }
-                  if (snapshot.hasError) {
-                    return ErrorBox(
-                      message: 'دریافت دسته‌بندی‌ها انجام نشد.\n${snapshot.error}',
-                      onRetry: _refresh,
-                    );
-                  }
-                  final categories = snapshot.data ?? [];
-                  final mainCategories = categories.where((c) => c['parent'] == 0).toList();
-                  if (mainCategories.isEmpty) {
-                    return const _EmptyBox(text: 'دسته‌ای یافت نشد.');
-                  }
-                  return Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Column(
-                      children: mainCategories.map((c) => CategoryTile(category: c)).toList(),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -956,21 +979,17 @@ class _CategoriesPageState extends State<CategoriesPage> {
 /* ==================== CATEGORY TILE ==================== */
 
 class CategoryTile extends StatelessWidget {
-  final dynamic category;
+  final CategoryItem category;
   const CategoryTile({super.key, required this.category});
 
   @override
   Widget build(BuildContext context) {
-    final name = cleanHtml(category['name'] ?? '');
-    final id = category['id'];
-    final count = category['count'] ?? 0;
-
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => SubCategoriesPage(categoryId: id, categoryName: name),
+            builder: (_) => ArticleWebViewPage(url: category.url),
           ),
         );
       },
@@ -991,25 +1010,18 @@ class CategoryTile extends StatelessWidget {
                 color: goldColor.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.folder_outlined, color: goldColor, size: 22),
+              child: Icon(category.icon, color: goldColor, size: 22),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                name,
-                maxLines: 1,
+                category.name,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: textColor, fontSize: 15, fontWeight: FontWeight.bold),
+                style: const TextStyle(color: textColor, fontSize: 14, fontWeight: FontWeight.bold, height: 1.4),
               ),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: panelColor2,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text('$count', style: const TextStyle(color: mutedColor, fontSize: 11)),
-            ),
+            const Icon(Icons.arrow_back_ios, color: mutedColor, size: 16),
           ],
         ),
       ),
@@ -1024,9 +1036,16 @@ class NewsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text('صفحه اخبار', style: TextStyle(color: Colors.white)),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('اخبار و رویدادها'),
+        backgroundColor: backgroundColor,
+      ),
+      body: const Center(
+        child: Text(
+          'صفحه اخبار به زودی...',
+          style: TextStyle(color: textColor, fontSize: 16),
+        ),
       ),
     );
   }
@@ -1039,9 +1058,16 @@ class AccountPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text('حساب من', style: TextStyle(color: Colors.white)),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('حساب من'),
+        backgroundColor: backgroundColor,
+      ),
+      body: const Center(
+        child: Text(
+          'صفحه حساب کاربری به زودی...',
+          style: TextStyle(color: textColor, fontSize: 16),
+        ),
       ),
     );
   }
@@ -1054,32 +1080,16 @@ class SearchPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text('صفحه جستجو', style: TextStyle(color: Colors.white)),
-      ),
-    );
-  }
-}
-
-/* ==================== SUB CATEGORIES PAGE ==================== */
-
-class SubCategoriesPage extends StatelessWidget {
-  final int categoryId;
-  final String categoryName;
-
-  const SubCategoriesPage({
-    super.key,
-    required this.categoryId,
-    required this.categoryName,
-  });
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(categoryName)),
+      appBar: AppBar(
+        title: const Text('جستجو'),
+        backgroundColor: backgroundColor,
+      ),
       body: const Center(
-        child: Text('زیر دسته‌ها', style: TextStyle(color: Colors.white)),
+        child: Text(
+          'صفحه جستجو به زودی...',
+          style: TextStyle(color: textColor, fontSize: 16),
+        ),
       ),
     );
   }
@@ -1140,20 +1150,42 @@ class ArticleWebViewPage extends StatefulWidget {
 
 class _ArticleWebViewPageState extends State<ArticleWebViewPage> {
   late final WebViewController controller;
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
     controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageStarted: (_) {
+            setState(() => isLoading = true);
+          },
+          onPageFinished: (_) {
+            setState(() => isLoading = false);
+          },
+        ),
+      )
       ..loadRequest(Uri.parse(widget.url));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('مقاله')),
-      body: WebViewWidget(controller: controller),
+      appBar: AppBar(
+        title: const Text('مشاهده مطلب'),
+        backgroundColor: backgroundColor,
+      ),
+      body: Stack(
+        children: [
+          WebViewWidget(controller: controller),
+          if (isLoading)
+            const Center(
+              child: CircularProgressIndicator(color: goldColor),
+            ),
+        ],
+      ),
     );
   }
 }
