@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -100,7 +99,6 @@ class App extends StatelessWidget {
           foregroundColor: txtC,
           elevation: 0,
         ),
-        textTheme: GoogleFonts.vazirmatnTextTheme(),
       ),
       builder: (c, ch) => Directionality(
         textDirection: TextDirection.rtl,
@@ -278,7 +276,7 @@ class NewsPage extends StatefulWidget {
 }
 
 class _NewsPageState extends State<NewsPage> {
-  late final WebViewController _c;
+  WebViewController? _c;
   @override
   void initState() {
     super.initState();
@@ -288,10 +286,11 @@ class _NewsPageState extends State<NewsPage> {
   }
   @override
   Widget build(BuildContext context) {
+    if (_c == null) return const _Loading();
     return Column(
       children: [
         AppBar(title: const Text('اخبار و رویدادها'), backgroundColor: bgC),
-        Expanded(child: WebViewWidget(controller: _c)),
+        Expanded(child: WebViewWidget(controller: _c!)),
       ],
     );
   }
