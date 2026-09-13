@@ -5,9 +5,16 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
-import 'package:webview_flutter/webview_flutter.dart';
+
+// ایمپورت کردن فایل‌های جانبی مورد نیاز
+import 'api/wordpress_api.dart';
+import 'pages/article_webview_page.dart';
+import 'pages/search_page.dart';
+import 'pages/news_page.dart';
+import 'pages/account_page.dart';
+import 'pages/sub_categories_page.dart';
+import 'widgets/error_box.dart';
 
 /* ==================== CONSTANTS ==================== */
 
@@ -79,7 +86,6 @@ String postLink(dynamic post) {
   }
 }
 
-/// تصویر شاخص (بدون نیاز به _embed)
 String postImage(dynamic post) {
   try {
     final media = post['_embedded']?['wp:featuredmedia'];
@@ -90,7 +96,6 @@ String postImage(dynamic post) {
   return '';
 }
 
-/// تاریخ شمسی ساده
 String formatDate(String? iso) {
   if (iso == null || iso.isEmpty) return '';
   try {
@@ -217,7 +222,7 @@ class _MainPageState extends State<MainPage> {
       bottomNavigationBar: NavigationBar(
         height: 68,
         backgroundColor: const Color(0xff081925),
-        indicatorColor: goldColor.withValues(alpha: .18),
+        indicatorColor: goldColor.withOpacity(0.18), // اصلاح شد
         selectedIndex: currentIndex,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         onDestinationSelected: (index) {
@@ -299,7 +304,7 @@ class AppHeader extends StatelessWidget {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(23),
                 border: Border.all(
-                  color: goldColor.withValues(alpha: .4),
+                  color: goldColor.withOpacity(0.4), // اصلاح شد
                   width: 1.5,
                 ),
               ),
@@ -566,7 +571,7 @@ class _HeroSection extends StatelessWidget {
           colors: [Color(0xff0a3d62), Color(0xff102a3e)],
         ),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: goldColor.withValues(alpha: .15)),
+        border: Border.all(color: goldColor.withOpacity(0.15)), // اصلاح شد
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -580,7 +585,7 @@ class _HeroSection extends StatelessWidget {
                   color: Colors.white,
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: goldColor.withValues(alpha: .5),
+                    color: goldColor.withOpacity(0.5), // اصلاح شد
                     width: 2,
                   ),
                 ),
@@ -729,7 +734,7 @@ class ServicesSection extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: panelColor,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.white.withValues(alpha: .06)),
+                    border: Border.all(color: Colors.white.withOpacity(0.06)), // اصلاح شد
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -827,7 +832,7 @@ class PostCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: panelColor,
           borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: Colors.white.withValues(alpha: .06)),
+          border: Border.all(color: Colors.white.withOpacity(0.06)), // اصلاح شد
         ),
         child: Row(
           children: [
@@ -937,7 +942,7 @@ class _HomeCategoryCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: panelColor,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withValues(alpha: .06)),
+          border: Border.all(color: Colors.white.withOpacity(0.06)), // اصلاح شد
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -946,7 +951,7 @@ class _HomeCategoryCard extends StatelessWidget {
               width: 46,
               height: 46,
               decoration: BoxDecoration(
-                color: goldColor.withValues(alpha: .12),
+                color: goldColor.withOpacity(0.12), // اصلاح شد
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(
@@ -1037,7 +1042,7 @@ class SocialSection extends StatelessWidget {
                     color: panelColor,
                     borderRadius: BorderRadius.circular(12),
                     border:
-                        Border.all(color: Colors.white.withValues(alpha: .06)),
+                        Border.all(color: Colors.white.withOpacity(0.06)), // اصلاح شد
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -1153,7 +1158,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
   }
 }
 
-/* ==================== CATEGORY TILE ==================== */
+/* ==================== CATEGORY TILE (تکمیل شده) ==================== */
 
 class CategoryTile extends StatelessWidget {
   final dynamic category;
@@ -1181,11 +1186,4 @@ class CategoryTile extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 11),
         padding: const EdgeInsets.all(15),
-        decoration: BoxDecoration(
-          color: panelColor,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withValues(alpha: .06)),
-        ),
-        child: Row(
-          children: [
-           
+        decoration: Box
