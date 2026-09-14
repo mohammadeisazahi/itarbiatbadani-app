@@ -77,29 +77,53 @@ String pImg(dynamic p) {
   return '';
 }
 
+/* ==================== تاریخ شمسی روز/ماه/سال ==================== */
 String pDate(dynamic p) {
   try {
     final d = DateTime.parse(p['date']).toLocal();
-    return '${d.year}/${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}';
+    final j = _toJalali(d.year, d.month, d.day);
+    final day = j[2].toString().padLeft(2, '0');
+    final month = j[1].toString().padLeft(2, '0');
+    final year = j[0].toString();
+    return '$day/$month/$year';
   } catch (_) { return ''; }
 }
 
-Future<List> getPosts({int perPage = 10, int? catId, String? search}) async {
+List<int> _toJalali(int gy, int gm, int gd) {
+  const gdm = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  const jdm = [31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29];
+  var gy2 = (gm > 2) ? (gy + 1) : gy;
+  var days = 355666 + (365 * gy) + ((gy2 + 3) ~/ 4) - ((gy2 + 99) ~/ 100) + ((gy2 + 399) ~/ 400) + gd;
+  for (var i = 0; i < gm - 1; i++) { days += gdm[i]; }
+  var jy = -1595 + (33 * (days ~/ 12053));
+  days %= 12053;
+  jy += 4 * (days ~/ 1461);
+  days %= 1461;
+  if (days > 365) { jy += (days - 1) ~/ 365; days = (days - 1) % 365; }
+  var jm = 0;
+  var jd = days + 1;
+  for (var i = 0; i < 12; i++) {
+    if (jd <= jdm[i]) { jm = i + 1; break; }
+    jd -= jdm[i];
+  }
+  return [jy, jm, jd];
+}
+
+/* ==================== API ==================== */
+Future<List> getPosts({int perPage = 6, int? catId}) async {
   var u = '$api/posts?per_page=$perPage&_embed';
   if (catId != null) u += '&categories=$catId';
-  if (search != null && search.isNotEmpty) u += '&search=${Uri.encodeComponent(search)}';
   final r = await http.get(Uri.parse(u));
   if (r.statusCode == 200) return json.decode(r.body);
   throw Exception('خطای ${r.statusCode}');
 }
 
-Future<List> getAllPosts({int? catId, String? search}) async {
+Future<List> getAllPosts({int? catId}) async {
   final all = <dynamic>[];
   int page = 1;
   while (true) {
-    var u = '$api/posts?per_page=100&page=$page&_embed';
+    var u = '$api/posts?per_page=50&page=$page&_embed';
     if (catId != null) u += '&categories=$catId';
-    if (search != null && search.isNotEmpty) u += '&search=${Uri.encodeComponent(search)}';
     final r = await http.get(Uri.parse(u));
     if (r.statusCode != 200) {
       if (page == 1) throw Exception('خطای ${r.statusCode}');
@@ -108,11 +132,27 @@ Future<List> getAllPosts({int? catId, String? search}) async {
     final list = json.decode(r.body) as List;
     if (list.isEmpty) break;
     all.addAll(list);
-    if (list.length < 100) break;
+    if (list.length < 50) break;
     page++;
-    if (page > 20) break;
+    if (page > 10) break;
   }
   return all;
+}
+
+Future<List> searchExact(String query) async {
+  final r = await http.get(
+    Uri.parse('$api/posts?search=${Uri.encodeComponent(query)}&per_page=50&_embed'),
+  );
+  if (r.statusCode != 200) throw Exception('خطای ${r.statusCode}');
+  final list = json.decode(r.body) as List;
+  final words = query.toLowerCase().trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+  return list.where((p) {
+    final title = clean((p['title']?['rendered'] ?? '')).toLowerCase();
+    final excerpt = clean((p['excerpt']?['rendered'] ?? '')).toLowerCase();
+    final content = clean((p['content']?['rendered'] ?? '')).toLowerCase();
+    final all = '$title $excerpt $content';
+    return words.every((w) => all.contains(w));
+  }).toList();
 }
 
 Future<int?> getCatIdBySlug(String slug) async {
@@ -130,7 +170,7 @@ Future<List> getAllProducts() async {
   final all = <dynamic>[];
   int page = 1;
   while (true) {
-    final url = '$site/wp-json/wc/v3/products?per_page=100&page=$page&consumer_key=$wcKey&consumer_secret=$wcSecret';
+    final url = '$site/wp-json/wc/v3/products?per_page=50&page=$page&consumer_key=$wcKey&consumer_secret=$wcSecret';
     final r = await http.get(Uri.parse(url));
     if (r.statusCode != 200) {
       if (page == 1) throw Exception('خطای ${r.statusCode}');
@@ -139,9 +179,9 @@ Future<List> getAllProducts() async {
     final list = json.decode(r.body) as List;
     if (list.isEmpty) break;
     all.addAll(list);
-    if (list.length < 100) break;
+    if (list.length < 50) break;
     page++;
-    if (page > 20) break;
+    if (page > 10) break;
   }
   return all;
 }
@@ -517,7 +557,7 @@ class _SearchPageState extends State<SearchPage> {
     if (q.isEmpty) return;
     setState(() {
       _q = q;
-      _f = getAllPosts(search: q);
+      _f = searchExact(q);
     });
   }
 
@@ -884,7 +924,8 @@ Widget _post(BuildContext context, dynamic p) {
                   ? CachedNetworkImage(
                       imageUrl: i,
                       fit: BoxFit.cover,
-                      fadeInDuration: const Duration(milliseconds: 200),
+                      fadeInDuration: const Duration(milliseconds: 150),
+                      memCacheWidth: 250,
                       placeholder: (_, __) => Container(
                         color: pnl2,
                         child: const Center(
@@ -944,7 +985,12 @@ Widget _product(BuildContext context, dynamic p) {
   final isOnSale = salePrice.isNotEmpty && salePrice != regularPrice;
 
   return GestureDetector(
-    onTap: () => openUrl(link),
+    onTap: () => Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => WebPage(url: link, title: name),
+      ),
+    ),
     child: Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
@@ -965,7 +1011,8 @@ Widget _product(BuildContext context, dynamic p) {
                   ? CachedNetworkImage(
                       imageUrl: img,
                       fit: BoxFit.cover,
-                      fadeInDuration: const Duration(milliseconds: 200),
+                      fadeInDuration: const Duration(milliseconds: 150),
+                      memCacheWidth: 250,
                       placeholder: (_, __) => Container(
                         color: pnl2,
                         child: const Center(
