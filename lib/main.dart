@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 const String site = 'https://itarbiatbadani.ir';
 const String api = '$site/wp-json/wp/v2';
@@ -52,6 +53,9 @@ String clean(String v) => v
     .replaceAll('&nbsp;', ' ')
     .replaceAll('&amp;', '&')
     .replaceAll('&quot;', '"')
+    .replaceAll('&#8217;', '’')
+    .replaceAll('&#8220;', '“')
+    .replaceAll('&#8221;', '”')
     .trim();
 
 String pTitle(dynamic p) {
@@ -70,10 +74,31 @@ String pImg(dynamic p) {
   return '';
 }
 
-Future<List> getPosts() async {
-  final r = await http.get(Uri.parse('$api/posts?per_page=6&_embed'));
+String pDate(dynamic p) {
+  try {
+    final d = DateTime.parse(p['date']).toLocal();
+    return '${d.year}/${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}';
+  } catch (_) { return ''; }
+}
+
+Future<List> getPosts({int perPage = 10, int? catId, String? search}) async {
+  var u = '$api/posts?per_page=$perPage&_embed';
+  if (catId != null) u += '&categories=$catId';
+  if (search != null && search.isNotEmpty) u += '&search=${Uri.encodeComponent(search)}';
+  final r = await http.get(Uri.parse(u));
   if (r.statusCode == 200) return json.decode(r.body);
   throw Exception('خطای ${r.statusCode}');
+}
+
+Future<int?> getCatIdBySlug(String slug) async {
+  try {
+    final r = await http.get(Uri.parse('$api/categories?slug=$slug'));
+    if (r.statusCode == 200) {
+      final list = json.decode(r.body);
+      if (list is List && list.isNotEmpty) return list[0]['id'];
+    }
+  } catch (_) {}
+  return null;
 }
 
 void main() => runApp(const App());
@@ -86,6 +111,7 @@ class App extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'تربیت بدنی و علوم ورزشی',
       theme: ThemeData(
+        fontFamily: 'Vazirmatn',
         brightness: Brightness.dark,
         scaffoldBackgroundColor: bgC,
         colorScheme: ColorScheme.fromSeed(seedColor: gold, brightness: Brightness.dark),
@@ -115,7 +141,7 @@ class _RootState extends State<Root> {
         index: _i,
         children: const [
           Home(),
-          CatsPage(),
+          ArticlesPage(),
           NewsPage(),
           SizedBox(),
           AccountPage(),
@@ -124,28 +150,27 @@ class _RootState extends State<Root> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _i,
         onTap: (i) {
-          if (i == 3) {
-            openUrl('$site/shop/');
-            return;
-          }
+          if (i == 3) { openUrl('$site/shop/'); return; }
           setState(() => _i = i);
         },
         backgroundColor: const Color(0xff081925),
         selectedItemColor: gold,
         unselectedItemColor: mutC,
         type: BottomNavigationBarType.fixed,
+        showUnselectedLabels: true,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'خانه'),
-          BottomNavigationBarItem(icon: Icon(Icons.category_outlined), label: 'دسته‌ها'),
-          BottomNavigationBarItem(icon: Icon(Icons.newspaper_outlined), label: 'اخبار'),
-          BottomNavigationBarItem(icon: Icon(Icons.shopping_cart_outlined), label: 'فروشگاه'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'حساب من'),
+          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: 'خانه'),
+          BottomNavigationBarItem(icon: Icon(Icons.article_outlined), activeIcon: Icon(Icons.article), label: 'مقالات'),
+          BottomNavigationBarItem(icon: Icon(Icons.newspaper_outlined), activeIcon: Icon(Icons.newspaper), label: 'اخبار'),
+          BottomNavigationBarItem(icon: Icon(Icons.shopping_cart_outlined), activeIcon: Icon(Icons.shopping_cart), label: 'فروشگاه'),
+          BottomNavigationBarItem(icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person), label: 'حساب من'),
         ],
       ),
     );
   }
 }
 
+/* ==================== HOME ==================== */
 class Home extends StatefulWidget {
   const Home({super.key});
   @override
@@ -157,10 +182,10 @@ class _HomeState extends State<Home> {
   @override
   void initState() {
     super.initState();
-    _f = getPosts();
+    _f = getPosts(perPage: 6);
   }
   Future<void> _refresh() async {
-    setState(() => _f = getPosts());
+    setState(() => _f = getPosts(perPage: 6));
     try { await _f; } catch (_) {}
   }
   @override
@@ -182,25 +207,19 @@ class _HomeState extends State<Home> {
             child: FutureBuilder<List>(
               future: _f,
               builder: (c, s) {
-                if (s.connectionState == ConnectionState.waiting) {
-                  return const _Loading();
-                }
-                if (s.hasError) {
-                  return _ErrorBox('خطا در دریافت مطالب.\n${s.error}', _refresh);
-                }
+                if (s.connectionState == ConnectionState.waiting) return const _Loading();
+                if (s.hasError) return _ErrorBox('خطا در دریافت مطالب.\n${s.error}', _refresh);
                 final posts = s.data ?? [];
                 if (posts.isEmpty) return const _Empty('مطلبی پیدا نشد.');
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 14),
-                  child: Column(
-                    children: posts.map((p) => _post(context, p)).toList(),
-                  ),
+                  child: Column(children: posts.map((p) => _post(context, p)).toList()),
                 );
               },
             ),
           ),
           const SliverToBoxAdapter(
-            child: _SectionTitle('دسته‌بندی مطالب', Icons.grid_view_rounded),
+            child: _SectionTitle('مقالات', Icons.grid_view_rounded),
           ),
           SliverToBoxAdapter(child: _catGrid()),
           SliverToBoxAdapter(child: _social()),
@@ -211,39 +230,122 @@ class _HomeState extends State<Home> {
   }
 }
 
-class CatsPage extends StatelessWidget {
-  const CatsPage({super.key});
+/* ==================== ARTICLES PAGE (formerly CatsPage) ==================== */
+class ArticlesPage extends StatelessWidget {
+  const ArticlesPage({super.key});
   @override
   Widget build(BuildContext context) {
     return ListView(
       padding: EdgeInsets.zero,
       children: [
-        _header(context, 'دسته‌بندی مطالب'),
+        _header(context, 'مقالات'),
         Padding(
           padding: const EdgeInsets.all(14),
-          child: Column(
-            children: cats.map((c) => _catTile(context, c)).toList(),
-          ),
+          child: Column(children: cats.map((c) => _catTile(context, c)).toList()),
         ),
       ],
     );
   }
 }
 
-class NewsPage extends StatelessWidget {
+/* ==================== CATEGORY POSTS PAGE (In-App, No WebView) ==================== */
+class CategoryPostsPage extends StatefulWidget {
+  final Cat c;
+  const CategoryPostsPage({super.key, required this.c});
+  @override
+  State<CategoryPostsPage> createState() => _CategoryPostsPageState();
+}
+
+class _CategoryPostsPageState extends State<CategoryPostsPage> {
+  Future<List>? _f;
+  @override
+  void initState() {
+    super.initState();
+    _f = _load();
+  }
+  Future<List> _load() async {
+    final id = await getCatIdBySlug(widget.c.s);
+    if (id == null) throw Exception('دسته‌بندی یافت نشد');
+    return getPosts(catId: id, perPage: 20);
+  }
+  Future<void> _refresh() async {
+    setState(() => _f = _load());
+    try { await _f; } catch (_) {}
+  }
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(widget.c.n), backgroundColor: bgC),
+      body: FutureBuilder<List>(
+        future: _f,
+        builder: (c, s) {
+          if (s.connectionState == ConnectionState.waiting) return const _Loading();
+          if (s.hasError) return _ErrorBox('خطا در دریافت مطالب.\n${s.error}', _refresh);
+          final posts = s.data ?? [];
+          if (posts.isEmpty) return const _Empty('مطلبی در این دسته پیدا نشد.');
+          return RefreshIndicator(
+            color: gold,
+            backgroundColor: pnl,
+            onRefresh: _refresh,
+            child: ListView.builder(
+              padding: const EdgeInsets.all(14),
+              itemCount: posts.length,
+              itemBuilder: (c, i) => _post(context, posts[i]),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/* ==================== NEWS PAGE (In-App List) ==================== */
+class NewsPage extends StatefulWidget {
   const NewsPage({super.key});
+  @override
+  State<NewsPage> createState() => _NewsPageState();
+}
+
+class _NewsPageState extends State<NewsPage> {
+  Future<List>? _f;
+  @override
+  void initState() {
+    super.initState();
+    _f = _load();
+  }
+  Future<List> _load() async {
+    final id = await getCatIdBySlug('sports-news-and-events');
+    if (id == null) throw Exception('دسته‌بندی اخبار یافت نشد');
+    return getPosts(catId: id, perPage: 20);
+  }
+  Future<void> _refresh() async {
+    setState(() => _f = _load());
+    try { await _f; } catch (_) {}
+  }
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         AppBar(title: const Text('اخبار و رویدادها'), backgroundColor: bgC),
         Expanded(
-          child: Center(
-            child: ElevatedButton.icon(
-              onPressed: () => openUrl('$site/category/sports-news-and-events/'),
-              icon: const Icon(Icons.open_in_browser),
-              label: const Text('مشاهده اخبار در مرورگر'),
-            ),
+          child: FutureBuilder<List>(
+            future: _f,
+            builder: (c, s) {
+              if (s.connectionState == ConnectionState.waiting) return const _Loading();
+              if (s.hasError) return _ErrorBox('خطا در دریافت اخبار.\n${s.error}', _refresh);
+              final posts = s.data ?? [];
+              if (posts.isEmpty) return const _Empty('خبری پیدا نشد.');
+              return RefreshIndicator(
+                color: gold,
+                backgroundColor: pnl,
+                onRefresh: _refresh,
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(14),
+                  itemCount: posts.length,
+                  itemBuilder: (c, i) => _post(context, posts[i]),
+                ),
+              );
+            },
           ),
         ),
       ],
@@ -251,23 +353,242 @@ class NewsPage extends StatelessWidget {
   }
 }
 
+/* ==================== SEARCH PAGE (Live) ==================== */
+class SearchPage extends StatefulWidget {
+  const SearchPage({super.key});
+  @override
+  State<SearchPage> createState() => _SearchPageState();
+}
+
+class _SearchPageState extends State<SearchPage> {
+  final _ctrl = TextEditingController();
+  Future<List>? _f;
+  String _q = '';
+
+  void _doSearch() {
+    final q = _ctrl.text.trim();
+    if (q.isEmpty) return;
+    setState(() {
+      _q = q;
+      _f = getPosts(search: q, perPage: 30);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('جستجو'), backgroundColor: bgC),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: TextField(
+              controller: _ctrl,
+              textInputAction: TextInputAction.search,
+              onSubmitted: (_) => _doSearch(),
+              style: const TextStyle(color: txtC),
+              decoration: InputDecoration(
+                hintText: 'عبارت مورد نظر...',
+                hintStyle: const TextStyle(color: mutC),
+                filled: true,
+                fillColor: pnl,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.search, color: gold),
+                  onPressed: _doSearch,
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: _f == null
+                ? const _Empty('عبارتی برای جستجو وارد کنید')
+                : FutureBuilder<List>(
+                    future: _f,
+                    builder: (c, s) {
+                      if (s.connectionState == ConnectionState.waiting) return const _Loading();
+                      if (s.hasError) return _ErrorBox('خطا در جستجو.\n${s.error}', null);
+                      final posts = s.data ?? [];
+                      if (posts.isEmpty) return _Empty('نتیجه‌ای برای «$_q» پیدا نشد.');
+                      return ListView.builder(
+                        padding: const EdgeInsets.all(14),
+                        itemCount: posts.length,
+                        itemBuilder: (c, i) => _post(context, posts[i]),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/* ==================== ACCOUNT PAGE ==================== */
 class AccountPage extends StatelessWidget {
   const AccountPage({super.key});
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return ListView(
+      padding: EdgeInsets.zero,
       children: [
-        AppBar(title: const Text('حساب من'), backgroundColor: bgC),
-        const Expanded(
-          child: Center(
-            child: Text('به زودی...', style: TextStyle(color: txtC)),
+        _header(context, 'حساب من'),
+        const SizedBox(height: 30),
+        Center(
+          child: Container(
+            width: 90, height: 90,
+            decoration: BoxDecoration(
+              color: gold.withOpacity(0.12),
+              shape: BoxShape.circle,
+              border: Border.all(color: gold.withOpacity(0.4), width: 2),
+            ),
+            child: const Icon(Icons.person_outline, color: gold, size: 50),
           ),
         ),
+        const SizedBox(height: 20),
+        const Center(
+          child: Text(
+            'به اپلیکیشن خوش آمدید',
+            style: TextStyle(color: txtC, fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+        ),
+        const SizedBox(height: 8),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 30),
+          child: Text(
+            'برای دسترسی به فایل‌های خریداری‌شده و امکانات بیشتر، وارد حساب کاربری خود شوید یا ثبت‌نام کنید.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: mutC, fontSize: 13, height: 1.8),
+          ),
+        ),
+        const SizedBox(height: 30),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: Column(
+            children: [
+              _accountBtn(
+                context,
+                'ورود به حساب کاربری',
+                Icons.login,
+                '${site}/my-account/',
+              ),
+              const SizedBox(height: 12),
+              _accountBtn(
+                context,
+                'ثبت‌نام / فراموشی رمز',
+                Icons.person_add_alt_1,
+                '${site}/my-account/',
+              ),
+              const SizedBox(height: 12),
+              _accountBtn(
+                context,
+                'خریدهای من (دانلود فایل‌ها)',
+                Icons.download_outlined,
+                '${site}/my-account/downloads/',
+              ),
+              const SizedBox(height: 12),
+              _accountBtn(
+                context,
+                'سفارش‌های من',
+                Icons.receipt_long_outlined,
+                '${site}/my-account/orders/',
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 30),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20),
+          child: Text(
+            'نکته: ثبت‌نام و ورود از طریق سامانه امن فروشگاه انجام می‌شود.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: mutC, fontSize: 11, height: 1.7),
+          ),
+        ),
+        const SizedBox(height: 30),
       ],
+    );
+  }
+
+  Widget _accountBtn(BuildContext context, String label, IconData icon, String url) {
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => WebPage(url: url, title: label)),
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        decoration: BoxDecoration(
+          color: pnl,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.white.withOpacity(0.06)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 42, height: 42,
+              decoration: BoxDecoration(
+                color: gold.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: gold, size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(color: txtC, fontSize: 14, fontWeight: FontWeight.bold),
+              ),
+            ),
+            const Icon(Icons.arrow_back_ios, color: mutC, size: 16),
+          ],
+        ),
+      ),
     );
   }
 }
 
+/* ==================== WEB PAGE (only created on demand) ==================== */
+class WebPage extends StatefulWidget {
+  final String url;
+  final String title;
+  const WebPage({super.key, required this.url, required this.title});
+  @override
+  State<WebPage> createState() => _WebPageState();
+}
+
+class _WebPageState extends State<WebPage> {
+  late final WebViewController _c;
+  bool _l = true;
+  @override
+  void initState() {
+    super.initState();
+    _c = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(NavigationDelegate(
+        onPageStarted: (_) => setState(() => _l = true),
+        onPageFinished: (_) => setState(() => _l = false),
+      ))
+      ..loadRequest(Uri.parse(widget.url));
+  }
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(widget.title), backgroundColor: bgC),
+      body: Stack(
+        children: [
+          WebViewWidget(controller: _c),
+          if (_l) const Center(child: CircularProgressIndicator(color: gold)),
+        ],
+      ),
+    );
+  }
+}
+
+/* ==================== COMMON WIDGETS ==================== */
 Widget _header(BuildContext context, [String t = 'تربیت بدنی و علوم ورزشی']) {
   return SafeArea(
     bottom: false,
@@ -307,8 +628,15 @@ Widget _header(BuildContext context, [String t = 'تربیت بدنی و علو�
             ),
           ),
           IconButton(
-            onPressed: () => openUrl('$site/?s='),
-            icon: const Icon(Icons.search, color: gold, size: 27),
+            onPressed: () => openUrl('$site/shop/'),
+            icon: const Icon(Icons.shopping_cart_outlined, color: gold, size: 26),
+          ),
+          IconButton(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SearchPage()),
+            ),
+            icon: const Icon(Icons.search, color: gold, size: 26),
           ),
         ],
       ),
@@ -331,45 +659,29 @@ Widget _hero() {
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 60, height: 60,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                border: Border.all(color: gold.withOpacity(0.5), width: 2),
-              ),
-              child: ClipOval(
-                child: Image.asset(
-                  logo,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const Icon(Icons.sports_soccer, color: gold, size: 30),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Text(
-                'تربیت بدنی و علوم ورزشی',
-                textAlign: TextAlign.right,
-                style: TextStyle(color: gold, fontSize: 17, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        const Text(
-          'اپلیکیشن رسمی مرجع ورزش',
+      children: const [
+        Text(
+          'اپلیکیشن رسمی تربیت بدنی و علوم ورزشی',
           textAlign: TextAlign.right,
-          style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, height: 1.6),
+          style: TextStyle(color: gold, fontSize: 18, fontWeight: FontWeight.bold, height: 1.6),
         ),
-        const SizedBox(height: 10),
-        const Text(
-          'دسترسی سریع به جدیدترین اخبار، منابع علمی، طرح درس، پاورپوینت‌های آموزشی و مطالب تخصصی.',
+        SizedBox(height: 14),
+        Text(
+          'مرجعی کاربردی برای دانشجویان، معلمان، مربیان و علاقه‌مندان به ورزش.',
+          textAlign: TextAlign.right,
+          style: TextStyle(color: Colors.white, fontSize: 14, height: 1.8),
+        ),
+        SizedBox(height: 10),
+        Text(
+          'مطالب علمی و آموزشی، اخبار ورزشی، منابع دانشگاهی، طرح درس و محتوای تخصصی؛ همه در یک اپلیکیشن.',
           textAlign: TextAlign.right,
           style: TextStyle(color: Color(0xffc5d4df), fontSize: 13, height: 1.9),
+        ),
+        SizedBox(height: 10),
+        Text(
+          'یاد بگیرید، به‌روز بمانید و حرفه‌ای‌تر پیش بروید.',
+          textAlign: TextAlign.right,
+          style: TextStyle(color: gold, fontSize: 13, fontWeight: FontWeight.bold, height: 1.8),
         ),
       ],
     ),
@@ -433,6 +745,7 @@ Widget _services() {
 
 Widget _post(BuildContext context, dynamic p) {
   final i = pImg(p);
+  final date = pDate(p);
   return GestureDetector(
     onTap: () => openUrl(pLink(p)),
     child: Container(
@@ -469,12 +782,21 @@ Widget _post(BuildContext context, dynamic p) {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(13),
-              child: Text(
-                pTitle(p),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.right,
-                style: const TextStyle(color: txtC, fontSize: 14, fontWeight: FontWeight.bold, height: 1.7),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    pTitle(p),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.right,
+                    style: const TextStyle(color: txtC, fontSize: 14, fontWeight: FontWeight.bold, height: 1.7),
+                  ),
+                  if (date.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(date, style: const TextStyle(color: mutC, fontSize: 11)),
+                  ],
+                ],
               ),
             ),
           ),
@@ -498,7 +820,10 @@ Widget _catGrid() {
         childAspectRatio: 1.15,
       ),
       itemBuilder: (c, i) => GestureDetector(
-        onTap: () => openUrl('$site/category/${cats[i].s}/'),
+        onTap: () => Navigator.push(
+          c,
+          MaterialPageRoute(builder: (_) => CategoryPostsPage(c: cats[i])),
+        ),
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -539,7 +864,10 @@ Widget _catGrid() {
 
 Widget _catTile(BuildContext context, Cat c) {
   return GestureDetector(
-    onTap: () => openUrl('$site/category/${c.s}/'),
+    onTap: () => Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => CategoryPostsPage(c: c)),
+    ),
     child: Container(
       margin: const EdgeInsets.only(bottom: 11),
       padding: const EdgeInsets.all(15),
