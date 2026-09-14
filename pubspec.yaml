@@ -1,7 +1,6 @@
 name: itarbiatbadani_app
 description: اپلیکیشن تربیت بدنی و علوم ورزشی
 publish_to: "none"
-
 version: 1.0.0+1
 
 environment:
@@ -10,14 +9,11 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
   cupertino_icons: ^1.0.8
   cached_network_image: ^3.4.1
   http: ^1.2.2
   url_launcher: ^6.3.1
   webview_flutter: ^4.10.0
-  font_awesome_flutter: ^10.6.0
-  google_fonts: ^6.2.1
 
 dev_dependencies:
   flutter_test:
@@ -30,6 +26,12 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+  fonts:
+    - family: Vazirmatn
+      fonts:
+        - asset: assets/fonts/Vazirmatn-Regular.ttf
+        - asset: assets/fonts/Vazirmatn-Bold.ttf
+          weight: 700
 
 flutter_launcher_icons:
   android: true
@@ -48,9 +50,6 @@ flutter_native_splash:
     color: "#07131f"
     image: assets/images/logo.png
     icon_background_color: "#07131f"
-    color_dark: "#07131f"
-    image_dark: assets/images/logo.png
-    icon_background_color_dark: "#07131f"
   android: true
   ios: false
   fullscreen: true
