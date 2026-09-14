@@ -41,16 +41,21 @@ jobs:
           rm -f pubspec.lock
           echo "✅ Cleaned cache"
 
+      - name: Download Vazirmatn Fonts
+        run: |
+          mkdir -p assets/fonts
+          curl -L -o assets/fonts/Vazirmatn-Regular.ttf \
+            https://github.com/rastikerdar/vazirmatn/raw/master/fonts/ttf/Vazirmatn-Regular.ttf
+          curl -L -o assets/fonts/Vazirmatn-Bold.ttf \
+            https://github.com/rastikerdar/vazirmatn/raw/master/fonts/ttf/Vazirmatn-Bold.ttf
+          ls -la assets/fonts/
+          echo "✅ Fonts downloaded"
+
       - name: Add INTERNET permission
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
-          
-          # تغییر نام برنامه
           sed -i 's/android:label="[^"]*"/android:label="تربیت بدنی و علوم ورزشی"/' $MANIFEST
-          
-          # اضافه کردن دسترسی اینترنت (با Python برای اطمینان)
           python3 -c "
-          import re
           path = '$MANIFEST'
           with open(path, 'r', encoding='utf-8') as f:
               content = f.read()
@@ -66,8 +71,6 @@ jobs:
           else:
               print('✅ INTERNET permission already exists')
           "
-          
-          echo '📄 محتوای AndroidManifest.xml:'
           cat $MANIFEST
 
       - name: Get Flutter dependencies
