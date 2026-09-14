@@ -7,6 +7,8 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 const String site = 'https://itarbiatbadani.ir';
 const String api = '$site/wp-json/wp/v2';
+const String wcKey = 'YOUR_WC_KEY';
+const String wcSecret = 'YOUR_WC_SECRET';
 const Color gold = Color(0xfffbc531);
 const Color bgC = Color(0xff07131f);
 const Color pnl = Color(0xff0d2233);
@@ -15,7 +17,7 @@ const Color txtC = Color(0xfff4f7fa);
 const Color mutC = Color(0xff9fb0bd);
 const String logo = 'assets/images/logo.png';
 const String logoNet = '$site/wp-content/uploads/2025/07/1000073463.png';
-const String heroImg = '$site/wp-content/uploads/2025/07/1000073463.png';
+const String heroImg = '$site/wp-content/uploads/2025/08/file_00000000b12862439589872d238e031b-1.png';
 
 class Cat {
   final String n;
@@ -102,6 +104,26 @@ Future<int?> getCatIdBySlug(String slug) async {
   return null;
 }
 
+Future<List> getProducts({int perPage = 30}) async {
+  final url = '$site/wp-json/wc/v3/products?per_page=$perPage&consumer_key=$wcKey&consumer_secret=$wcSecret';
+  final r = await http.get(Uri.parse(url));
+  if (r.statusCode == 200) return json.decode(r.body);
+  throw Exception('خطای ${r.statusCode}');
+}
+
+String formatPrice(String price) {
+  if (price.isEmpty) return '';
+  final num = int.tryParse(price);
+  if (num == null) return price;
+  final s = num.toString();
+  final buffer = StringBuffer();
+  for (int i = 0; i < s.length; i++) {
+    if (i > 0 && (s.length - i) % 3 == 0) buffer.write(',');
+    buffer.write(s[i]);
+  }
+  return '$buffer تومان';
+}
+
 void main() => runApp(const App());
 
 class App extends StatelessWidget {
@@ -148,16 +170,13 @@ class _RootState extends State<Root> {
           Home(),
           ArticlesPage(),
           NewsPage(),
-          SizedBox(),
+          ShopPage(),
           AccountPage(),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _i,
-        onTap: (i) {
-          if (i == 3) { openUrl('$site/shop/'); return; }
-          setState(() => _i = i);
-        },
+        onTap: (i) => setState(() => _i = i),
         backgroundColor: const Color(0xff081925),
         selectedItemColor: gold,
         unselectedItemColor: mutC,
@@ -235,7 +254,7 @@ class _HomeState extends State<Home> {
   }
 }
 
-/* ==================== ARTICLES PAGE ==================== */
+/* ==================== ARTICLES ==================== */
 class ArticlesPage extends StatefulWidget {
   const ArticlesPage({super.key});
   @override
@@ -287,7 +306,7 @@ class _ArticlesPageState extends State<ArticlesPage> {
   }
 }
 
-/* ==================== CATEGORY POSTS PAGE ==================== */
+/* ==================== CATEGORY POSTS ==================== */
 class CategoryPostsPage extends StatefulWidget {
   final Cat c;
   const CategoryPostsPage({super.key, required this.c});
@@ -339,7 +358,7 @@ class _CategoryPostsPageState extends State<CategoryPostsPage> {
   }
 }
 
-/* ==================== NEWS PAGE ==================== */
+/* ==================== NEWS ==================== */
 class NewsPage extends StatefulWidget {
   const NewsPage({super.key});
   @override
@@ -394,7 +413,59 @@ class _NewsPageState extends State<NewsPage> {
   }
 }
 
-/* ==================== SEARCH PAGE ==================== */
+/* ==================== SHOP ==================== */
+class ShopPage extends StatefulWidget {
+  const ShopPage({super.key});
+  @override
+  State<ShopPage> createState() => _ShopPageState();
+}
+
+class _ShopPageState extends State<ShopPage> {
+  Future<List>? _f;
+  @override
+  void initState() {
+    super.initState();
+    _f = getProducts(perPage: 30);
+  }
+  Future<void> _refresh() async {
+    setState(() => _f = getProducts(perPage: 30));
+    try { await _f; } catch (_) {}
+  }
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Column(
+        children: [
+          _header(context, 'فروشگاه'),
+          Expanded(
+            child: FutureBuilder<List>(
+              future: _f,
+              builder: (c, s) {
+                if (s.connectionState == ConnectionState.waiting) return const _Loading();
+                if (s.hasError) return _ErrorBox('خطا در دریافت محصولات.\n${s.error}', _refresh);
+                final products = s.data ?? [];
+                if (products.isEmpty) return const _Empty('محصولی پیدا نشد.');
+                return RefreshIndicator(
+                  color: gold,
+                  backgroundColor: pnl,
+                  onRefresh: _refresh,
+                  child: ListView.builder(
+                    cacheExtent: 1000,
+                    padding: const EdgeInsets.all(14),
+                    itemCount: products.length,
+                    itemBuilder: (c, i) => _product(context, products[i]),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/* ==================== SEARCH ==================== */
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
   @override
@@ -486,7 +557,7 @@ class _SearchPageState extends State<SearchPage> {
   }
 }
 
-/* ==================== ACCOUNT PAGE ==================== */
+/* ==================== ACCOUNT ==================== */
 class AccountPage extends StatelessWidget {
   const AccountPage({super.key});
   @override
@@ -628,7 +699,7 @@ class _WebPageState extends State<WebPage> {
 }
 
 /* ==================== COMMON WIDGETS ==================== */
-Widget _header(BuildContext context, [String t = 'تربیت بدنی و علوم ورزشی']) {
+Widget _header(BuildContext context, [String? t]) {
   return SafeArea(
     bottom: false,
     child: Container(
@@ -661,9 +732,9 @@ Widget _header(BuildContext context, [String t = 'تربیت بدنی و علو�
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              t,
+              t ?? 'اپلیکیشن رسمی تربیت بدنی و علوم ورزشی',
               textAlign: TextAlign.right,
-              style: const TextStyle(color: txtC, fontSize: 14, fontWeight: FontWeight.bold),
+              style: const TextStyle(color: txtC, fontSize: 13, fontWeight: FontWeight.bold),
             ),
           ),
           IconButton(
@@ -687,51 +758,29 @@ Widget _hero() {
   return Container(
     margin: const EdgeInsets.fromLTRB(14, 18, 14, 10),
     decoration: BoxDecoration(
-      gradient: const LinearGradient(
-        begin: Alignment.topRight,
-        end: Alignment.bottomLeft,
-        colors: [Color(0xff0a3d62), Color(0xff102a3e)],
-      ),
+      color: pnl,
       borderRadius: BorderRadius.circular(18),
       border: Border.all(color: gold.withOpacity(0.15)),
     ),
     child: ClipRRect(
       borderRadius: BorderRadius.circular(18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-            child: Text(
-              'اپلیکیشن رسمی تربیت بدنی و علوم ورزشی',
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                color: gold,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                height: 1.6,
-              ),
-            ),
-          ),
-          Image.network(
-            heroImg,
-            fit: BoxFit.cover,
-            height: 160,
-            loadingBuilder: (c, ch, pr) {
-              if (pr == null) return ch;
-              return Container(
-                height: 160,
-                color: pnl2,
-                child: const Center(child: CircularProgressIndicator(color: gold)),
-              );
-            },
-            errorBuilder: (_, __, ___) => Container(
-              height: 160,
-              color: pnl2,
-              child: const Icon(Icons.sports_soccer, color: gold, size: 60),
-            ),
-          ),
-        ],
+      child: Image.network(
+        heroImg,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        loadingBuilder: (c, ch, pr) {
+          if (pr == null) return ch;
+          return Container(
+            height: 180,
+            color: pnl2,
+            child: const Center(child: CircularProgressIndicator(color: gold)),
+          );
+        },
+        errorBuilder: (_, __, ___) => Container(
+          height: 180,
+          color: pnl2,
+          child: const Icon(Icons.sports_soccer, color: gold, size: 60),
+        ),
       ),
     ),
   );
@@ -855,6 +904,151 @@ Widget _post(BuildContext context, dynamic p) {
                     const SizedBox(height: 6),
                     Text(date, style: const TextStyle(color: mutC, fontSize: 11)),
                   ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+Widget _product(BuildContext context, dynamic p) {
+  final img = (p['images'] as List?)?.isNotEmpty == true
+      ? (p['images'][0]['src'] ?? '')
+      : '';
+  final name = p['name'] ?? '';
+  final link = p['permalink'] ?? '';
+  final inStock = p['in_stock'] == true;
+  final regularPrice = p['regular_price'] ?? '';
+  final salePrice = p['sale_price'] ?? '';
+  final isOnSale = salePrice.isNotEmpty && salePrice != regularPrice;
+
+  return GestureDetector(
+    onTap: () => openUrl(link),
+    child: Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: pnl,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.white.withOpacity(0.06)),
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: const BorderRadius.only(
+              topRight: Radius.circular(15),
+              bottomRight: Radius.circular(15),
+            ),
+            child: SizedBox(
+              width: 125, height: 130,
+              child: img.isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: img,
+                      fit: BoxFit.cover,
+                      fadeInDuration: const Duration(milliseconds: 200),
+                      placeholder: (_, __) => Container(
+                        color: pnl2,
+                        child: const Center(
+                          child: SizedBox(
+                            width: 20, height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: gold),
+                          ),
+                        ),
+                      ),
+                      errorWidget: (_, __, ___) => Container(
+                        color: pnl2,
+                        child: const Icon(Icons.shopping_bag_outlined, color: gold, size: 40),
+                      ),
+                    )
+                  : Container(
+                      color: pnl2,
+                      child: const Icon(Icons.shopping_bag_outlined, color: gold, size: 40),
+                    ),
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(13),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.right,
+                    style: const TextStyle(color: txtC, fontSize: 14, fontWeight: FontWeight.bold, height: 1.6),
+                  ),
+                  const SizedBox(height: 8),
+                  if (isOnSale) ...[
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'تخفیف',
+                            style: TextStyle(color: Colors.red, fontSize: 10, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          formatPrice(regularPrice),
+                          style: const TextStyle(
+                            color: mutC,
+                            fontSize: 11,
+                            decoration: TextDecoration.lineThrough,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      formatPrice(salePrice),
+                      style: const TextStyle(
+                        color: gold,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ] else if (regularPrice.isNotEmpty) ...[
+                    Text(
+                      formatPrice(regularPrice),
+                      style: const TextStyle(
+                        color: gold,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ] else ...[
+                    const Text(
+                      'قیمت نامشخص',
+                      style: TextStyle(color: mutC, fontSize: 12),
+                    ),
+                  ],
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(
+                        inStock ? Icons.check_circle : Icons.cancel,
+                        color: inStock ? Colors.green : Colors.red,
+                        size: 14,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        inStock ? 'موجود' : 'ناموجود',
+                        style: TextStyle(
+                          color: inStock ? Colors.green : Colors.red,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
