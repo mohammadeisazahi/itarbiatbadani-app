@@ -93,6 +93,28 @@ Future<List> getPosts({int perPage = 10, int? catId, String? search}) async {
   throw Exception('خطای ${r.statusCode}');
 }
 
+Future<List> getAllPosts({int? catId, String? search}) async {
+  final all = <dynamic>[];
+  int page = 1;
+  while (true) {
+    var u = '$api/posts?per_page=100&page=$page&_embed';
+    if (catId != null) u += '&categories=$catId';
+    if (search != null && search.isNotEmpty) u += '&search=${Uri.encodeComponent(search)}';
+    final r = await http.get(Uri.parse(u));
+    if (r.statusCode != 200) {
+      if (page == 1) throw Exception('خطای ${r.statusCode}');
+      break;
+    }
+    final list = json.decode(r.body) as List;
+    if (list.isEmpty) break;
+    all.addAll(list);
+    if (list.length < 100) break;
+    page++;
+    if (page > 20) break;
+  }
+  return all;
+}
+
 Future<int?> getCatIdBySlug(String slug) async {
   try {
     final r = await http.get(Uri.parse('$api/categories?slug=$slug'));
@@ -104,11 +126,24 @@ Future<int?> getCatIdBySlug(String slug) async {
   return null;
 }
 
-Future<List> getProducts({int perPage = 30}) async {
-  final url = '$site/wp-json/wc/v3/products?per_page=$perPage&consumer_key=$wcKey&consumer_secret=$wcSecret';
-  final r = await http.get(Uri.parse(url));
-  if (r.statusCode == 200) return json.decode(r.body);
-  throw Exception('خطای ${r.statusCode}');
+Future<List> getAllProducts() async {
+  final all = <dynamic>[];
+  int page = 1;
+  while (true) {
+    final url = '$site/wp-json/wc/v3/products?per_page=100&page=$page&consumer_key=$wcKey&consumer_secret=$wcSecret';
+    final r = await http.get(Uri.parse(url));
+    if (r.statusCode != 200) {
+      if (page == 1) throw Exception('خطای ${r.statusCode}');
+      break;
+    }
+    final list = json.decode(r.body) as List;
+    if (list.isEmpty) break;
+    all.addAll(list);
+    if (list.length < 100) break;
+    page++;
+    if (page > 20) break;
+  }
+  return all;
 }
 
 String formatPrice(String price) {
@@ -206,10 +241,10 @@ class _HomeState extends State<Home> {
   @override
   void initState() {
     super.initState();
-    _f = getPosts(perPage: 4);
+    _f = getPosts(perPage: 6);
   }
   Future<void> _refresh() async {
-    setState(() => _f = getPosts(perPage: 4));
+    setState(() => _f = getPosts(perPage: 6));
     try { await _f; } catch (_) {}
   }
   @override
@@ -266,10 +301,10 @@ class _ArticlesPageState extends State<ArticlesPage> {
   @override
   void initState() {
     super.initState();
-    _f = getPosts(perPage: 30);
+    _f = getAllPosts();
   }
   Future<void> _refresh() async {
-    setState(() => _f = getPosts(perPage: 30));
+    setState(() => _f = getAllPosts());
     try { await _f; } catch (_) {}
   }
   @override
@@ -324,7 +359,7 @@ class _CategoryPostsPageState extends State<CategoryPostsPage> {
   Future<List> _load() async {
     final id = await getCatIdBySlug(widget.c.s);
     if (id == null) throw Exception('دسته‌بندی یافت نشد');
-    return getPosts(catId: id, perPage: 20);
+    return getAllPosts(catId: id);
   }
   Future<void> _refresh() async {
     setState(() => _f = _load());
@@ -375,7 +410,7 @@ class _NewsPageState extends State<NewsPage> {
   Future<List> _load() async {
     final id = await getCatIdBySlug('sports-news-and-events');
     if (id == null) throw Exception('دسته‌بندی اخبار یافت نشد');
-    return getPosts(catId: id, perPage: 20);
+    return getAllPosts(catId: id);
   }
   Future<void> _refresh() async {
     setState(() => _f = _load());
@@ -425,10 +460,10 @@ class _ShopPageState extends State<ShopPage> {
   @override
   void initState() {
     super.initState();
-    _f = getProducts(perPage: 30);
+    _f = getAllProducts();
   }
   Future<void> _refresh() async {
-    setState(() => _f = getProducts(perPage: 30));
+    setState(() => _f = getAllProducts());
     try { await _f; } catch (_) {}
   }
   @override
@@ -482,25 +517,8 @@ class _SearchPageState extends State<SearchPage> {
     if (q.isEmpty) return;
     setState(() {
       _q = q;
-      _f = _searchPosts(q);
+      _f = getAllPosts(search: q);
     });
-  }
-
-  Future<List> _searchPosts(String q) async {
-    final r = await http.get(
-      Uri.parse('$api/posts?search=${Uri.encodeComponent(q)}&per_page=30&_embed'),
-    );
-    if (r.statusCode != 200) throw Exception('خطای ${r.statusCode}');
-    final list = json.decode(r.body) as List;
-    final lowerQ = q.toLowerCase();
-    return list.where((p) {
-      final title = clean((p['title']?['rendered'] ?? '')).toLowerCase();
-      final excerpt = clean((p['excerpt']?['rendered'] ?? '')).toLowerCase();
-      final content = clean((p['content']?['rendered'] ?? '')).toLowerCase();
-      return title.contains(lowerQ) ||
-             excerpt.contains(lowerQ) ||
-             content.contains(lowerQ);
-    }).toList();
   }
 
   @override
@@ -732,7 +750,7 @@ Widget _header(BuildContext context, [String? t]) {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              t ?? 'اپلیکیشن رسمی تربیت بدنی و علوم ورزشی',
+              t ?? 'اپلیکیشن تربیت بدنی و علوم ورزشی',
               textAlign: TextAlign.right,
               style: const TextStyle(color: txtC, fontSize: 13, fontWeight: FontWeight.bold),
             ),
@@ -920,7 +938,7 @@ Widget _product(BuildContext context, dynamic p) {
       : '';
   final name = p['name'] ?? '';
   final link = p['permalink'] ?? '';
-  final inStock = p['in_stock'] == true;
+  final inStock = p['stock_status'] == 'instock';
   final regularPrice = p['regular_price'] ?? '';
   final salePrice = p['sale_price'] ?? '';
   final isOnSale = salePrice.isNotEmpty && salePrice != regularPrice;
