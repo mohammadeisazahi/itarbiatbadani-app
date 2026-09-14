@@ -15,6 +15,7 @@ const Color txtC = Color(0xfff4f7fa);
 const Color mutC = Color(0xff9fb0bd);
 const String logo = 'assets/images/logo.png';
 const String logoNet = '$site/wp-content/uploads/2025/07/1000073463.png';
+const String heroImg = '$site/wp-content/uploads/2025/07/1000073463.png';
 
 class Cat {
   final String n;
@@ -115,6 +116,11 @@ class App extends StatelessWidget {
         brightness: Brightness.dark,
         scaffoldBackgroundColor: bgC,
         colorScheme: ColorScheme.fromSeed(seedColor: gold, brightness: Brightness.dark),
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+          },
+        ),
       ),
       builder: (c, ch) => Directionality(
         textDirection: TextDirection.rtl,
@@ -133,7 +139,6 @@ class Root extends StatefulWidget {
 
 class _RootState extends State<Root> {
   int _i = 0;
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -182,10 +187,10 @@ class _HomeState extends State<Home> {
   @override
   void initState() {
     super.initState();
-    _f = getPosts(perPage: 6);
+    _f = getPosts(perPage: 4);
   }
   Future<void> _refresh() async {
-    setState(() => _f = getPosts(perPage: 6));
+    setState(() => _f = getPosts(perPage: 4));
     try { await _f; } catch (_) {}
   }
   @override
@@ -219,7 +224,7 @@ class _HomeState extends State<Home> {
             ),
           ),
           const SliverToBoxAdapter(
-            child: _SectionTitle('مقالات', Icons.grid_view_rounded),
+            child: _SectionTitle('دسته‌بندی مقالات', Icons.grid_view_rounded),
           ),
           SliverToBoxAdapter(child: _catGrid()),
           SliverToBoxAdapter(child: _social()),
@@ -230,25 +235,59 @@ class _HomeState extends State<Home> {
   }
 }
 
-/* ==================== ARTICLES PAGE (formerly CatsPage) ==================== */
-class ArticlesPage extends StatelessWidget {
+/* ==================== ARTICLES PAGE ==================== */
+class ArticlesPage extends StatefulWidget {
   const ArticlesPage({super.key});
   @override
+  State<ArticlesPage> createState() => _ArticlesPageState();
+}
+
+class _ArticlesPageState extends State<ArticlesPage> {
+  Future<List>? _f;
+  @override
+  void initState() {
+    super.initState();
+    _f = getPosts(perPage: 30);
+  }
+  Future<void> _refresh() async {
+    setState(() => _f = getPosts(perPage: 30));
+    try { await _f; } catch (_) {}
+  }
+  @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: EdgeInsets.zero,
-      children: [
-        _header(context, 'مقالات'),
-        Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(children: cats.map((c) => _catTile(context, c)).toList()),
-        ),
-      ],
+    return Scaffold(
+      body: Column(
+        children: [
+          _header(context, 'مقالات'),
+          Expanded(
+            child: FutureBuilder<List>(
+              future: _f,
+              builder: (c, s) {
+                if (s.connectionState == ConnectionState.waiting) return const _Loading();
+                if (s.hasError) return _ErrorBox('خطا در دریافت مقالات.\n${s.error}', _refresh);
+                final posts = s.data ?? [];
+                if (posts.isEmpty) return const _Empty('مقاله‌ای پیدا نشد.');
+                return RefreshIndicator(
+                  color: gold,
+                  backgroundColor: pnl,
+                  onRefresh: _refresh,
+                  child: ListView.builder(
+                    cacheExtent: 1000,
+                    padding: const EdgeInsets.all(14),
+                    itemCount: posts.length,
+                    itemBuilder: (c, i) => _post(context, posts[i]),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-/* ==================== CATEGORY POSTS PAGE (In-App, No WebView) ==================== */
+/* ==================== CATEGORY POSTS PAGE ==================== */
 class CategoryPostsPage extends StatefulWidget {
   final Cat c;
   const CategoryPostsPage({super.key, required this.c});
@@ -288,6 +327,7 @@ class _CategoryPostsPageState extends State<CategoryPostsPage> {
             backgroundColor: pnl,
             onRefresh: _refresh,
             child: ListView.builder(
+              cacheExtent: 1000,
               padding: const EdgeInsets.all(14),
               itemCount: posts.length,
               itemBuilder: (c, i) => _post(context, posts[i]),
@@ -299,7 +339,7 @@ class _CategoryPostsPageState extends State<CategoryPostsPage> {
   }
 }
 
-/* ==================== NEWS PAGE (In-App List) ==================== */
+/* ==================== NEWS PAGE ==================== */
 class NewsPage extends StatefulWidget {
   const NewsPage({super.key});
   @override
@@ -340,6 +380,7 @@ class _NewsPageState extends State<NewsPage> {
                 backgroundColor: pnl,
                 onRefresh: _refresh,
                 child: ListView.builder(
+                  cacheExtent: 1000,
                   padding: const EdgeInsets.all(14),
                   itemCount: posts.length,
                   itemBuilder: (c, i) => _post(context, posts[i]),
@@ -353,7 +394,7 @@ class _NewsPageState extends State<NewsPage> {
   }
 }
 
-/* ==================== SEARCH PAGE (Live) ==================== */
+/* ==================== SEARCH PAGE ==================== */
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
   @override
@@ -370,8 +411,25 @@ class _SearchPageState extends State<SearchPage> {
     if (q.isEmpty) return;
     setState(() {
       _q = q;
-      _f = getPosts(search: q, perPage: 30);
+      _f = _searchPosts(q);
     });
+  }
+
+  Future<List> _searchPosts(String q) async {
+    final r = await http.get(
+      Uri.parse('$api/posts?search=${Uri.encodeComponent(q)}&per_page=30&_embed'),
+    );
+    if (r.statusCode != 200) throw Exception('خطای ${r.statusCode}');
+    final list = json.decode(r.body) as List;
+    final lowerQ = q.toLowerCase();
+    return list.where((p) {
+      final title = clean((p['title']?['rendered'] ?? '')).toLowerCase();
+      final excerpt = clean((p['excerpt']?['rendered'] ?? '')).toLowerCase();
+      final content = clean((p['content']?['rendered'] ?? '')).toLowerCase();
+      return title.contains(lowerQ) ||
+             excerpt.contains(lowerQ) ||
+             content.contains(lowerQ);
+    }).toList();
   }
 
   @override
@@ -414,6 +472,7 @@ class _SearchPageState extends State<SearchPage> {
                       final posts = s.data ?? [];
                       if (posts.isEmpty) return _Empty('نتیجه‌ای برای «$_q» پیدا نشد.');
                       return ListView.builder(
+                        cacheExtent: 1000,
                         padding: const EdgeInsets.all(14),
                         itemCount: posts.length,
                         itemBuilder: (c, i) => _post(context, posts[i]),
@@ -469,33 +528,13 @@ class AccountPage extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14),
           child: Column(
             children: [
-              _accountBtn(
-                context,
-                'ورود به حساب کاربری',
-                Icons.login,
-                '${site}/my-account/',
-              ),
+              _accountBtn(context, 'ورود به حساب کاربری', Icons.login, '$site/my-account/'),
               const SizedBox(height: 12),
-              _accountBtn(
-                context,
-                'ثبت‌نام / فراموشی رمز',
-                Icons.person_add_alt_1,
-                '${site}/my-account/',
-              ),
+              _accountBtn(context, 'ثبت‌نام / فراموشی رمز', Icons.person_add_alt_1, '$site/my-account/'),
               const SizedBox(height: 12),
-              _accountBtn(
-                context,
-                'خریدهای من (دانلود فایل‌ها)',
-                Icons.download_outlined,
-                '${site}/my-account/downloads/',
-              ),
+              _accountBtn(context, 'خریدهای من (دانلود فایل‌ها)', Icons.download_outlined, '$site/my-account/downloads/'),
               const SizedBox(height: 12),
-              _accountBtn(
-                context,
-                'سفارش‌های من',
-                Icons.receipt_long_outlined,
-                '${site}/my-account/orders/',
-              ),
+              _accountBtn(context, 'سفارش‌های من', Icons.receipt_long_outlined, '$site/my-account/orders/'),
             ],
           ),
         ),
@@ -551,7 +590,7 @@ class AccountPage extends StatelessWidget {
   }
 }
 
-/* ==================== WEB PAGE (only created on demand) ==================== */
+/* ==================== WEB PAGE ==================== */
 class WebPage extends StatefulWidget {
   final String url;
   final String title;
@@ -647,7 +686,6 @@ Widget _header(BuildContext context, [String t = 'تربیت بدنی و علو�
 Widget _hero() {
   return Container(
     margin: const EdgeInsets.fromLTRB(14, 18, 14, 10),
-    padding: const EdgeInsets.all(22),
     decoration: BoxDecoration(
       gradient: const LinearGradient(
         begin: Alignment.topRight,
@@ -657,33 +695,44 @@ Widget _hero() {
       borderRadius: BorderRadius.circular(18),
       border: Border.all(color: gold.withOpacity(0.15)),
     ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: const [
-        Text(
-          'اپلیکیشن رسمی تربیت بدنی و علوم ورزشی',
-          textAlign: TextAlign.right,
-          style: TextStyle(color: gold, fontSize: 18, fontWeight: FontWeight.bold, height: 1.6),
-        ),
-        SizedBox(height: 14),
-        Text(
-          'مرجعی کاربردی برای دانشجویان، معلمان، مربیان و علاقه‌مندان به ورزش.',
-          textAlign: TextAlign.right,
-          style: TextStyle(color: Colors.white, fontSize: 14, height: 1.8),
-        ),
-        SizedBox(height: 10),
-        Text(
-          'مطالب علمی و آموزشی، اخبار ورزشی، منابع دانشگاهی، طرح درس و محتوای تخصصی؛ همه در یک اپلیکیشن.',
-          textAlign: TextAlign.right,
-          style: TextStyle(color: Color(0xffc5d4df), fontSize: 13, height: 1.9),
-        ),
-        SizedBox(height: 10),
-        Text(
-          'یاد بگیرید، به‌روز بمانید و حرفه‌ای‌تر پیش بروید.',
-          textAlign: TextAlign.right,
-          style: TextStyle(color: gold, fontSize: 13, fontWeight: FontWeight.bold, height: 1.8),
-        ),
-      ],
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+            child: Text(
+              'اپلیکیشن رسمی تربیت بدنی و علوم ورزشی',
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                color: gold,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                height: 1.6,
+              ),
+            ),
+          ),
+          Image.network(
+            heroImg,
+            fit: BoxFit.cover,
+            height: 160,
+            loadingBuilder: (c, ch, pr) {
+              if (pr == null) return ch;
+              return Container(
+                height: 160,
+                color: pnl2,
+                child: const Center(child: CircularProgressIndicator(color: gold)),
+              );
+            },
+            errorBuilder: (_, __, ___) => Container(
+              height: 160,
+              color: pnl2,
+              child: const Icon(Icons.sports_soccer, color: gold, size: 60),
+            ),
+          ),
+        ],
+      ),
     ),
   );
 }
@@ -768,6 +817,16 @@ Widget _post(BuildContext context, dynamic p) {
                   ? CachedNetworkImage(
                       imageUrl: i,
                       fit: BoxFit.cover,
+                      fadeInDuration: const Duration(milliseconds: 200),
+                      placeholder: (_, __) => Container(
+                        color: pnl2,
+                        child: const Center(
+                          child: SizedBox(
+                            width: 20, height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: gold),
+                          ),
+                        ),
+                      ),
                       errorWidget: (_, __, ___) => Container(
                         color: pnl2,
                         child: const Icon(Icons.article_outlined, color: gold, size: 40),
@@ -857,46 +916,6 @@ Widget _catGrid() {
             ],
           ),
         ),
-      ),
-    ),
-  );
-}
-
-Widget _catTile(BuildContext context, Cat c) {
-  return GestureDetector(
-    onTap: () => Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => CategoryPostsPage(c: c)),
-    ),
-    child: Container(
-      margin: const EdgeInsets.only(bottom: 11),
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: pnl,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withOpacity(0.06)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 42, height: 42,
-            decoration: BoxDecoration(
-              color: gold.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(c.i, color: gold, size: 22),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              c.n,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: txtC, fontSize: 14, fontWeight: FontWeight.bold, height: 1.4),
-            ),
-          ),
-          const Icon(Icons.arrow_back_ios, color: mutC, size: 16),
-        ],
       ),
     ),
   );
