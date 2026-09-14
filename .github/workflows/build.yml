@@ -51,6 +51,12 @@ jobs:
           ls -la assets/fonts/
           echo "✅ Fonts downloaded"
 
+      - name: Inject WooCommerce Keys
+        run: |
+          sed -i "s|YOUR_WC_KEY|${{ secrets.WC_KEY }}|g" lib/main.dart
+          sed -i "s|YOUR_WC_SECRET|${{ secrets.WC_SECRET }}|g" lib/main.dart
+          echo "✅ WooCommerce keys injected"
+
       - name: Add INTERNET permission
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
