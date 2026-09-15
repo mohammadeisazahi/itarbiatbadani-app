@@ -741,7 +741,7 @@ class _SearchPageState extends State<SearchPage> {
   }
 }
 
-/* ==================== ACCOUNT (Persistent Login with InAppWebView) ==================== */
+/* ==================== ACCOUNT (Persistent Login + Download) ==================== */
 final _storage = const FlutterSecureStorage();
 
 class AccountPage extends StatefulWidget {
@@ -824,6 +824,7 @@ class _AccountPageState extends State<AccountPage> {
                   initialUrlRequest: URLRequest(url: WebUri('$site/my-account/')),
                   initialSettings: InAppWebViewSettings(
                     javaScriptEnabled: true,
+                    useOnDownloadStart: true,
                     userAgent:
                         'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
                   ),
@@ -832,6 +833,10 @@ class _AccountPageState extends State<AccountPage> {
                   onLoadStop: (c, url) async {
                     setState(() => _l = false);
                     await _save();
+                  },
+                  onDownloadStartRequest: (controller, request) async {
+                    final url = request.url.toString();
+                    await openUrl(url);
                   },
                 ),
                 if (_l) const Center(child: CircularProgressIndicator(color: gold)),
