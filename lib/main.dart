@@ -11,6 +11,7 @@ const String api = '$site/wp-json/wp/v2';
 const String wcKey = 'YOUR_WC_KEY';
 const String wcSecret = 'YOUR_WC_SECRET';
 const Color gold = Color(0xfffbc531);
+const Color turquoise = Color(0xff25b8e8);
 const String logo = 'assets/images/logo.png';
 const String logoNet = '$site/wp-content/uploads/2025/07/1000073463.png';
 const String heroImg = '$site/wp-content/uploads/2025/08/file_00000000b12862439589872d238e031b-1.png';
@@ -24,7 +25,7 @@ Color get pnl => darkModeNotifier.value ? const Color(0xff0d2233) : const Color(
 Color get pnl2 => darkModeNotifier.value ? const Color(0xff102a3e) : const Color(0xffeaeaea);
 Color get txtC => darkModeNotifier.value ? const Color(0xfff4f7fa) : const Color(0xff1a1a1a);
 Color get mutC => darkModeNotifier.value ? const Color(0xff9fb0bd) : const Color(0xff666666);
-Color get lineC => darkModeNotifier.value ? const Color(0x17ffffff) : const Color(0x22000000);
+Color get lineC => darkModeNotifier.value ? const Color(0x3325b8e8) : const Color(0x2225b8e8);
 Color get navBg => darkModeNotifier.value ? const Color(0xff081925) : const Color(0xffffffff);
 
 class Cat {
@@ -783,7 +784,7 @@ class _SearchPageState extends State<SearchPage> {
   }
 }
 
-/* ==================== ACCOUNT (Persistent Login + Download) ==================== */
+/* ==================== ACCOUNT ==================== */
 class AccountPage extends StatefulWidget {
   const AccountPage({super.key});
   @override
@@ -973,7 +974,7 @@ Widget _header(BuildContext context, [String? t]) {
                 errorBuilder: (_, __, ___) => Image.network(
                   logoNet,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const Icon(Icons.sports, color: gold),
+                  errorBuilder: (_, __, ___) => const Icon(Icons.sports, color: turquoise),
                 ),
               ),
             ),
@@ -986,6 +987,7 @@ Widget _header(BuildContext context, [String? t]) {
               style: TextStyle(color: txtC, fontSize: 13, fontWeight: FontWeight.bold),
             ),
           ),
+          // 🌙 دکمه حالت شب/روز
           IconButton(
             onPressed: () async {
               darkModeNotifier.value = !darkModeNotifier.value;
@@ -1003,6 +1005,7 @@ Widget _header(BuildContext context, [String? t]) {
               ),
             ),
           ),
+          // 🔍 دکمه جستجو
           IconButton(
             onPressed: () => Navigator.push(
               context,
@@ -1022,7 +1025,7 @@ Widget _hero() {
     decoration: BoxDecoration(
       color: pnl,
       borderRadius: BorderRadius.circular(18),
-      border: Border.all(color: gold.withOpacity(0.15)),
+      border: Border.all(color: lineC),
     ),
     child: ClipRRect(
       borderRadius: BorderRadius.circular(18),
@@ -1036,13 +1039,13 @@ Widget _hero() {
           return Container(
             height: 180,
             color: pnl2,
-            child: const Center(child: CircularProgressIndicator(color: gold)),
+            child: const Center(child: CircularProgressIndicator(color: turquoise)),
           );
         },
         errorBuilder: (_, __, ___) => Container(
           height: 180,
           color: pnl2,
-          child: const Icon(Icons.sports_soccer, color: gold, size: 60),
+          child: const Icon(Icons.sports_soccer, color: turquoise, size: 60),
         ),
       ),
     ),
@@ -1084,7 +1087,7 @@ Widget _services() {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(items[i][1] as IconData, color: gold, size: 30),
+                  Icon(items[i][1] as IconData, color: turquoise, size: 30),
                   const SizedBox(height: 8),
                   Text(
                     items[i][0] as String,
@@ -1136,18 +1139,18 @@ Widget _post(BuildContext context, dynamic p) {
                         child: const Center(
                           child: SizedBox(
                             width: 20, height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: gold),
+                            child: CircularProgressIndicator(strokeWidth: 2, color: turquoise),
                           ),
                         ),
                       ),
                       errorWidget: (_, __, ___) => Container(
                         color: pnl2,
-                        child: const Icon(Icons.article_outlined, color: gold, size: 40),
+                        child: const Icon(Icons.article_outlined, color: turquoise, size: 40),
                       ),
                     )
                   : Container(
                       color: pnl2,
-                      child: const Icon(Icons.article_outlined, color: gold, size: 40),
+                      child: const Icon(Icons.article_outlined, color: turquoise, size: 40),
                     ),
             ),
           ),
@@ -1218,18 +1221,18 @@ Widget _product(BuildContext context, dynamic p) {
                         child: const Center(
                           child: SizedBox(
                             width: 20, height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: gold),
+                            child: CircularProgressIndicator(strokeWidth: 2, color: turquoise),
                           ),
                         ),
                       ),
                       errorWidget: (_, __, ___) => Container(
                         color: pnl2,
-                        child: const Icon(Icons.shopping_bag_outlined, color: gold, size: 40),
+                        child: const Icon(Icons.shopping_bag_outlined, color: turquoise, size: 40),
                       ),
                     )
                   : Container(
                       color: pnl2,
-                      child: const Icon(Icons.shopping_bag_outlined, color: gold, size: 40),
+                      child: const Icon(Icons.shopping_bag_outlined, color: turquoise, size: 40),
                     ),
             ),
           ),
@@ -1355,10 +1358,10 @@ Widget _catGrid() {
               Container(
                 width: 46, height: 46,
                 decoration: BoxDecoration(
-                  color: gold.withOpacity(0.12),
+                  color: turquoise.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(cats[i].i, color: gold, size: 24),
+                child: Icon(cats[i].i, color: turquoise, size: 24),
               ),
               const SizedBox(height: 10),
               Expanded(
@@ -1413,7 +1416,7 @@ Widget _social() {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(items[i][1] as IconData, color: gold, size: 18),
+                  Icon(items[i][1] as IconData, color: turquoise, size: 18),
                   const SizedBox(width: 8),
                   Text(
                     items[i][0] as String,
@@ -1467,7 +1470,7 @@ class _Loading extends StatelessWidget {
   @override
   Widget build(BuildContext context) => const Padding(
         padding: EdgeInsets.all(35),
-        child: Center(child: CircularProgressIndicator(color: gold)),
+        child: Center(child: CircularProgressIndicator(color: turquoise)),
       );
 }
 
