@@ -24,7 +24,7 @@ Color get pnl => darkModeNotifier.value ? const Color(0xff0d2233) : const Color(
 Color get pnl2 => darkModeNotifier.value ? const Color(0xff102a3e) : const Color(0xffeaeaea);
 Color get txtC => darkModeNotifier.value ? const Color(0xfff4f7fa) : const Color(0xff1a1a1a);
 Color get mutC => darkModeNotifier.value ? const Color(0xff9fb0bd) : const Color(0xff666666);
-Color get lineC => darkModeNotifier.value ? const Color(0x17ffffff) : const Color(0x17000000);
+Color get lineC => darkModeNotifier.value ? const Color(0x17ffffff) : const Color(0x22000000);
 Color get navBg => darkModeNotifier.value ? const Color(0xff081925) : const Color(0xffffffff);
 
 class Cat {
@@ -219,26 +219,29 @@ class _RootState extends State<Root> {
   int _i = 0;
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(
-        index: _i,
-        children: const [Home(), ArticlesPage(), NewsPage(), ShopPage(), AccountPage()],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _i,
-        onTap: (i) => setState(() => _i = i),
-        backgroundColor: navBg,
-        selectedItemColor: gold,
-        unselectedItemColor: mutC,
-        type: BottomNavigationBarType.fixed,
-        showUnselectedLabels: true,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: 'خانه'),
-          BottomNavigationBarItem(icon: Icon(Icons.article_outlined), activeIcon: Icon(Icons.article), label: 'مقالات'),
-          BottomNavigationBarItem(icon: Icon(Icons.newspaper_outlined), activeIcon: Icon(Icons.newspaper), label: 'اخبار'),
-          BottomNavigationBarItem(icon: Icon(Icons.shopping_cart_outlined), activeIcon: Icon(Icons.shopping_cart), label: 'فروشگاه'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person), label: 'حساب من'),
-        ],
+    return ValueListenableBuilder<bool>(
+      valueListenable: darkModeNotifier,
+      builder: (context, _, __) => Scaffold(
+        body: IndexedStack(
+          index: _i,
+          children: const [Home(), ArticlesPage(), NewsPage(), ShopPage(), AccountPage()],
+        ),
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: _i,
+          onTap: (i) => setState(() => _i = i),
+          backgroundColor: navBg,
+          selectedItemColor: gold,
+          unselectedItemColor: mutC,
+          type: BottomNavigationBarType.fixed,
+          showUnselectedLabels: true,
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: 'خانه'),
+            BottomNavigationBarItem(icon: Icon(Icons.article_outlined), activeIcon: Icon(Icons.article), label: 'مقالات'),
+            BottomNavigationBarItem(icon: Icon(Icons.newspaper_outlined), activeIcon: Icon(Icons.newspaper), label: 'اخبار'),
+            BottomNavigationBarItem(icon: Icon(Icons.shopping_cart_outlined), activeIcon: Icon(Icons.shopping_cart), label: 'فروشگاه'),
+            BottomNavigationBarItem(icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person), label: 'حساب من'),
+          ],
+        ),
       ),
     );
   }
@@ -780,7 +783,7 @@ class _SearchPageState extends State<SearchPage> {
   }
 }
 
-/* ==================== ACCOUNT ==================== */
+/* ==================== ACCOUNT (Persistent Login + Download) ==================== */
 class AccountPage extends StatefulWidget {
   const AccountPage({super.key});
   @override
@@ -961,7 +964,7 @@ Widget _header(BuildContext context, [String? t]) {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(23),
-              border: Border.all(color: gold.withOpacity(0.4), width: 1.5),
+              border: Border.all(color: lineC, width: 1),
             ),
             child: ClipOval(
               child: Image.asset(
@@ -983,27 +986,22 @@ Widget _header(BuildContext context, [String? t]) {
               style: TextStyle(color: txtC, fontSize: 13, fontWeight: FontWeight.bold),
             ),
           ),
-          // 🌙 دکمه حالت شب/روز
-          ValueListenableBuilder<bool>(
-            valueListenable: darkModeNotifier,
-            builder: (c, isDark, _) => IconButton(
-              onPressed: () async {
-                darkModeNotifier.value = !darkModeNotifier.value;
-                await _storage.write(
-                  key: 'dark_mode',
-                  value: darkModeNotifier.value.toString(),
-                );
-              },
-              icon: Icon(
+          IconButton(
+            onPressed: () async {
+              darkModeNotifier.value = !darkModeNotifier.value;
+              await _storage.write(
+                key: 'dark_mode',
+                value: darkModeNotifier.value.toString(),
+              );
+            },
+            icon: ValueListenableBuilder<bool>(
+              valueListenable: darkModeNotifier,
+              builder: (c, isDark, _) => Icon(
                 isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
                 color: gold,
                 size: 26,
               ),
             ),
-          ),
-          IconButton(
-            onPressed: () => openUrl('$site/shop/'),
-            icon: const Icon(Icons.shopping_cart_outlined, color: gold, size: 26),
           ),
           IconButton(
             onPressed: () => Navigator.push(
@@ -1277,8 +1275,8 @@ Widget _product(BuildContext context, dynamic p) {
                     const SizedBox(height: 4),
                     Text(
                       formatPrice(salePrice),
-                      style: const TextStyle(
-                        color: gold,
+                      style: TextStyle(
+                        color: txtC,
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                       ),
@@ -1286,8 +1284,8 @@ Widget _product(BuildContext context, dynamic p) {
                   ] else if (regularPrice.isNotEmpty) ...[
                     Text(
                       formatPrice(regularPrice),
-                      style: const TextStyle(
-                        color: gold,
+                      style: TextStyle(
+                        color: txtC,
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                       ),
@@ -1437,25 +1435,28 @@ class _SectionTitle extends StatelessWidget {
   const _SectionTitle(this.t, this.i);
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 18, 14, 12),
-      child: Row(
-        children: [
-          Container(
-            width: 4, height: 25,
-            decoration: BoxDecoration(color: gold, borderRadius: BorderRadius.circular(5)),
-          ),
-          const SizedBox(width: 9),
-          Icon(i, color: gold, size: 22),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              t,
-              textAlign: TextAlign.right,
-              style: TextStyle(color: txtC, fontSize: 18, fontWeight: FontWeight.bold),
+    return ValueListenableBuilder<bool>(
+      valueListenable: darkModeNotifier,
+      builder: (c, _, __) => Padding(
+        padding: const EdgeInsets.fromLTRB(14, 18, 14, 12),
+        child: Row(
+          children: [
+            Container(
+              width: 4, height: 25,
+              decoration: BoxDecoration(color: gold, borderRadius: BorderRadius.circular(5)),
             ),
-          ),
-        ],
+            const SizedBox(width: 9),
+            Icon(i, color: gold, size: 22),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                t,
+                textAlign: TextAlign.right,
+                style: TextStyle(color: txtC, fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
