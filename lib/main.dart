@@ -789,18 +789,25 @@ class _AccountPageState extends State<AccountPage> {
       final cookies = await CookieManager.instance().getCookies(
         url: WebUri(site),
       );
-      final list = cookies
-          .map((c) => {
-                'name': c.name,
-                'value': c.value,
-                'domain': c.domain,
-                'path': c.path,
-                'httponly': c.isHttpOnly,
-                'secure': c.isSecure,
-                'expiry': c.expiresDate,
-              })
-          .toList();
-      await _storage.write(key: 'wc_cookies', value: json.encode(list));
+      final hasLogin = cookies.any(
+        (c) => c.name.startsWith('wordpress_logged_in'),
+      );
+      if (hasLogin) {
+        final list = cookies
+            .map((c) => {
+                  'name': c.name,
+                  'value': c.value,
+                  'domain': c.domain,
+                  'path': c.path,
+                  'httponly': c.isHttpOnly,
+                  'secure': c.isSecure,
+                  'expiry': c.expiresDate,
+                })
+            .toList();
+        await _storage.write(key: 'wc_cookies', value: json.encode(list));
+      } else {
+        await _storage.delete(key: 'wc_cookies');
+      }
     } catch (_) {}
   }
 
