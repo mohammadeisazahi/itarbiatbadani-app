@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 
 const String site = 'https://itarbiatbadani.ir';
 const String api = '$site/wp-json/wp/v2';
@@ -741,9 +741,8 @@ class _SearchPageState extends State<SearchPage> {
   }
 }
 
-/* ==================== ACCOUNT (Persistent Login) ==================== */
+/* ==================== ACCOUNT (Persistent Login with InAppWebView) ==================== */
 final _storage = const FlutterSecureStorage();
-WebViewController? _accountController;
 
 class AccountPage extends StatefulWidget {
   const AccountPage({super.key});
@@ -752,71 +751,61 @@ class AccountPage extends StatefulWidget {
 }
 
 class _AccountPageState extends State<AccountPage> {
+  InAppWebViewController? _controller;
   bool _l = true;
 
   @override
   void initState() {
     super.initState();
-    _init();
+    _restore();
   }
 
-  Future<void> _init() async {
-    if (_accountController != null) {
-      setState(() => _l = false);
-      return;
-    }
-
-    _accountController = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(bgC)
-      ..setUserAgent(
-          'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36')
-      ..setNavigationDelegate(NavigationDelegate(
-        onPageStarted: (_) => setState(() => _l = true),
-        onPageFinished: (_) async {
-          setState(() => _l = false);
-          await _saveCookies();
-        },
-      ));
-
-    await _restoreCookies();
-    _accountController!.loadRequest(Uri.parse('$site/my-account/'));
-  }
-
-  Future<void> _saveCookies() async {
+  Future<void> _restore() async {
     try {
-      final result = await _accountController!.runJavaScriptReturningResult(
-        'document.cookie',
-      );
-      final str = result.toString().replaceAll('"', '');
-      if (str.isNotEmpty) {
-        await _storage.write(key: 'wc_cookies', value: str);
+      final saved = await _storage.read(key: 'wc_cookies');
+      if (saved != null && saved.isNotEmpty) {
+        final list = json.decode(saved) as List;
+        for (var item in list) {
+          await CookieManager.instance().setCookie(
+            url: WebUri(site),
+            name: item['name'],
+            value: item['value'],
+            domain: item['domain'],
+            path: item['path'],
+            isHttpOnly: item['httponly'] ?? false,
+            isSecure: item['secure'] ?? false,
+            expiresDate: item['expiry'] != null
+                ? (item['expiry'] as int) * 1000
+                : null,
+          );
+        }
       }
     } catch (_) {}
   }
 
-  Future<void> _restoreCookies() async {
+  Future<void> _save() async {
     try {
-      final saved = await _storage.read(key: 'wc_cookies');
-      if (saved == null || saved.isEmpty) return;
-      await _accountController!.runJavaScript(
-        'document.cookie = "$saved";',
+      if (_controller == null) return;
+      final cookies = await CookieManager.instance().getCookies(
+        url: WebUri(site),
       );
+      final list = cookies
+          .map((c) => {
+                'name': c.name,
+                'value': c.value,
+                'domain': c.domain,
+                'path': c.path,
+                'httponly': c.isHttpOnly,
+                'secure': c.isSecure,
+                'expiry': c.expiresDate,
+              })
+          .toList();
+      await _storage.write(key: 'wc_cookies', value: json.encode(list));
     } catch (_) {}
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_accountController == null) {
-      return Scaffold(
-        body: Column(
-          children: [
-            _header(context, 'حساب من'),
-            const Expanded(child: _Loading()),
-          ],
-        ),
-      );
-    }
     return Scaffold(
       body: Column(
         children: [
@@ -824,7 +813,21 @@ class _AccountPageState extends State<AccountPage> {
           Expanded(
             child: Stack(
               children: [
-                WebViewWidget(controller: _accountController!),
+                InAppWebView(
+                  initialUrlRequest: URLRequest(url: WebUri('$site/my-account/')),
+                  initialSettings: InAppWebViewSettings(
+                    javaScriptEnabled: true,
+                    useShouldOverrideUrlLoading: true,
+                    userAgent:
+                        'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+                  ),
+                  onWebViewCreated: (c) => _controller = c,
+                  onLoadStart: (c, url) => setState(() => _l = true),
+                  onLoadStop: (c, url) async {
+                    setState(() => _l = false);
+                    await _save();
+                  },
+                ),
                 if (_l) const Center(child: CircularProgressIndicator(color: gold)),
               ],
             ),
@@ -851,29 +854,22 @@ class WebPage extends StatefulWidget {
 }
 
 class _WebPageState extends State<WebPage> {
-  late final WebViewController _c;
   bool _l = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _c = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(bgC)
-      ..setUserAgent(
-          'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36')
-      ..setNavigationDelegate(NavigationDelegate(
-        onPageStarted: (_) => setState(() => _l = true),
-        onPageFinished: (_) => setState(() => _l = false),
-      ))
-      ..loadRequest(Uri.parse(widget.url));
-  }
 
   @override
   Widget build(BuildContext context) {
     final content = Stack(
       children: [
-        WebViewWidget(controller: _c),
+        InAppWebView(
+          initialUrlRequest: URLRequest(url: WebUri(widget.url)),
+          initialSettings: InAppWebViewSettings(
+            javaScriptEnabled: true,
+            userAgent:
+                'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+          ),
+          onLoadStart: (c, url) => setState(() => _l = true),
+          onLoadStop: (c, url) => setState(() => _l = false),
+        ),
         if (_l) const Center(child: CircularProgressIndicator(color: gold)),
       ],
     );
