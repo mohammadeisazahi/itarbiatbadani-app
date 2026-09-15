@@ -817,7 +817,6 @@ class _AccountPageState extends State<AccountPage> {
                   initialUrlRequest: URLRequest(url: WebUri('$site/my-account/')),
                   initialSettings: InAppWebViewSettings(
                     javaScriptEnabled: true,
-                    useShouldOverrideUrlLoading: true,
                     userAgent:
                         'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
                   ),
