@@ -18,6 +18,7 @@ const Color mutC = Color(0xff9fb0bd);
 const String logo = 'assets/images/logo.png';
 const String logoNet = '$site/wp-content/uploads/2025/07/1000073463.png';
 const String heroImg = '$site/wp-content/uploads/2025/08/file_00000000b12862439589872d238e031b-1.png';
+const int perPageSize = 10;
 
 class Cat {
   final String n;
@@ -77,15 +78,11 @@ String pImg(dynamic p) {
   return '';
 }
 
-/* ==================== تاریخ شمسی روز/ماه/سال ==================== */
 String pDate(dynamic p) {
   try {
     final d = DateTime.parse(p['date']).toLocal();
     final j = _toJalali(d.year, d.month, d.day);
-    final day = j[2].toString().padLeft(2, '0');
-    final month = j[1].toString().padLeft(2, '0');
-    final year = j[0].toString();
-    return '$day/$month/$year';
+    return '${j[0]}/${j[1].toString().padLeft(2, '0')}/${j[2].toString().padLeft(2, '0')}';
   } catch (_) { return ''; }
 }
 
@@ -94,7 +91,7 @@ List<int> _toJalali(int gy, int gm, int gd) {
   const jdm = [31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29];
   var gy2 = (gm > 2) ? (gy + 1) : gy;
   var days = 355666 + (365 * gy) + ((gy2 + 3) ~/ 4) - ((gy2 + 99) ~/ 100) + ((gy2 + 399) ~/ 400) + gd;
-  for (var i = 0; i < gm - 1; i++) { days += gdm[i]; }
+  for (var i = 0; i < gm - 1; i++) days += gdm[i];
   var jy = -1595 + (33 * (days ~/ 12053));
   days %= 12053;
   jy += 4 * (days ~/ 1461);
@@ -109,50 +106,22 @@ List<int> _toJalali(int gy, int gm, int gd) {
   return [jy, jm, jd];
 }
 
-/* ==================== API ==================== */
-Future<List> getPosts({int perPage = 6, int? catId}) async {
-  var u = '$api/posts?per_page=$perPage&_embed';
+// صفحه‌بندی
+Future<List> getPostsPaged({int perPage = perPageSize, int page = 1, int? catId}) async {
+  var u = '$api/posts?per_page=$perPage&page=$page&_embed=wp:featuredmedia';
   if (catId != null) u += '&categories=$catId';
   final r = await http.get(Uri.parse(u));
-  if (r.statusCode == 200) return json.decode(r.body);
-  throw Exception('خطای ${r.statusCode}');
-}
-
-Future<List> getAllPosts({int? catId}) async {
-  final all = <dynamic>[];
-  int page = 1;
-  while (true) {
-    var u = '$api/posts?per_page=50&page=$page&_embed';
-    if (catId != null) u += '&categories=$catId';
-    final r = await http.get(Uri.parse(u));
-    if (r.statusCode != 200) {
-      if (page == 1) throw Exception('خطای ${r.statusCode}');
-      break;
-    }
-    final list = json.decode(r.body) as List;
-    if (list.isEmpty) break;
-    all.addAll(list);
-    if (list.length < 50) break;
-    page++;
-    if (page > 10) break;
-  }
-  return all;
-}
-
-Future<List> searchExact(String query) async {
-  final r = await http.get(
-    Uri.parse('$api/posts?search=${Uri.encodeComponent(query)}&per_page=50&_embed'),
-  );
+  if (r.statusCode == 400) return [];
   if (r.statusCode != 200) throw Exception('خطای ${r.statusCode}');
-  final list = json.decode(r.body) as List;
-  final words = query.toLowerCase().trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
-  return list.where((p) {
-    final title = clean((p['title']?['rendered'] ?? '')).toLowerCase();
-    final excerpt = clean((p['excerpt']?['rendered'] ?? '')).toLowerCase();
-    final content = clean((p['content']?['rendered'] ?? '')).toLowerCase();
-    final all = '$title $excerpt $content';
-    return words.every((w) => all.contains(w));
-  }).toList();
+  return json.decode(r.body) as List;
+}
+
+Future<List> getProductsPaged({int perPage = perPageSize, int page = 1}) async {
+  final u = '$site/wp-json/wc/v3/products?per_page=$perPage&page=$page&consumer_key=$wcKey&consumer_secret=$wcSecret';
+  final r = await http.get(Uri.parse(u));
+  if (r.statusCode == 400) return [];
+  if (r.statusCode != 200) throw Exception('خطای ${r.statusCode}');
+  return json.decode(r.body) as List;
 }
 
 Future<int?> getCatIdBySlug(String slug) async {
@@ -166,31 +135,25 @@ Future<int?> getCatIdBySlug(String slug) async {
   return null;
 }
 
-Future<List> getAllProducts() async {
-  final all = <dynamic>[];
-  int page = 1;
-  while (true) {
-    final url = '$site/wp-json/wc/v3/products?per_page=50&page=$page&consumer_key=$wcKey&consumer_secret=$wcSecret';
-    final r = await http.get(Uri.parse(url));
-    if (r.statusCode != 200) {
-      if (page == 1) throw Exception('خطای ${r.statusCode}');
-      break;
-    }
-    final list = json.decode(r.body) as List;
-    if (list.isEmpty) break;
-    all.addAll(list);
-    if (list.length < 50) break;
-    page++;
-    if (page > 10) break;
-  }
-  return all;
+// جستجوی دقیق در عنوان
+Future<List> searchExact(String query) async {
+  final r = await http.get(
+    Uri.parse('$api/posts?search=${Uri.encodeComponent(query)}&per_page=50&_embed=wp:featuredmedia'),
+  );
+  if (r.statusCode != 200) throw Exception('خطای ${r.statusCode}');
+  final list = json.decode(r.body) as List;
+  final words = query.trim().toLowerCase().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+  return list.where((p) {
+    final title = clean((p['title']?['rendered'] ?? '')).toLowerCase();
+    return words.every((w) => title.contains(w));
+  }).toList();
 }
 
 String formatPrice(String price) {
   if (price.isEmpty) return '';
-  final num = int.tryParse(price);
-  if (num == null) return price;
-  final s = num.toString();
+  final n = int.tryParse(price);
+  if (n == null) return price;
+  final s = n.toString();
   final buffer = StringBuffer();
   for (int i = 0; i < s.length; i++) {
     if (i > 0 && (s.length - i) % 3 == 0) buffer.write(',');
@@ -214,9 +177,7 @@ class App extends StatelessWidget {
         scaffoldBackgroundColor: bgC,
         colorScheme: ColorScheme.fromSeed(seedColor: gold, brightness: Brightness.dark),
         pageTransitionsTheme: const PageTransitionsTheme(
-          builders: {
-            TargetPlatform.android: CupertinoPageTransitionsBuilder(),
-          },
+          builders: {TargetPlatform.android: CupertinoPageTransitionsBuilder()},
         ),
       ),
       builder: (c, ch) => Directionality(
@@ -241,13 +202,7 @@ class _RootState extends State<Root> {
     return Scaffold(
       body: IndexedStack(
         index: _i,
-        children: const [
-          Home(),
-          ArticlesPage(),
-          NewsPage(),
-          ShopPage(),
-          AccountPage(),
-        ],
+        children: const [Home(), ArticlesPage(), NewsPage(), ShopPage(), AccountPage()],
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _i,
@@ -281,10 +236,10 @@ class _HomeState extends State<Home> {
   @override
   void initState() {
     super.initState();
-    _f = getPosts(perPage: 6);
+    _f = getPostsPaged(perPage: 6, page: 1);
   }
   Future<void> _refresh() async {
-    setState(() => _f = getPosts(perPage: 6));
+    setState(() => _f = getPostsPaged(perPage: 6, page: 1));
     try { await _f; } catch (_) {}
   }
   @override
@@ -329,7 +284,7 @@ class _HomeState extends State<Home> {
   }
 }
 
-/* ==================== ARTICLES ==================== */
+/* ==================== ARTICLES (با صفحه‌بندی) ==================== */
 class ArticlesPage extends StatefulWidget {
   const ArticlesPage({super.key});
   @override
@@ -337,16 +292,49 @@ class ArticlesPage extends StatefulWidget {
 }
 
 class _ArticlesPageState extends State<ArticlesPage> {
-  Future<List>? _f;
+  final _posts = <dynamic>[];
+  int _page = 1;
+  bool _loading = false;
+  bool _hasMore = true;
+  String? _error;
+  final _scroll = ScrollController();
+
   @override
   void initState() {
     super.initState();
-    _f = getAllPosts();
+    _load();
+    _scroll.addListener(() {
+      if (_scroll.position.pixels >= _scroll.position.maxScrollExtent - 300 && !_loading && _hasMore) {
+        _load();
+      }
+    });
   }
+
+  Future<void> _load() async {
+    if (_loading || !_hasMore) return;
+    setState(() { _loading = true; _error = null; });
+    try {
+      final list = await getPostsPaged(perPage: perPageSize, page: _page);
+      setState(() {
+        if (list.isEmpty) {
+          _hasMore = false;
+        } else {
+          _posts.addAll(list);
+          _page++;
+          if (list.length < perPageSize) _hasMore = false;
+        }
+        _loading = false;
+      });
+    } catch (e) {
+      setState(() { _error = e.toString(); _loading = false; });
+    }
+  }
+
   Future<void> _refresh() async {
-    setState(() => _f = getAllPosts());
-    try { await _f; } catch (_) {}
+    setState(() { _posts.clear(); _page = 1; _hasMore = true; _error = null; });
+    await _load();
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -354,26 +342,32 @@ class _ArticlesPageState extends State<ArticlesPage> {
         children: [
           _header(context, 'مقالات'),
           Expanded(
-            child: FutureBuilder<List>(
-              future: _f,
-              builder: (c, s) {
-                if (s.connectionState == ConnectionState.waiting) return const _Loading();
-                if (s.hasError) return _ErrorBox('خطا در دریافت مقالات.\n${s.error}', _refresh);
-                final posts = s.data ?? [];
-                if (posts.isEmpty) return const _Empty('مقاله‌ای پیدا نشد.');
-                return RefreshIndicator(
-                  color: gold,
-                  backgroundColor: pnl,
-                  onRefresh: _refresh,
-                  child: ListView.builder(
-                    cacheExtent: 1000,
-                    padding: const EdgeInsets.all(14),
-                    itemCount: posts.length,
-                    itemBuilder: (c, i) => _post(context, posts[i]),
-                  ),
-                );
-              },
-            ),
+            child: _posts.isEmpty && _loading
+                ? const _Loading()
+                : _posts.isEmpty && _error != null
+                    ? _ErrorBox('خطا در دریافت مقالات.\n$_error', _refresh)
+                    : _posts.isEmpty
+                        ? const _Empty('مقاله‌ای پیدا نشد.')
+                        : RefreshIndicator(
+                            color: gold,
+                            backgroundColor: pnl,
+                            onRefresh: _refresh,
+                            child: ListView.builder(
+                              controller: _scroll,
+                              cacheExtent: 800,
+                              padding: const EdgeInsets.all(14),
+                              itemCount: _posts.length + (_hasMore ? 1 : 0),
+                              itemBuilder: (c, i) {
+                                if (i >= _posts.length) {
+                                  return const Padding(
+                                    padding: EdgeInsets.all(20),
+                                    child: Center(child: CircularProgressIndicator(color: gold)),
+                                  );
+                                }
+                                return _post(context, _posts[i]);
+                              },
+                            ),
+                          ),
           ),
         ],
       ),
@@ -381,7 +375,7 @@ class _ArticlesPageState extends State<ArticlesPage> {
   }
 }
 
-/* ==================== CATEGORY POSTS ==================== */
+/* ==================== CATEGORY POSTS (با صفحه‌بندی) ==================== */
 class CategoryPostsPage extends StatefulWidget {
   final Cat c;
   const CategoryPostsPage({super.key, required this.c});
@@ -390,50 +384,97 @@ class CategoryPostsPage extends StatefulWidget {
 }
 
 class _CategoryPostsPageState extends State<CategoryPostsPage> {
-  Future<List>? _f;
+  final _posts = <dynamic>[];
+  int _page = 1;
+  bool _loading = false;
+  bool _hasMore = true;
+  String? _error;
+  int? _catId;
+  final _scroll = ScrollController();
+
   @override
   void initState() {
     super.initState();
-    _f = _load();
+    _init();
+    _scroll.addListener(() {
+      if (_scroll.position.pixels >= _scroll.position.maxScrollExtent - 300 && !_loading && _hasMore) {
+        _load();
+      }
+    });
   }
-  Future<List> _load() async {
-    final id = await getCatIdBySlug(widget.c.s);
-    if (id == null) throw Exception('دسته‌بندی یافت نشد');
-    return getAllPosts(catId: id);
+
+  Future<void> _init() async {
+    setState(() => _loading = true);
+    try {
+      _catId = await getCatIdBySlug(widget.c.s);
+      if (_catId == null) throw Exception('دسته‌بندی یافت نشد');
+      await _load();
+    } catch (e) {
+      setState(() { _error = e.toString(); _loading = false; });
+    }
   }
+
+  Future<void> _load() async {
+    if (_loading && _posts.isNotEmpty) return;
+    if (!_hasMore) return;
+    setState(() { _loading = true; _error = null; });
+    try {
+      final list = await getPostsPaged(perPage: perPageSize, page: _page, catId: _catId);
+      setState(() {
+        if (list.isEmpty) {
+          _hasMore = false;
+        } else {
+          _posts.addAll(list);
+          _page++;
+          if (list.length < perPageSize) _hasMore = false;
+        }
+        _loading = false;
+      });
+    } catch (e) {
+      setState(() { _error = e.toString(); _loading = false; });
+    }
+  }
+
   Future<void> _refresh() async {
-    setState(() => _f = _load());
-    try { await _f; } catch (_) {}
+    setState(() { _posts.clear(); _page = 1; _hasMore = true; _error = null; });
+    await _load();
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(widget.c.n), backgroundColor: bgC),
-      body: FutureBuilder<List>(
-        future: _f,
-        builder: (c, s) {
-          if (s.connectionState == ConnectionState.waiting) return const _Loading();
-          if (s.hasError) return _ErrorBox('خطا در دریافت مطالب.\n${s.error}', _refresh);
-          final posts = s.data ?? [];
-          if (posts.isEmpty) return const _Empty('مطلبی در این دسته پیدا نشد.');
-          return RefreshIndicator(
-            color: gold,
-            backgroundColor: pnl,
-            onRefresh: _refresh,
-            child: ListView.builder(
-              cacheExtent: 1000,
-              padding: const EdgeInsets.all(14),
-              itemCount: posts.length,
-              itemBuilder: (c, i) => _post(context, posts[i]),
-            ),
-          );
-        },
-      ),
+      body: _posts.isEmpty && _loading
+          ? const _Loading()
+          : _posts.isEmpty && _error != null
+              ? _ErrorBox('خطا در دریافت مطالب.\n$_error', _refresh)
+              : _posts.isEmpty
+                  ? const _Empty('مطلبی در این دسته پیدا نشد.')
+                  : RefreshIndicator(
+                      color: gold,
+                      backgroundColor: pnl,
+                      onRefresh: _refresh,
+                      child: ListView.builder(
+                        controller: _scroll,
+                        cacheExtent: 800,
+                        padding: const EdgeInsets.all(14),
+                        itemCount: _posts.length + (_hasMore ? 1 : 0),
+                        itemBuilder: (c, i) {
+                          if (i >= _posts.length) {
+                            return const Padding(
+                              padding: EdgeInsets.all(20),
+                              child: Center(child: CircularProgressIndicator(color: gold)),
+                            );
+                          }
+                          return _post(context, _posts[i]);
+                        },
+                      ),
+                    ),
     );
   }
 }
 
-/* ==================== NEWS ==================== */
+/* ==================== NEWS (با صفحه‌بندی) ==================== */
 class NewsPage extends StatefulWidget {
   const NewsPage({super.key});
   @override
@@ -441,54 +482,101 @@ class NewsPage extends StatefulWidget {
 }
 
 class _NewsPageState extends State<NewsPage> {
-  Future<List>? _f;
+  final _posts = <dynamic>[];
+  int _page = 1;
+  bool _loading = false;
+  bool _hasMore = true;
+  String? _error;
+  int? _catId;
+  final _scroll = ScrollController();
+
   @override
   void initState() {
     super.initState();
-    _f = _load();
+    _init();
+    _scroll.addListener(() {
+      if (_scroll.position.pixels >= _scroll.position.maxScrollExtent - 300 && !_loading && _hasMore) {
+        _load();
+      }
+    });
   }
-  Future<List> _load() async {
-    final id = await getCatIdBySlug('sports-news-and-events');
-    if (id == null) throw Exception('دسته‌بندی اخبار یافت نشد');
-    return getAllPosts(catId: id);
+
+  Future<void> _init() async {
+    setState(() => _loading = true);
+    try {
+      _catId = await getCatIdBySlug('sports-news-and-events');
+      if (_catId == null) throw Exception('دسته‌بندی اخبار یافت نشد');
+      await _load();
+    } catch (e) {
+      setState(() { _error = e.toString(); _loading = false; });
+    }
   }
+
+  Future<void> _load() async {
+    if (_loading && _posts.isNotEmpty) return;
+    if (!_hasMore) return;
+    setState(() { _loading = true; _error = null; });
+    try {
+      final list = await getPostsPaged(perPage: perPageSize, page: _page, catId: _catId);
+      setState(() {
+        if (list.isEmpty) {
+          _hasMore = false;
+        } else {
+          _posts.addAll(list);
+          _page++;
+          if (list.length < perPageSize) _hasMore = false;
+        }
+        _loading = false;
+      });
+    } catch (e) {
+      setState(() { _error = e.toString(); _loading = false; });
+    }
+  }
+
   Future<void> _refresh() async {
-    setState(() => _f = _load());
-    try { await _f; } catch (_) {}
+    setState(() { _posts.clear(); _page = 1; _hasMore = true; _error = null; });
+    await _load();
   }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         AppBar(title: const Text('اخبار و رویدادها'), backgroundColor: bgC),
         Expanded(
-          child: FutureBuilder<List>(
-            future: _f,
-            builder: (c, s) {
-              if (s.connectionState == ConnectionState.waiting) return const _Loading();
-              if (s.hasError) return _ErrorBox('خطا در دریافت اخبار.\n${s.error}', _refresh);
-              final posts = s.data ?? [];
-              if (posts.isEmpty) return const _Empty('خبری پیدا نشد.');
-              return RefreshIndicator(
-                color: gold,
-                backgroundColor: pnl,
-                onRefresh: _refresh,
-                child: ListView.builder(
-                  cacheExtent: 1000,
-                  padding: const EdgeInsets.all(14),
-                  itemCount: posts.length,
-                  itemBuilder: (c, i) => _post(context, posts[i]),
-                ),
-              );
-            },
-          ),
+          child: _posts.isEmpty && _loading
+              ? const _Loading()
+              : _posts.isEmpty && _error != null
+                  ? _ErrorBox('خطا در دریافت اخبار.\n$_error', _refresh)
+                  : _posts.isEmpty
+                      ? const _Empty('خبری پیدا نشد.')
+                      : RefreshIndicator(
+                          color: gold,
+                          backgroundColor: pnl,
+                          onRefresh: _refresh,
+                          child: ListView.builder(
+                            controller: _scroll,
+                            cacheExtent: 800,
+                            padding: const EdgeInsets.all(14),
+                            itemCount: _posts.length + (_hasMore ? 1 : 0),
+                            itemBuilder: (c, i) {
+                              if (i >= _posts.length) {
+                                return const Padding(
+                                  padding: EdgeInsets.all(20),
+                                  child: Center(child: CircularProgressIndicator(color: gold)),
+                                );
+                              }
+                              return _post(context, _posts[i]);
+                            },
+                          ),
+                        ),
         ),
       ],
     );
   }
 }
 
-/* ==================== SHOP ==================== */
+/* ==================== SHOP (با صفحه‌بندی) ==================== */
 class ShopPage extends StatefulWidget {
   const ShopPage({super.key});
   @override
@@ -496,16 +584,49 @@ class ShopPage extends StatefulWidget {
 }
 
 class _ShopPageState extends State<ShopPage> {
-  Future<List>? _f;
+  final _products = <dynamic>[];
+  int _page = 1;
+  bool _loading = false;
+  bool _hasMore = true;
+  String? _error;
+  final _scroll = ScrollController();
+
   @override
   void initState() {
     super.initState();
-    _f = getAllProducts();
+    _load();
+    _scroll.addListener(() {
+      if (_scroll.position.pixels >= _scroll.position.maxScrollExtent - 300 && !_loading && _hasMore) {
+        _load();
+      }
+    });
   }
+
+  Future<void> _load() async {
+    if (_loading || !_hasMore) return;
+    setState(() { _loading = true; _error = null; });
+    try {
+      final list = await getProductsPaged(perPage: perPageSize, page: _page);
+      setState(() {
+        if (list.isEmpty) {
+          _hasMore = false;
+        } else {
+          _products.addAll(list);
+          _page++;
+          if (list.length < perPageSize) _hasMore = false;
+        }
+        _loading = false;
+      });
+    } catch (e) {
+      setState(() { _error = e.toString(); _loading = false; });
+    }
+  }
+
   Future<void> _refresh() async {
-    setState(() => _f = getAllProducts());
-    try { await _f; } catch (_) {}
+    setState(() { _products.clear(); _page = 1; _hasMore = true; _error = null; });
+    await _load();
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -513,26 +634,32 @@ class _ShopPageState extends State<ShopPage> {
         children: [
           _header(context, 'فروشگاه'),
           Expanded(
-            child: FutureBuilder<List>(
-              future: _f,
-              builder: (c, s) {
-                if (s.connectionState == ConnectionState.waiting) return const _Loading();
-                if (s.hasError) return _ErrorBox('خطا در دریافت محصولات.\n${s.error}', _refresh);
-                final products = s.data ?? [];
-                if (products.isEmpty) return const _Empty('محصولی پیدا نشد.');
-                return RefreshIndicator(
-                  color: gold,
-                  backgroundColor: pnl,
-                  onRefresh: _refresh,
-                  child: ListView.builder(
-                    cacheExtent: 1000,
-                    padding: const EdgeInsets.all(14),
-                    itemCount: products.length,
-                    itemBuilder: (c, i) => _product(context, products[i]),
-                  ),
-                );
-              },
-            ),
+            child: _products.isEmpty && _loading
+                ? const _Loading()
+                : _products.isEmpty && _error != null
+                    ? _ErrorBox('خطا در دریافت محصولات.\n$_error', _refresh)
+                    : _products.isEmpty
+                        ? const _Empty('محصولی پیدا نشد.')
+                        : RefreshIndicator(
+                            color: gold,
+                            backgroundColor: pnl,
+                            onRefresh: _refresh,
+                            child: ListView.builder(
+                              controller: _scroll,
+                              cacheExtent: 800,
+                              padding: const EdgeInsets.all(14),
+                              itemCount: _products.length + (_hasMore ? 1 : 0),
+                              itemBuilder: (c, i) {
+                                if (i >= _products.length) {
+                                  return const Padding(
+                                    padding: EdgeInsets.all(20),
+                                    child: Center(child: CircularProgressIndicator(color: gold)),
+                                  );
+                                }
+                                return _product(context, _products[i]);
+                              },
+                            ),
+                          ),
           ),
         ],
       ),
@@ -601,7 +728,7 @@ class _SearchPageState extends State<SearchPage> {
                       final posts = s.data ?? [];
                       if (posts.isEmpty) return _Empty('نتیجه‌ای برای «$_q» پیدا نشد.');
                       return ListView.builder(
-                        cacheExtent: 1000,
+                        cacheExtent: 800,
                         padding: const EdgeInsets.all(14),
                         itemCount: posts.length,
                         itemBuilder: (c, i) => _post(context, posts[i]),
@@ -826,6 +953,7 @@ Widget _hero() {
         heroImg,
         fit: BoxFit.cover,
         width: double.infinity,
+        filterQuality: FilterQuality.high,
         loadingBuilder: (c, ch, pr) {
           if (pr == null) return ch;
           return Container(
@@ -924,8 +1052,8 @@ Widget _post(BuildContext context, dynamic p) {
                   ? CachedNetworkImage(
                       imageUrl: i,
                       fit: BoxFit.cover,
-                      fadeInDuration: const Duration(milliseconds: 150),
-                      memCacheWidth: 250,
+                      filterQuality: FilterQuality.high,
+                      fadeInDuration: const Duration(milliseconds: 200),
                       placeholder: (_, __) => Container(
                         color: pnl2,
                         child: const Center(
@@ -985,12 +1113,7 @@ Widget _product(BuildContext context, dynamic p) {
   final isOnSale = salePrice.isNotEmpty && salePrice != regularPrice;
 
   return GestureDetector(
-    onTap: () => Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => WebPage(url: link, title: name),
-      ),
-    ),
+    onTap: () => openUrl(link),
     child: Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
@@ -1011,8 +1134,8 @@ Widget _product(BuildContext context, dynamic p) {
                   ? CachedNetworkImage(
                       imageUrl: img,
                       fit: BoxFit.cover,
-                      fadeInDuration: const Duration(milliseconds: 150),
-                      memCacheWidth: 250,
+                      filterQuality: FilterQuality.high,
+                      fadeInDuration: const Duration(milliseconds: 200),
                       placeholder: (_, __) => Container(
                         color: pnl2,
                         child: const Center(
