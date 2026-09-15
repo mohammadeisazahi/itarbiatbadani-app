@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -740,129 +741,95 @@ class _SearchPageState extends State<SearchPage> {
   }
 }
 
-/* ==================== ACCOUNT ==================== */
-class AccountPage extends StatelessWidget {
+/* ==================== ACCOUNT (Persistent Login) ==================== */
+final _storage = const FlutterSecureStorage();
+WebViewController? _accountController;
+
+class AccountPage extends StatefulWidget {
   const AccountPage({super.key});
   @override
+  State<AccountPage> createState() => _AccountPageState();
+}
+
+class _AccountPageState extends State<AccountPage> {
+  bool _l = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _init();
+  }
+
+  Future<void> _init() async {
+    if (_accountController != null) {
+      setState(() => _l = false);
+      return;
+    }
+
+    _accountController = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(bgC)
+      ..setUserAgent(
+          'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36')
+      ..setNavigationDelegate(NavigationDelegate(
+        onPageStarted: (_) => setState(() => _l = true),
+        onPageFinished: (_) async {
+          setState(() => _l = false);
+          await _saveCookies();
+        },
+      ));
+
+    await _restoreCookies();
+    _accountController!.loadRequest(Uri.parse('$site/my-account/'));
+  }
+
+  Future<void> _saveCookies() async {
+    try {
+      final result = await _accountController!.runJavaScriptReturningResult(
+        'document.cookie',
+      );
+      final str = result.toString().replaceAll('"', '');
+      if (str.isNotEmpty) {
+        await _storage.write(key: 'wc_cookies', value: str);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _restoreCookies() async {
+    try {
+      final saved = await _storage.read(key: 'wc_cookies');
+      if (saved == null || saved.isEmpty) return;
+      await _accountController!.runJavaScript(
+        'document.cookie = "$saved";',
+      );
+    } catch (_) {}
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
+    if (_accountController == null) {
+      return Scaffold(
         body: Column(
           children: [
             _header(context, 'حساب من'),
-            Container(
-              color: pnl,
-              child: const TabBar(
-                indicatorColor: gold,
-                labelColor: gold,
-                unselectedLabelColor: mutC,
-                tabs: [
-                  Tab(text: 'حساب من', icon: Icon(Icons.person_outline, size: 20)),
-                  Tab(text: 'دسترسی سریع', icon: Icon(Icons.flash_on_outlined, size: 20)),
-                ],
-              ),
-            ),
-            Expanded(
-              child: TabBarView(
-                children: [
-                  const WebPage(
-                    url: '$site/my-account/',
-                    title: 'حساب من',
-                    fullPage: false,
-                  ),
-                  ListView(
-                    padding: const EdgeInsets.all(14),
-                    children: [
-                      const SizedBox(height: 10),
-                      Center(
-                        child: Container(
-                          width: 90, height: 90,
-                          decoration: BoxDecoration(
-                            color: gold.withOpacity(0.12),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: gold.withOpacity(0.4), width: 2),
-                          ),
-                          child: const Icon(Icons.person_outline, color: gold, size: 50),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      const Center(
-                        child: Text(
-                          'دسترسی سریع',
-                          style: TextStyle(color: txtC, fontSize: 20, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20),
-                        child: Text(
-                          'برای دسترسی سریع به بخش‌های مهم حساب کاربری، از دکمه‌های زیر استفاده کنید.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: mutC, fontSize: 13, height: 1.8),
-                        ),
-                      ),
-                      const SizedBox(height: 25),
-                      _accountBtn(context, 'ورود به حساب کاربری', Icons.login, '$site/my-account/'),
-                      const SizedBox(height: 12),
-                      _accountBtn(context, 'ثبت‌نام / فراموشی رمز', Icons.person_add_alt_1, '$site/my-account/'),
-                      const SizedBox(height: 12),
-                      _accountBtn(context, 'خریدهای من (دانلود فایل‌ها)', Icons.download_outlined, '$site/my-account/downloads/'),
-                      const SizedBox(height: 12),
-                      _accountBtn(context, 'سفارش‌های من', Icons.receipt_long_outlined, '$site/my-account/orders/'),
-                      const SizedBox(height: 25),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20),
-                        child: Text(
-                          'نکته: ثبت‌نام و ورود از طریق سامانه امن فروشگاه انجام می‌شود.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: mutC, fontSize: 11, height: 1.7),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+            const Expanded(child: _Loading()),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _accountBtn(BuildContext context, String label, IconData icon, String url) {
-    return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => WebPage(url: url, title: label)),
-      ),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        decoration: BoxDecoration(
-          color: pnl,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withOpacity(0.06)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 42, height: 42,
-              decoration: BoxDecoration(
-                color: gold.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: gold, size: 22),
+      );
+    }
+    return Scaffold(
+      body: Column(
+        children: [
+          _header(context, 'حساب من'),
+          Expanded(
+            child: Stack(
+              children: [
+                WebViewWidget(controller: _accountController!),
+                if (_l) const Center(child: CircularProgressIndicator(color: gold)),
+              ],
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Text(
-                label,
-                style: const TextStyle(color: txtC, fontSize: 14, fontWeight: FontWeight.bold),
-              ),
-            ),
-            const Icon(Icons.arrow_back_ios, color: mutC, size: 16),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -893,7 +860,8 @@ class _WebPageState extends State<WebPage> {
     _c = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(bgC)
-      ..setUserAgent('Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36')
+      ..setUserAgent(
+          'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36')
       ..setNavigationDelegate(NavigationDelegate(
         onPageStarted: (_) => setState(() => _l = true),
         onPageFinished: (_) => setState(() => _l = false),
@@ -909,6 +877,7 @@ class _WebPageState extends State<WebPage> {
         if (_l) const Center(child: CircularProgressIndicator(color: gold)),
       ],
     );
+
     if (widget.fullPage) {
       return Scaffold(
         body: Column(
@@ -919,6 +888,7 @@ class _WebPageState extends State<WebPage> {
         ),
       );
     }
+
     return Scaffold(
       appBar: AppBar(title: Text(widget.title), backgroundColor: bgC),
       body: content,
@@ -1074,12 +1044,7 @@ Widget _post(BuildContext context, dynamic p) {
   final i = pImg(p);
   final date = pDate(p);
   return GestureDetector(
-    onTap: () => Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => WebPage(url: pLink(p), title: pTitle(p)),
-      ),
-    ),
+    onTap: () => openUrl(pLink(p)),
     child: Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
