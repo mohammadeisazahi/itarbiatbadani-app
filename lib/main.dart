@@ -106,7 +106,6 @@ List<int> _toJalali(int gy, int gm, int gd) {
   return [jy, jm, jd];
 }
 
-// صفحه‌بندی
 Future<List> getPostsPaged({int perPage = perPageSize, int page = 1, int? catId}) async {
   var u = '$api/posts?per_page=$perPage&page=$page&_embed=wp:featuredmedia';
   if (catId != null) u += '&categories=$catId';
@@ -135,7 +134,6 @@ Future<int?> getCatIdBySlug(String slug) async {
   return null;
 }
 
-// جستجوی دقیق در عنوان
 Future<List> searchExact(String query) async {
   final r = await http.get(
     Uri.parse('$api/posts?search=${Uri.encodeComponent(query)}&per_page=50&_embed=wp:featuredmedia'),
@@ -284,7 +282,7 @@ class _HomeState extends State<Home> {
   }
 }
 
-/* ==================== ARTICLES (با صفحه‌بندی) ==================== */
+/* ==================== ARTICLES ==================== */
 class ArticlesPage extends StatefulWidget {
   const ArticlesPage({super.key});
   @override
@@ -375,7 +373,7 @@ class _ArticlesPageState extends State<ArticlesPage> {
   }
 }
 
-/* ==================== CATEGORY POSTS (با صفحه‌بندی) ==================== */
+/* ==================== CATEGORY POSTS ==================== */
 class CategoryPostsPage extends StatefulWidget {
   final Cat c;
   const CategoryPostsPage({super.key, required this.c});
@@ -474,7 +472,7 @@ class _CategoryPostsPageState extends State<CategoryPostsPage> {
   }
 }
 
-/* ==================== NEWS (با صفحه‌بندی) ==================== */
+/* ==================== NEWS ==================== */
 class NewsPage extends StatefulWidget {
   const NewsPage({super.key});
   @override
@@ -576,7 +574,7 @@ class _NewsPageState extends State<NewsPage> {
   }
 }
 
-/* ==================== SHOP (با صفحه‌بندی) ==================== */
+/* ==================== SHOP ==================== */
 class ShopPage extends StatefulWidget {
   const ShopPage({super.key});
   @override
@@ -747,64 +745,88 @@ class AccountPage extends StatelessWidget {
   const AccountPage({super.key});
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: EdgeInsets.zero,
-      children: [
-        _header(context, 'حساب من'),
-        const SizedBox(height: 30),
-        Center(
-          child: Container(
-            width: 90, height: 90,
-            decoration: BoxDecoration(
-              color: gold.withOpacity(0.12),
-              shape: BoxShape.circle,
-              border: Border.all(color: gold.withOpacity(0.4), width: 2),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        body: Column(
+          children: [
+            _header(context, 'حساب من'),
+            Container(
+              color: pnl,
+              child: const TabBar(
+                indicatorColor: gold,
+                labelColor: gold,
+                unselectedLabelColor: mutC,
+                tabs: [
+                  Tab(text: 'حساب من', icon: Icon(Icons.person_outline, size: 20)),
+                  Tab(text: 'دسترسی سریع', icon: Icon(Icons.flash_on_outlined, size: 20)),
+                ],
+              ),
             ),
-            child: const Icon(Icons.person_outline, color: gold, size: 50),
-          ),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  const WebPage(
+                    url: '$site/my-account/',
+                    title: 'حساب من',
+                    fullPage: false,
+                  ),
+                  ListView(
+                    padding: const EdgeInsets.all(14),
+                    children: [
+                      const SizedBox(height: 10),
+                      Center(
+                        child: Container(
+                          width: 90, height: 90,
+                          decoration: BoxDecoration(
+                            color: gold.withOpacity(0.12),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: gold.withOpacity(0.4), width: 2),
+                          ),
+                          child: const Icon(Icons.person_outline, color: gold, size: 50),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      const Center(
+                        child: Text(
+                          'دسترسی سریع',
+                          style: TextStyle(color: txtC, fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20),
+                        child: Text(
+                          'برای دسترسی سریع به بخش‌های مهم حساب کاربری، از دکمه‌های زیر استفاده کنید.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: mutC, fontSize: 13, height: 1.8),
+                        ),
+                      ),
+                      const SizedBox(height: 25),
+                      _accountBtn(context, 'ورود به حساب کاربری', Icons.login, '$site/my-account/'),
+                      const SizedBox(height: 12),
+                      _accountBtn(context, 'ثبت‌نام / فراموشی رمز', Icons.person_add_alt_1, '$site/my-account/'),
+                      const SizedBox(height: 12),
+                      _accountBtn(context, 'خریدهای من (دانلود فایل‌ها)', Icons.download_outlined, '$site/my-account/downloads/'),
+                      const SizedBox(height: 12),
+                      _accountBtn(context, 'سفارش‌های من', Icons.receipt_long_outlined, '$site/my-account/orders/'),
+                      const SizedBox(height: 25),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20),
+                        child: Text(
+                          'نکته: ثبت‌نام و ورود از طریق سامانه امن فروشگاه انجام می‌شود.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: mutC, fontSize: 11, height: 1.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 20),
-        const Center(
-          child: Text(
-            'به اپلیکیشن خوش آمدید',
-            style: TextStyle(color: txtC, fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-        ),
-        const SizedBox(height: 8),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 30),
-          child: Text(
-            'برای دسترسی به فایل‌های خریداری‌شده و امکانات بیشتر، وارد حساب کاربری خود شوید یا ثبت‌نام کنید.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: mutC, fontSize: 13, height: 1.8),
-          ),
-        ),
-        const SizedBox(height: 30),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          child: Column(
-            children: [
-              _accountBtn(context, 'ورود به حساب کاربری', Icons.login, '$site/my-account/'),
-              const SizedBox(height: 12),
-              _accountBtn(context, 'ثبت‌نام / فراموشی رمز', Icons.person_add_alt_1, '$site/my-account/'),
-              const SizedBox(height: 12),
-              _accountBtn(context, 'خریدهای من (دانلود فایل‌ها)', Icons.download_outlined, '$site/my-account/downloads/'),
-              const SizedBox(height: 12),
-              _accountBtn(context, 'سفارش‌های من', Icons.receipt_long_outlined, '$site/my-account/orders/'),
-            ],
-          ),
-        ),
-        const SizedBox(height: 30),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20),
-          child: Text(
-            'نکته: ثبت‌نام و ورود از طریق سامانه امن فروشگاه انجام می‌شود.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: mutC, fontSize: 11, height: 1.7),
-          ),
-        ),
-        const SizedBox(height: 30),
-      ],
+      ),
     );
   }
 
@@ -850,7 +872,13 @@ class AccountPage extends StatelessWidget {
 class WebPage extends StatefulWidget {
   final String url;
   final String title;
-  const WebPage({super.key, required this.url, required this.title});
+  final bool fullPage;
+  const WebPage({
+    super.key,
+    required this.url,
+    required this.title,
+    this.fullPage = false,
+  });
   @override
   State<WebPage> createState() => _WebPageState();
 }
@@ -858,27 +886,42 @@ class WebPage extends StatefulWidget {
 class _WebPageState extends State<WebPage> {
   late final WebViewController _c;
   bool _l = true;
+
   @override
   void initState() {
     super.initState();
     _c = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(bgC)
+      ..setUserAgent('Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36')
       ..setNavigationDelegate(NavigationDelegate(
         onPageStarted: (_) => setState(() => _l = true),
         onPageFinished: (_) => setState(() => _l = false),
       ))
       ..loadRequest(Uri.parse(widget.url));
   }
+
   @override
   Widget build(BuildContext context) {
+    final content = Stack(
+      children: [
+        WebViewWidget(controller: _c),
+        if (_l) const Center(child: CircularProgressIndicator(color: gold)),
+      ],
+    );
+    if (widget.fullPage) {
+      return Scaffold(
+        body: Column(
+          children: [
+            _header(context, widget.title),
+            Expanded(child: content),
+          ],
+        ),
+      );
+    }
     return Scaffold(
       appBar: AppBar(title: Text(widget.title), backgroundColor: bgC),
-      body: Stack(
-        children: [
-          WebViewWidget(controller: _c),
-          if (_l) const Center(child: CircularProgressIndicator(color: gold)),
-        ],
-      ),
+      body: content,
     );
   }
 }
@@ -1031,7 +1074,12 @@ Widget _post(BuildContext context, dynamic p) {
   final i = pImg(p);
   final date = pDate(p);
   return GestureDetector(
-    onTap: () => openUrl(pLink(p)),
+    onTap: () => Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => WebPage(url: pLink(p), title: pTitle(p)),
+      ),
+    ),
     child: Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
