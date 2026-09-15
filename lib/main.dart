@@ -11,15 +11,21 @@ const String api = '$site/wp-json/wp/v2';
 const String wcKey = 'YOUR_WC_KEY';
 const String wcSecret = 'YOUR_WC_SECRET';
 const Color gold = Color(0xfffbc531);
-const Color bgC = Color(0xff07131f);
-const Color pnl = Color(0xff0d2233);
-const Color pnl2 = Color(0xff102a3e);
-const Color txtC = Color(0xfff4f7fa);
-const Color mutC = Color(0xff9fb0bd);
 const String logo = 'assets/images/logo.png';
 const String logoNet = '$site/wp-content/uploads/2025/07/1000073463.png';
 const String heroImg = '$site/wp-content/uploads/2025/08/file_00000000b12862439589872d238e031b-1.png';
 const int perPageSize = 10;
+
+final _storage = const FlutterSecureStorage();
+final darkModeNotifier = ValueNotifier<bool>(true);
+
+Color get bgC => darkModeNotifier.value ? const Color(0xff07131f) : const Color(0xffffffff);
+Color get pnl => darkModeNotifier.value ? const Color(0xff0d2233) : const Color(0xfff5f5f5);
+Color get pnl2 => darkModeNotifier.value ? const Color(0xff102a3e) : const Color(0xffeaeaea);
+Color get txtC => darkModeNotifier.value ? const Color(0xfff4f7fa) : const Color(0xff1a1a1a);
+Color get mutC => darkModeNotifier.value ? const Color(0xff9fb0bd) : const Color(0xff666666);
+Color get lineC => darkModeNotifier.value ? const Color(0x17ffffff) : const Color(0x17000000);
+Color get navBg => darkModeNotifier.value ? const Color(0xff081925) : const Color(0xffffffff);
 
 class Cat {
   final String n;
@@ -161,29 +167,44 @@ String formatPrice(String price) {
   return '$buffer تومان';
 }
 
-void main() => runApp(const App());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    final saved = await _storage.read(key: 'dark_mode');
+    darkModeNotifier.value = saved == null ? true : saved == 'true';
+  } catch (_) {}
+  runApp(const App());
+}
 
 class App extends StatelessWidget {
   const App({super.key});
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'تربیت بدنی و علوم ورزشی',
-      theme: ThemeData(
-        fontFamily: 'Vazirmatn',
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: bgC,
-        colorScheme: ColorScheme.fromSeed(seedColor: gold, brightness: Brightness.dark),
-        pageTransitionsTheme: const PageTransitionsTheme(
-          builders: {TargetPlatform.android: CupertinoPageTransitionsBuilder()},
-        ),
-      ),
-      builder: (c, ch) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: ch ?? const SizedBox(),
-      ),
-      home: const Root(),
+    return ValueListenableBuilder<bool>(
+      valueListenable: darkModeNotifier,
+      builder: (c, isDark, _) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'تربیت بدنی و علوم ورزشی',
+          theme: ThemeData(
+            fontFamily: 'Vazirmatn',
+            brightness: isDark ? Brightness.dark : Brightness.light,
+            scaffoldBackgroundColor: bgC,
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: gold,
+              brightness: isDark ? Brightness.dark : Brightness.light,
+            ),
+            pageTransitionsTheme: const PageTransitionsTheme(
+              builders: {TargetPlatform.android: CupertinoPageTransitionsBuilder()},
+            ),
+          ),
+          builder: (c, ch) => Directionality(
+            textDirection: TextDirection.rtl,
+            child: ch ?? const SizedBox(),
+          ),
+          home: const Root(),
+        );
+      },
     );
   }
 }
@@ -206,7 +227,7 @@ class _RootState extends State<Root> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _i,
         onTap: (i) => setState(() => _i = i),
-        backgroundColor: const Color(0xff081925),
+        backgroundColor: navBg,
         selectedItemColor: gold,
         unselectedItemColor: mutC,
         type: BottomNavigationBarType.fixed,
@@ -243,41 +264,44 @@ class _HomeState extends State<Home> {
   }
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
-      color: gold,
-      backgroundColor: pnl,
-      onRefresh: _refresh,
-      child: CustomScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        slivers: [
-          SliverToBoxAdapter(child: _header(context)),
-          SliverToBoxAdapter(child: _hero()),
-          SliverToBoxAdapter(child: _services()),
-          const SliverToBoxAdapter(
-            child: _SectionTitle('جدیدترین نوشته‌ها', Icons.article_outlined),
-          ),
-          SliverToBoxAdapter(
-            child: FutureBuilder<List>(
-              future: _f,
-              builder: (c, s) {
-                if (s.connectionState == ConnectionState.waiting) return const _Loading();
-                if (s.hasError) return _ErrorBox('خطا در دریافت مطالب.\n${s.error}', _refresh);
-                final posts = s.data ?? [];
-                if (posts.isEmpty) return const _Empty('مطلبی پیدا نشد.');
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  child: Column(children: posts.map((p) => _post(context, p)).toList()),
-                );
-              },
+    return ValueListenableBuilder<bool>(
+      valueListenable: darkModeNotifier,
+      builder: (context, _, __) => RefreshIndicator(
+        color: gold,
+        backgroundColor: pnl,
+        onRefresh: _refresh,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(child: _header(context)),
+            SliverToBoxAdapter(child: _hero()),
+            SliverToBoxAdapter(child: _services()),
+            const SliverToBoxAdapter(
+              child: _SectionTitle('جدیدترین نوشته‌ها', Icons.article_outlined),
             ),
-          ),
-          const SliverToBoxAdapter(
-            child: _SectionTitle('دسته‌بندی مقالات', Icons.grid_view_rounded),
-          ),
-          SliverToBoxAdapter(child: _catGrid()),
-          SliverToBoxAdapter(child: _social()),
-          const SliverToBoxAdapter(child: SizedBox(height: 25)),
-        ],
+            SliverToBoxAdapter(
+              child: FutureBuilder<List>(
+                future: _f,
+                builder: (c, s) {
+                  if (s.connectionState == ConnectionState.waiting) return const _Loading();
+                  if (s.hasError) return _ErrorBox('خطا در دریافت مطالب.\n${s.error}', _refresh);
+                  final posts = s.data ?? [];
+                  if (posts.isEmpty) return const _Empty('مطلبی پیدا نشد.');
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    child: Column(children: posts.map((p) => _post(context, p)).toList()),
+                  );
+                },
+              ),
+            ),
+            const SliverToBoxAdapter(
+              child: _SectionTitle('دسته‌بندی مقالات', Icons.grid_view_rounded),
+            ),
+            SliverToBoxAdapter(child: _catGrid()),
+            SliverToBoxAdapter(child: _social()),
+            const SliverToBoxAdapter(child: SizedBox(height: 25)),
+          ],
+        ),
       ),
     );
   }
@@ -336,39 +360,42 @@ class _ArticlesPageState extends State<ArticlesPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
-        children: [
-          _header(context, 'مقالات'),
-          Expanded(
-            child: _posts.isEmpty && _loading
-                ? const _Loading()
-                : _posts.isEmpty && _error != null
-                    ? _ErrorBox('خطا در دریافت مقالات.\n$_error', _refresh)
-                    : _posts.isEmpty
-                        ? const _Empty('مقاله‌ای پیدا نشد.')
-                        : RefreshIndicator(
-                            color: gold,
-                            backgroundColor: pnl,
-                            onRefresh: _refresh,
-                            child: ListView.builder(
-                              controller: _scroll,
-                              cacheExtent: 800,
-                              padding: const EdgeInsets.all(14),
-                              itemCount: _posts.length + (_hasMore ? 1 : 0),
-                              itemBuilder: (c, i) {
-                                if (i >= _posts.length) {
-                                  return const Padding(
-                                    padding: EdgeInsets.all(20),
-                                    child: Center(child: CircularProgressIndicator(color: gold)),
-                                  );
-                                }
-                                return _post(context, _posts[i]);
-                              },
+    return ValueListenableBuilder<bool>(
+      valueListenable: darkModeNotifier,
+      builder: (context, _, __) => Scaffold(
+        body: Column(
+          children: [
+            _header(context, 'مقالات'),
+            Expanded(
+              child: _posts.isEmpty && _loading
+                  ? const _Loading()
+                  : _posts.isEmpty && _error != null
+                      ? _ErrorBox('خطا در دریافت مقالات.\n$_error', _refresh)
+                      : _posts.isEmpty
+                          ? const _Empty('مقاله‌ای پیدا نشد.')
+                          : RefreshIndicator(
+                              color: gold,
+                              backgroundColor: pnl,
+                              onRefresh: _refresh,
+                              child: ListView.builder(
+                                controller: _scroll,
+                                cacheExtent: 800,
+                                padding: const EdgeInsets.all(14),
+                                itemCount: _posts.length + (_hasMore ? 1 : 0),
+                                itemBuilder: (c, i) {
+                                  if (i >= _posts.length) {
+                                    return const Padding(
+                                      padding: EdgeInsets.all(20),
+                                      child: Center(child: CircularProgressIndicator(color: gold)),
+                                    );
+                                  }
+                                  return _post(context, _posts[i]);
+                                },
+                              ),
                             ),
-                          ),
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -441,34 +468,37 @@ class _CategoryPostsPageState extends State<CategoryPostsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(widget.c.n), backgroundColor: bgC),
-      body: _posts.isEmpty && _loading
-          ? const _Loading()
-          : _posts.isEmpty && _error != null
-              ? _ErrorBox('خطا در دریافت مطالب.\n$_error', _refresh)
-              : _posts.isEmpty
-                  ? const _Empty('مطلبی در این دسته پیدا نشد.')
-                  : RefreshIndicator(
-                      color: gold,
-                      backgroundColor: pnl,
-                      onRefresh: _refresh,
-                      child: ListView.builder(
-                        controller: _scroll,
-                        cacheExtent: 800,
-                        padding: const EdgeInsets.all(14),
-                        itemCount: _posts.length + (_hasMore ? 1 : 0),
-                        itemBuilder: (c, i) {
-                          if (i >= _posts.length) {
-                            return const Padding(
-                              padding: EdgeInsets.all(20),
-                              child: Center(child: CircularProgressIndicator(color: gold)),
-                            );
-                          }
-                          return _post(context, _posts[i]);
-                        },
+    return ValueListenableBuilder<bool>(
+      valueListenable: darkModeNotifier,
+      builder: (context, _, __) => Scaffold(
+        appBar: AppBar(title: Text(widget.c.n), backgroundColor: bgC, foregroundColor: txtC),
+        body: _posts.isEmpty && _loading
+            ? const _Loading()
+            : _posts.isEmpty && _error != null
+                ? _ErrorBox('خطا در دریافت مطالب.\n$_error', _refresh)
+                : _posts.isEmpty
+                    ? const _Empty('مطلبی در این دسته پیدا نشد.')
+                    : RefreshIndicator(
+                        color: gold,
+                        backgroundColor: pnl,
+                        onRefresh: _refresh,
+                        child: ListView.builder(
+                          controller: _scroll,
+                          cacheExtent: 800,
+                          padding: const EdgeInsets.all(14),
+                          itemCount: _posts.length + (_hasMore ? 1 : 0),
+                          itemBuilder: (c, i) {
+                            if (i >= _posts.length) {
+                              return const Padding(
+                                padding: EdgeInsets.all(20),
+                                child: Center(child: CircularProgressIndicator(color: gold)),
+                              );
+                            }
+                            return _post(context, _posts[i]);
+                          },
+                        ),
                       ),
-                    ),
+      ),
     );
   }
 }
@@ -539,38 +569,41 @@ class _NewsPageState extends State<NewsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        AppBar(title: const Text('اخبار و رویدادها'), backgroundColor: bgC),
-        Expanded(
-          child: _posts.isEmpty && _loading
-              ? const _Loading()
-              : _posts.isEmpty && _error != null
-                  ? _ErrorBox('خطا در دریافت اخبار.\n$_error', _refresh)
-                  : _posts.isEmpty
-                      ? const _Empty('خبری پیدا نشد.')
-                      : RefreshIndicator(
-                          color: gold,
-                          backgroundColor: pnl,
-                          onRefresh: _refresh,
-                          child: ListView.builder(
-                            controller: _scroll,
-                            cacheExtent: 800,
-                            padding: const EdgeInsets.all(14),
-                            itemCount: _posts.length + (_hasMore ? 1 : 0),
-                            itemBuilder: (c, i) {
-                              if (i >= _posts.length) {
-                                return const Padding(
-                                  padding: EdgeInsets.all(20),
-                                  child: Center(child: CircularProgressIndicator(color: gold)),
-                                );
-                              }
-                              return _post(context, _posts[i]);
-                            },
+    return ValueListenableBuilder<bool>(
+      valueListenable: darkModeNotifier,
+      builder: (context, _, __) => Column(
+        children: [
+          AppBar(title: const Text('اخبار و رویدادها'), backgroundColor: bgC, foregroundColor: txtC),
+          Expanded(
+            child: _posts.isEmpty && _loading
+                ? const _Loading()
+                : _posts.isEmpty && _error != null
+                    ? _ErrorBox('خطا در دریافت اخبار.\n$_error', _refresh)
+                    : _posts.isEmpty
+                        ? const _Empty('خبری پیدا نشد.')
+                        : RefreshIndicator(
+                            color: gold,
+                            backgroundColor: pnl,
+                            onRefresh: _refresh,
+                            child: ListView.builder(
+                              controller: _scroll,
+                              cacheExtent: 800,
+                              padding: const EdgeInsets.all(14),
+                              itemCount: _posts.length + (_hasMore ? 1 : 0),
+                              itemBuilder: (c, i) {
+                                if (i >= _posts.length) {
+                                  return const Padding(
+                                    padding: EdgeInsets.all(20),
+                                    child: Center(child: CircularProgressIndicator(color: gold)),
+                                  );
+                                }
+                                return _post(context, _posts[i]);
+                              },
+                            ),
                           ),
-                        ),
-        ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 }
@@ -628,39 +661,42 @@ class _ShopPageState extends State<ShopPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
-        children: [
-          _header(context, 'فروشگاه'),
-          Expanded(
-            child: _products.isEmpty && _loading
-                ? const _Loading()
-                : _products.isEmpty && _error != null
-                    ? _ErrorBox('خطا در دریافت محصولات.\n$_error', _refresh)
-                    : _products.isEmpty
-                        ? const _Empty('محصولی پیدا نشد.')
-                        : RefreshIndicator(
-                            color: gold,
-                            backgroundColor: pnl,
-                            onRefresh: _refresh,
-                            child: ListView.builder(
-                              controller: _scroll,
-                              cacheExtent: 800,
-                              padding: const EdgeInsets.all(14),
-                              itemCount: _products.length + (_hasMore ? 1 : 0),
-                              itemBuilder: (c, i) {
-                                if (i >= _products.length) {
-                                  return const Padding(
-                                    padding: EdgeInsets.all(20),
-                                    child: Center(child: CircularProgressIndicator(color: gold)),
-                                  );
-                                }
-                                return _product(context, _products[i]);
-                              },
+    return ValueListenableBuilder<bool>(
+      valueListenable: darkModeNotifier,
+      builder: (context, _, __) => Scaffold(
+        body: Column(
+          children: [
+            _header(context, 'فروشگاه'),
+            Expanded(
+              child: _products.isEmpty && _loading
+                  ? const _Loading()
+                  : _products.isEmpty && _error != null
+                      ? _ErrorBox('خطا در دریافت محصولات.\n$_error', _refresh)
+                      : _products.isEmpty
+                          ? const _Empty('محصولی پیدا نشد.')
+                          : RefreshIndicator(
+                              color: gold,
+                              backgroundColor: pnl,
+                              onRefresh: _refresh,
+                              child: ListView.builder(
+                                controller: _scroll,
+                                cacheExtent: 800,
+                                padding: const EdgeInsets.all(14),
+                                itemCount: _products.length + (_hasMore ? 1 : 0),
+                                itemBuilder: (c, i) {
+                                  if (i >= _products.length) {
+                                    return const Padding(
+                                      padding: EdgeInsets.all(20),
+                                      child: Center(child: CircularProgressIndicator(color: gold)),
+                                    );
+                                  }
+                                  return _product(context, _products[i]);
+                                },
+                              ),
                             ),
-                          ),
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -689,61 +725,62 @@ class _SearchPageState extends State<SearchPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('جستجو'), backgroundColor: bgC),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(14),
-            child: TextField(
-              controller: _ctrl,
-              textInputAction: TextInputAction.search,
-              onSubmitted: (_) => _doSearch(),
-              style: const TextStyle(color: txtC),
-              decoration: InputDecoration(
-                hintText: 'عبارت مورد نظر...',
-                hintStyle: const TextStyle(color: mutC),
-                filled: true,
-                fillColor: pnl,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.search, color: gold),
-                  onPressed: _doSearch,
+    return ValueListenableBuilder<bool>(
+      valueListenable: darkModeNotifier,
+      builder: (context, _, __) => Scaffold(
+        appBar: AppBar(title: const Text('جستجو'), backgroundColor: bgC, foregroundColor: txtC),
+        body: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: TextField(
+                controller: _ctrl,
+                textInputAction: TextInputAction.search,
+                onSubmitted: (_) => _doSearch(),
+                style: TextStyle(color: txtC),
+                decoration: InputDecoration(
+                  hintText: 'عبارت مورد نظر...',
+                  hintStyle: TextStyle(color: mutC),
+                  filled: true,
+                  fillColor: pnl,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.search, color: gold),
+                    onPressed: _doSearch,
+                  ),
                 ),
               ),
             ),
-          ),
-          Expanded(
-            child: _f == null
-                ? const _Empty('عبارتی برای جستجو وارد کنید')
-                : FutureBuilder<List>(
-                    future: _f,
-                    builder: (c, s) {
-                      if (s.connectionState == ConnectionState.waiting) return const _Loading();
-                      if (s.hasError) return _ErrorBox('خطا در جستجو.\n${s.error}', null);
-                      final posts = s.data ?? [];
-                      if (posts.isEmpty) return _Empty('نتیجه‌ای برای «$_q» پیدا نشد.');
-                      return ListView.builder(
-                        cacheExtent: 800,
-                        padding: const EdgeInsets.all(14),
-                        itemCount: posts.length,
-                        itemBuilder: (c, i) => _post(context, posts[i]),
-                      );
-                    },
-                  ),
-          ),
-        ],
+            Expanded(
+              child: _f == null
+                  ? const _Empty('عبارتی برای جستجو وارد کنید')
+                  : FutureBuilder<List>(
+                      future: _f,
+                      builder: (c, s) {
+                        if (s.connectionState == ConnectionState.waiting) return const _Loading();
+                        if (s.hasError) return _ErrorBox('خطا در جستجو.\n${s.error}', null);
+                        final posts = s.data ?? [];
+                        if (posts.isEmpty) return _Empty('نتیجه‌ای برای «$_q» پیدا نشد.');
+                        return ListView.builder(
+                          cacheExtent: 800,
+                          padding: const EdgeInsets.all(14),
+                          itemCount: posts.length,
+                          itemBuilder: (c, i) => _post(context, posts[i]),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-/* ==================== ACCOUNT (Persistent Login + Download) ==================== */
-final _storage = const FlutterSecureStorage();
-
+/* ==================== ACCOUNT ==================== */
 class AccountPage extends StatefulWidget {
   const AccountPage({super.key});
   @override
@@ -807,43 +844,47 @@ class _AccountPageState extends State<AccountPage> {
         await _storage.write(key: 'wc_cookies', value: json.encode(list));
       } else {
         await _storage.delete(key: 'wc_cookies');
+        await CookieManager.instance().deleteAllCookies();
       }
     } catch (_) {}
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
-        children: [
-          _header(context, 'حساب من'),
-          Expanded(
-            child: Stack(
-              children: [
-                InAppWebView(
-                  initialUrlRequest: URLRequest(url: WebUri('$site/my-account/')),
-                  initialSettings: InAppWebViewSettings(
-                    javaScriptEnabled: true,
-                    useOnDownloadStart: true,
-                    userAgent:
-                        'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+    return ValueListenableBuilder<bool>(
+      valueListenable: darkModeNotifier,
+      builder: (context, _, __) => Scaffold(
+        body: Column(
+          children: [
+            _header(context, 'حساب من'),
+            Expanded(
+              child: Stack(
+                children: [
+                  InAppWebView(
+                    initialUrlRequest: URLRequest(url: WebUri('$site/my-account/')),
+                    initialSettings: InAppWebViewSettings(
+                      javaScriptEnabled: true,
+                      useOnDownloadStart: true,
+                      userAgent:
+                          'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+                    ),
+                    onWebViewCreated: (c) => _controller = c,
+                    onLoadStart: (c, url) => setState(() => _l = true),
+                    onLoadStop: (c, url) async {
+                      setState(() => _l = false);
+                      await _save();
+                    },
+                    onDownloadStartRequest: (controller, request) async {
+                      final url = request.url.toString();
+                      await openUrl(url);
+                    },
                   ),
-                  onWebViewCreated: (c) => _controller = c,
-                  onLoadStart: (c, url) => setState(() => _l = true),
-                  onLoadStop: (c, url) async {
-                    setState(() => _l = false);
-                    await _save();
-                  },
-                  onDownloadStartRequest: (controller, request) async {
-                    final url = request.url.toString();
-                    await openUrl(url);
-                  },
-                ),
-                if (_l) const Center(child: CircularProgressIndicator(color: gold)),
-              ],
+                  if (_l) const Center(child: CircularProgressIndicator(color: gold)),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -897,7 +938,7 @@ class _WebPageState extends State<WebPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title), backgroundColor: bgC),
+      appBar: AppBar(title: Text(widget.title), backgroundColor: bgC, foregroundColor: txtC),
       body: content,
     );
   }
@@ -909,9 +950,9 @@ Widget _header(BuildContext context, [String? t]) {
     bottom: false,
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: bgC,
-        border: Border(bottom: BorderSide(color: Color(0x17ffffff))),
+        border: Border(bottom: BorderSide(color: lineC)),
       ),
       child: Row(
         children: [
@@ -939,7 +980,25 @@ Widget _header(BuildContext context, [String? t]) {
             child: Text(
               t ?? 'اپلیکیشن تربیت بدنی و علوم ورزشی',
               textAlign: TextAlign.right,
-              style: const TextStyle(color: txtC, fontSize: 13, fontWeight: FontWeight.bold),
+              style: TextStyle(color: txtC, fontSize: 13, fontWeight: FontWeight.bold),
+            ),
+          ),
+          // 🌙 دکمه حالت شب/روز
+          ValueListenableBuilder<bool>(
+            valueListenable: darkModeNotifier,
+            builder: (c, isDark, _) => IconButton(
+              onPressed: () async {
+                darkModeNotifier.value = !darkModeNotifier.value;
+                await _storage.write(
+                  key: 'dark_mode',
+                  value: darkModeNotifier.value.toString(),
+                );
+              },
+              icon: Icon(
+                isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                color: gold,
+                size: 26,
+              ),
             ),
           ),
           IconButton(
@@ -1022,7 +1081,7 @@ Widget _services() {
               decoration: BoxDecoration(
                 color: pnl,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.white.withOpacity(0.06)),
+                border: Border.all(color: lineC),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -1034,7 +1093,7 @@ Widget _services() {
                     maxLines: 2,
                     textAlign: TextAlign.center,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: txtC, fontSize: 12, fontWeight: FontWeight.bold, height: 1.5),
+                    style: TextStyle(color: txtC, fontSize: 12, fontWeight: FontWeight.bold, height: 1.5),
                   ),
                 ],
               ),
@@ -1057,7 +1116,7 @@ Widget _post(BuildContext context, dynamic p) {
       decoration: BoxDecoration(
         color: pnl,
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.white.withOpacity(0.06)),
+        border: Border.all(color: lineC),
       ),
       child: Row(
         children: [
@@ -1105,11 +1164,11 @@ Widget _post(BuildContext context, dynamic p) {
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.right,
-                    style: const TextStyle(color: txtC, fontSize: 14, fontWeight: FontWeight.bold, height: 1.7),
+                    style: TextStyle(color: txtC, fontSize: 14, fontWeight: FontWeight.bold, height: 1.7),
                   ),
                   if (date.isNotEmpty) ...[
                     const SizedBox(height: 6),
-                    Text(date, style: const TextStyle(color: mutC, fontSize: 11)),
+                    Text(date, style: TextStyle(color: mutC, fontSize: 11)),
                   ],
                 ],
               ),
@@ -1139,7 +1198,7 @@ Widget _product(BuildContext context, dynamic p) {
       decoration: BoxDecoration(
         color: pnl,
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.white.withOpacity(0.06)),
+        border: Border.all(color: lineC),
       ),
       child: Row(
         children: [
@@ -1187,7 +1246,7 @@ Widget _product(BuildContext context, dynamic p) {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.right,
-                    style: const TextStyle(color: txtC, fontSize: 14, fontWeight: FontWeight.bold, height: 1.6),
+                    style: TextStyle(color: txtC, fontSize: 14, fontWeight: FontWeight.bold, height: 1.6),
                   ),
                   const SizedBox(height: 8),
                   if (isOnSale) ...[
@@ -1207,7 +1266,7 @@ Widget _product(BuildContext context, dynamic p) {
                         const SizedBox(width: 6),
                         Text(
                           formatPrice(regularPrice),
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: mutC,
                             fontSize: 11,
                             decoration: TextDecoration.lineThrough,
@@ -1234,7 +1293,7 @@ Widget _product(BuildContext context, dynamic p) {
                       ),
                     ),
                   ] else ...[
-                    const Text(
+                    Text(
                       'قیمت نامشخص',
                       style: TextStyle(color: mutC, fontSize: 12),
                     ),
@@ -1290,7 +1349,7 @@ Widget _catGrid() {
           decoration: BoxDecoration(
             color: pnl,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.white.withOpacity(0.06)),
+            border: Border.all(color: lineC),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -1311,7 +1370,7 @@ Widget _catGrid() {
                     maxLines: 2,
                     textAlign: TextAlign.center,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: txtC, fontSize: 12, fontWeight: FontWeight.bold, height: 1.5),
+                    style: TextStyle(color: txtC, fontSize: 12, fontWeight: FontWeight.bold, height: 1.5),
                   ),
                 ),
               ),
@@ -1351,7 +1410,7 @@ Widget _social() {
               decoration: BoxDecoration(
                 color: pnl,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white.withOpacity(0.06)),
+                border: Border.all(color: lineC),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -1360,7 +1419,7 @@ Widget _social() {
                   const SizedBox(width: 8),
                   Text(
                     items[i][0] as String,
-                    style: const TextStyle(color: txtC, fontWeight: FontWeight.bold, fontSize: 13),
+                    style: TextStyle(color: txtC, fontWeight: FontWeight.bold, fontSize: 13),
                   ),
                 ],
               ),
@@ -1393,7 +1452,7 @@ class _SectionTitle extends StatelessWidget {
             child: Text(
               t,
               textAlign: TextAlign.right,
-              style: const TextStyle(color: txtC, fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(color: txtC, fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -1417,7 +1476,7 @@ class _Empty extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.all(30),
-        child: Center(child: Text(t, style: const TextStyle(color: mutC))),
+        child: Center(child: Text(t, style: TextStyle(color: mutC))),
       );
 }
 
@@ -1434,7 +1493,7 @@ class _ErrorBox extends StatelessWidget {
         children: [
           const Icon(Icons.error_outline, color: Colors.red, size: 40),
           const SizedBox(height: 10),
-          Text(m, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70)),
+          Text(m, textAlign: TextAlign.center, style: TextStyle(color: txtC)),
           if (r != null) ...[
             const SizedBox(height: 15),
             ElevatedButton(onPressed: r, child: const Text('تلاش مجدد')),
