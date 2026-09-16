@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -10,8 +11,6 @@ const String site = 'https://itarbiatbadani.ir';
 const String api = '$site/wp-json/wp/v2';
 const String wcKey = 'YOUR_WC_KEY';
 const String wcSecret = 'YOUR_WC_SECRET';
-const Color gold = Color(0xfffbc531);
-const Color turquoise = Color(0xff25b8e8);
 const String logo = 'assets/images/logo.png';
 const String logoNet = '$site/wp-content/uploads/2025/07/1000073463.png';
 const String heroImg = '$site/wp-content/uploads/2025/08/file_00000000b12862439589872d238e031b-1.png';
@@ -20,13 +19,18 @@ const int perPageSize = 10;
 final _storage = const FlutterSecureStorage();
 final darkModeNotifier = ValueNotifier<bool>(true);
 
-Color get bgC => darkModeNotifier.value ? const Color(0xff07131f) : const Color(0xffffffff);
-Color get pnl => darkModeNotifier.value ? const Color(0xff0d2233) : const Color(0xfff5f5f5);
-Color get pnl2 => darkModeNotifier.value ? const Color(0xff102a3e) : const Color(0xffeaeaea);
-Color get txtC => darkModeNotifier.value ? const Color(0xfff4f7fa) : const Color(0xff1a1a1a);
-Color get mutC => darkModeNotifier.value ? const Color(0xff9fb0bd) : const Color(0xff666666);
-Color get lineC => darkModeNotifier.value ? const Color(0x3325b8e8) : const Color(0x2225b8e8);
-Color get navBg => darkModeNotifier.value ? const Color(0xff081925) : const Color(0xffffffff);
+// ===== رنگ‌های پویا (شب و روز) =====
+Color get bgC => darkModeNotifier.value ? const Color(0xff0a1929) : const Color(0xfff5f9fc);
+Color get pnl => darkModeNotifier.value ? const Color(0xff132f4c) : const Color(0xffffffff);
+Color get pnl2 => darkModeNotifier.value ? const Color(0xff1a3a5c) : const Color(0xffeef4fa);
+Color get txtC => darkModeNotifier.value ? const Color(0xffffffff) : const Color(0xff0a1929);
+Color get mutC => darkModeNotifier.value ? const Color(0xff8899aa) : const Color(0xff5a6b7c);
+Color get accentGreen => darkModeNotifier.value ? const Color(0xff4caf50) : const Color(0xff2e7d32);
+Color get accentBlue => darkModeNotifier.value ? const Color(0xff42a5f5) : const Color(0xff1976d2);
+Color get gold => darkModeNotifier.value ? const Color(0xfffbc531) : const Color(0xffd4a017);
+Color get lineC => darkModeNotifier.value ? const Color(0x404caf50) : const Color(0x332e7d32);
+Color get navBg => darkModeNotifier.value ? const Color(0xff0d1f33) : const Color(0xffffffff);
+Color get skeletonC => darkModeNotifier.value ? const Color(0xff1a3a5c) : const Color(0xffe0e8f0);
 
 class Cat {
   final String n;
@@ -192,7 +196,7 @@ class App extends StatelessWidget {
             brightness: isDark ? Brightness.dark : Brightness.light,
             scaffoldBackgroundColor: bgC,
             colorScheme: ColorScheme.fromSeed(
-              seedColor: gold,
+              seedColor: accentGreen,
               brightness: isDark ? Brightness.dark : Brightness.light,
             ),
             pageTransitionsTheme: const PageTransitionsTheme(
@@ -271,7 +275,7 @@ class _HomeState extends State<Home> {
     return ValueListenableBuilder<bool>(
       valueListenable: darkModeNotifier,
       builder: (context, _, __) => RefreshIndicator(
-        color: gold,
+        color: accentGreen,
         backgroundColor: pnl,
         onRefresh: _refresh,
         child: CustomScrollView(
@@ -287,13 +291,32 @@ class _HomeState extends State<Home> {
               child: FutureBuilder<List>(
                 future: _f,
                 builder: (c, s) {
-                  if (s.connectionState == ConnectionState.waiting) return const _Loading();
-                  if (s.hasError) return _ErrorBox('خطا در دریافت مطالب.\n${s.error}', _refresh);
+                  if (s.connectionState == ConnectionState.waiting) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 14),
+                      child: Column(
+                        children: [
+                          _FeaturedSkeleton(),
+                          _PostSkeleton(),
+                          _PostSkeleton(),
+                          _PostSkeleton(),
+                        ],
+                      ),
+                    );
+                  }
+                  if (s.hasError) {
+                    return _ErrorBox('خطا در دریافت مطالب.\n${s.error}', _refresh);
+                  }
                   final posts = s.data ?? [];
                   if (posts.isEmpty) return const _Empty('مطلبی پیدا نشد.');
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 14),
-                    child: Column(children: posts.map((p) => _post(context, p)).toList()),
+                    child: Column(
+                      children: [
+                        _featuredPost(context, posts.first),
+                        ...posts.skip(1).map((p) => _post(context, p)).toList(),
+                      ],
+                    ),
                   );
                 },
               ),
@@ -372,13 +395,24 @@ class _ArticlesPageState extends State<ArticlesPage> {
             _header(context, 'مقالات'),
             Expanded(
               child: _posts.isEmpty && _loading
-                  ? const _Loading()
+                  ? const Padding(
+                      padding: EdgeInsets.all(14),
+                      child: Column(
+                        children: [
+                          _PostSkeleton(),
+                          _PostSkeleton(),
+                          _PostSkeleton(),
+                          _PostSkeleton(),
+                          _PostSkeleton(),
+                        ],
+                      ),
+                    )
                   : _posts.isEmpty && _error != null
                       ? _ErrorBox('خطا در دریافت مقالات.\n$_error', _refresh)
                       : _posts.isEmpty
                           ? const _Empty('مقاله‌ای پیدا نشد.')
                           : RefreshIndicator(
-                              color: gold,
+                              color: accentGreen,
                               backgroundColor: pnl,
                               onRefresh: _refresh,
                               child: ListView.builder(
@@ -388,9 +422,9 @@ class _ArticlesPageState extends State<ArticlesPage> {
                                 itemCount: _posts.length + (_hasMore ? 1 : 0),
                                 itemBuilder: (c, i) {
                                   if (i >= _posts.length) {
-                                    return const Padding(
-                                      padding: EdgeInsets.all(20),
-                                      child: Center(child: CircularProgressIndicator(color: gold)),
+                                    return Padding(
+                                      padding: const EdgeInsets.all(20),
+                                      child: Center(child: CircularProgressIndicator(color: accentGreen)),
                                     );
                                   }
                                   return _post(context, _posts[i]);
@@ -477,13 +511,23 @@ class _CategoryPostsPageState extends State<CategoryPostsPage> {
       builder: (context, _, __) => Scaffold(
         appBar: AppBar(title: Text(widget.c.n), backgroundColor: bgC, foregroundColor: txtC),
         body: _posts.isEmpty && _loading
-            ? const _Loading()
+            ? const Padding(
+                padding: EdgeInsets.all(14),
+                child: Column(
+                  children: [
+                    _PostSkeleton(),
+                    _PostSkeleton(),
+                    _PostSkeleton(),
+                    _PostSkeleton(),
+                  ],
+                ),
+              )
             : _posts.isEmpty && _error != null
                 ? _ErrorBox('خطا در دریافت مطالب.\n$_error', _refresh)
                 : _posts.isEmpty
                     ? const _Empty('مطلبی در این دسته پیدا نشد.')
                     : RefreshIndicator(
-                        color: gold,
+                        color: accentGreen,
                         backgroundColor: pnl,
                         onRefresh: _refresh,
                         child: ListView.builder(
@@ -493,9 +537,9 @@ class _CategoryPostsPageState extends State<CategoryPostsPage> {
                           itemCount: _posts.length + (_hasMore ? 1 : 0),
                           itemBuilder: (c, i) {
                             if (i >= _posts.length) {
-                              return const Padding(
-                                padding: EdgeInsets.all(20),
-                                child: Center(child: CircularProgressIndicator(color: gold)),
+                              return Padding(
+                                padding: const EdgeInsets.all(20),
+                                child: Center(child: CircularProgressIndicator(color: accentGreen)),
                               );
                             }
                             return _post(context, _posts[i]);
@@ -580,13 +624,23 @@ class _NewsPageState extends State<NewsPage> {
           AppBar(title: const Text('اخبار و رویدادها'), backgroundColor: bgC, foregroundColor: txtC),
           Expanded(
             child: _posts.isEmpty && _loading
-                ? const _Loading()
+                ? const Padding(
+                    padding: EdgeInsets.all(14),
+                    child: Column(
+                      children: [
+                        _PostSkeleton(),
+                        _PostSkeleton(),
+                        _PostSkeleton(),
+                        _PostSkeleton(),
+                      ],
+                    ),
+                  )
                 : _posts.isEmpty && _error != null
                     ? _ErrorBox('خطا در دریافت اخبار.\n$_error', _refresh)
                     : _posts.isEmpty
                         ? const _Empty('خبری پیدا نشد.')
                         : RefreshIndicator(
-                            color: gold,
+                            color: accentGreen,
                             backgroundColor: pnl,
                             onRefresh: _refresh,
                             child: ListView.builder(
@@ -596,9 +650,9 @@ class _NewsPageState extends State<NewsPage> {
                               itemCount: _posts.length + (_hasMore ? 1 : 0),
                               itemBuilder: (c, i) {
                                 if (i >= _posts.length) {
-                                  return const Padding(
-                                    padding: EdgeInsets.all(20),
-                                    child: Center(child: CircularProgressIndicator(color: gold)),
+                                  return Padding(
+                                    padding: const EdgeInsets.all(20),
+                                    child: Center(child: CircularProgressIndicator(color: accentGreen)),
                                   );
                                 }
                                 return _post(context, _posts[i]);
@@ -673,13 +727,23 @@ class _ShopPageState extends State<ShopPage> {
             _header(context, 'فروشگاه'),
             Expanded(
               child: _products.isEmpty && _loading
-                  ? const _Loading()
+                  ? const Padding(
+                      padding: EdgeInsets.all(14),
+                      child: Column(
+                        children: [
+                          _PostSkeleton(),
+                          _PostSkeleton(),
+                          _PostSkeleton(),
+                          _PostSkeleton(),
+                        ],
+                      ),
+                    )
                   : _products.isEmpty && _error != null
                       ? _ErrorBox('خطا در دریافت محصولات.\n$_error', _refresh)
                       : _products.isEmpty
                           ? const _Empty('محصولی پیدا نشد.')
                           : RefreshIndicator(
-                              color: gold,
+                              color: accentGreen,
                               backgroundColor: pnl,
                               onRefresh: _refresh,
                               child: ListView.builder(
@@ -689,9 +753,9 @@ class _ShopPageState extends State<ShopPage> {
                                 itemCount: _products.length + (_hasMore ? 1 : 0),
                                 itemBuilder: (c, i) {
                                   if (i >= _products.length) {
-                                    return const Padding(
-                                      padding: EdgeInsets.all(20),
-                                      child: Center(child: CircularProgressIndicator(color: gold)),
+                                    return Padding(
+                                      padding: const EdgeInsets.all(20),
+                                      child: Center(child: CircularProgressIndicator(color: accentGreen)),
                                     );
                                   }
                                   return _product(context, _products[i]);
@@ -706,7 +770,7 @@ class _ShopPageState extends State<ShopPage> {
   }
 }
 
-/* ==================== SEARCH ==================== */
+/* ==================== SEARCH (Live) ==================== */
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
   @override
@@ -717,13 +781,30 @@ class _SearchPageState extends State<SearchPage> {
   final _ctrl = TextEditingController();
   Future<List>? _f;
   String _q = '';
+  Timer? _debounce;
 
-  void _doSearch() {
-    final q = _ctrl.text.trim();
-    if (q.isEmpty) return;
-    setState(() {
-      _q = q;
-      _f = searchExact(q);
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  void _onChanged(String value) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 400), () {
+      final q = value.trim();
+      if (q.isEmpty) {
+        setState(() {
+          _q = '';
+          _f = null;
+        });
+        return;
+      }
+      setState(() {
+        _q = q;
+        _f = searchExact(q);
+      });
     });
   }
 
@@ -740,7 +821,7 @@ class _SearchPageState extends State<SearchPage> {
               child: TextField(
                 controller: _ctrl,
                 textInputAction: TextInputAction.search,
-                onSubmitted: (_) => _doSearch(),
+                onChanged: _onChanged,
                 style: TextStyle(color: txtC),
                 decoration: InputDecoration(
                   hintText: 'عبارت مورد نظر...',
@@ -752,8 +833,8 @@ class _SearchPageState extends State<SearchPage> {
                     borderSide: BorderSide.none,
                   ),
                   suffixIcon: IconButton(
-                    icon: const Icon(Icons.search, color: gold),
-                    onPressed: _doSearch,
+                    icon: Icon(Icons.search, color: accentGreen),
+                    onPressed: () => _onChanged(_ctrl.text),
                   ),
                 ),
               ),
@@ -764,7 +845,18 @@ class _SearchPageState extends State<SearchPage> {
                   : FutureBuilder<List>(
                       future: _f,
                       builder: (c, s) {
-                        if (s.connectionState == ConnectionState.waiting) return const _Loading();
+                        if (s.connectionState == ConnectionState.waiting) {
+                          return const Padding(
+                            padding: EdgeInsets.all(14),
+                            child: Column(
+                              children: [
+                                _PostSkeleton(),
+                                _PostSkeleton(),
+                                _PostSkeleton(),
+                              ],
+                            ),
+                          );
+                        }
                         if (s.hasError) return _ErrorBox('خطا در جستجو.\n${s.error}', null);
                         final posts = s.data ?? [];
                         if (posts.isEmpty) return _Empty('نتیجه‌ای برای «$_q» پیدا نشد.');
@@ -848,7 +940,6 @@ class _AccountPageState extends State<AccountPage> {
         await _storage.write(key: 'wc_cookies', value: json.encode(list));
       } else {
         await _storage.delete(key: 'wc_cookies');
-        await CookieManager.instance().deleteAllCookies();
       }
     } catch (_) {}
   }
@@ -883,7 +974,7 @@ class _AccountPageState extends State<AccountPage> {
                       await openUrl(url);
                     },
                   ),
-                  if (_l) const Center(child: CircularProgressIndicator(color: gold)),
+                  if (_l) Center(child: CircularProgressIndicator(color: accentGreen)),
                 ],
               ),
             ),
@@ -926,7 +1017,7 @@ class _WebPageState extends State<WebPage> {
           onLoadStart: (c, url) => setState(() => _l = true),
           onLoadStop: (c, url) => setState(() => _l = false),
         ),
-        if (_l) const Center(child: CircularProgressIndicator(color: gold)),
+        if (_l) Center(child: CircularProgressIndicator(color: accentGreen)),
       ],
     );
 
@@ -974,7 +1065,7 @@ Widget _header(BuildContext context, [String? t]) {
                 errorBuilder: (_, __, ___) => Image.network(
                   logoNet,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const Icon(Icons.sports, color: turquoise),
+                  errorBuilder: (_, __, ___) => Icon(Icons.sports, color: accentGreen),
                 ),
               ),
             ),
@@ -987,7 +1078,6 @@ Widget _header(BuildContext context, [String? t]) {
               style: TextStyle(color: txtC, fontSize: 13, fontWeight: FontWeight.bold),
             ),
           ),
-          // 🌙 دکمه حالت شب/روز
           IconButton(
             onPressed: () async {
               darkModeNotifier.value = !darkModeNotifier.value;
@@ -1005,13 +1095,12 @@ Widget _header(BuildContext context, [String? t]) {
               ),
             ),
           ),
-          // 🔍 دکمه جستجو
           IconButton(
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const SearchPage()),
             ),
-            icon: const Icon(Icons.search, color: gold, size: 26),
+            icon: Icon(Icons.search, color: gold, size: 26),
           ),
         ],
       ),
@@ -1039,13 +1128,13 @@ Widget _hero() {
           return Container(
             height: 180,
             color: pnl2,
-            child: const Center(child: CircularProgressIndicator(color: turquoise)),
+            child: Center(child: CircularProgressIndicator(color: accentGreen)),
           );
         },
         errorBuilder: (_, __, ___) => Container(
           height: 180,
           color: pnl2,
-          child: const Icon(Icons.sports_soccer, color: turquoise, size: 60),
+          child: Icon(Icons.sports_soccer, color: accentGreen, size: 60),
         ),
       ),
     ),
@@ -1087,7 +1176,7 @@ Widget _services() {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(items[i][1] as IconData, color: turquoise, size: 30),
+                  Icon(items[i][1] as IconData, color: accentBlue, size: 30),
                   const SizedBox(height: 8),
                   Text(
                     items[i][0] as String,
@@ -1107,6 +1196,101 @@ Widget _services() {
   );
 }
 
+/* ==================== FEATURED POST (کارت ویژه) ==================== */
+Widget _featuredPost(BuildContext context, dynamic p) {
+  final img = pImg(p);
+  final title = pTitle(p);
+  final date = pDate(p);
+
+  return GestureDetector(
+    onTap: () => openUrl(pLink(p)),
+    child: Container(
+      margin: const EdgeInsets.only(bottom: 18),
+      decoration: BoxDecoration(
+        color: pnl,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: lineC),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(18),
+              topRight: Radius.circular(18),
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              height: 200,
+              child: img.isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: img,
+                      fit: BoxFit.cover,
+                      filterQuality: FilterQuality.high,
+                      placeholder: (_, __) => Container(
+                        color: pnl2,
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: accentGreen,
+                          ),
+                        ),
+                      ),
+                      errorWidget: (_, __, ___) => Container(
+                        color: pnl2,
+                        child: Icon(Icons.article_outlined, color: accentGreen, size: 60),
+                      ),
+                    )
+                  : Container(
+                      color: pnl2,
+                      child: Icon(Icons.article_outlined, color: accentGreen, size: 60),
+                    ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: gold.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    'جدیدترین',
+                    style: TextStyle(color: gold, fontSize: 10, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  title,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.right,
+                  style: TextStyle(color: txtC, fontSize: 17, fontWeight: FontWeight.bold, height: 1.6),
+                ),
+                if (date.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(Icons.calendar_today_outlined, color: mutC, size: 13),
+                      const SizedBox(width: 5),
+                      Text(date, style: TextStyle(color: mutC, fontSize: 11)),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+/* ==================== POST (لیست معمولی) ==================== */
 Widget _post(BuildContext context, dynamic p) {
   final i = pImg(p);
   final date = pDate(p);
@@ -1136,21 +1320,21 @@ Widget _post(BuildContext context, dynamic p) {
                       fadeInDuration: const Duration(milliseconds: 200),
                       placeholder: (_, __) => Container(
                         color: pnl2,
-                        child: const Center(
+                        child: Center(
                           child: SizedBox(
                             width: 20, height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: turquoise),
+                            child: CircularProgressIndicator(strokeWidth: 2, color: accentGreen),
                           ),
                         ),
                       ),
                       errorWidget: (_, __, ___) => Container(
                         color: pnl2,
-                        child: const Icon(Icons.article_outlined, color: turquoise, size: 40),
+                        child: Icon(Icons.article_outlined, color: accentGreen, size: 40),
                       ),
                     )
                   : Container(
                       color: pnl2,
-                      child: const Icon(Icons.article_outlined, color: turquoise, size: 40),
+                      child: Icon(Icons.article_outlined, color: accentGreen, size: 40),
                     ),
             ),
           ),
@@ -1181,6 +1365,7 @@ Widget _post(BuildContext context, dynamic p) {
   );
 }
 
+/* ==================== PRODUCT ==================== */
 Widget _product(BuildContext context, dynamic p) {
   final img = (p['images'] as List?)?.isNotEmpty == true
       ? (p['images'][0]['src'] ?? '')
@@ -1218,21 +1403,21 @@ Widget _product(BuildContext context, dynamic p) {
                       fadeInDuration: const Duration(milliseconds: 200),
                       placeholder: (_, __) => Container(
                         color: pnl2,
-                        child: const Center(
+                        child: Center(
                           child: SizedBox(
                             width: 20, height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: turquoise),
+                            child: CircularProgressIndicator(strokeWidth: 2, color: accentGreen),
                           ),
                         ),
                       ),
                       errorWidget: (_, __, ___) => Container(
                         color: pnl2,
-                        child: const Icon(Icons.shopping_bag_outlined, color: turquoise, size: 40),
+                        child: Icon(Icons.shopping_bag_outlined, color: accentGreen, size: 40),
                       ),
                     )
                   : Container(
                       color: pnl2,
-                      child: const Icon(Icons.shopping_bag_outlined, color: turquoise, size: 40),
+                      child: Icon(Icons.shopping_bag_outlined, color: accentGreen, size: 40),
                     ),
             ),
           ),
@@ -1278,20 +1463,12 @@ Widget _product(BuildContext context, dynamic p) {
                     const SizedBox(height: 4),
                     Text(
                       formatPrice(salePrice),
-                      style: TextStyle(
-                        color: txtC,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: TextStyle(color: txtC, fontSize: 14, fontWeight: FontWeight.bold),
                     ),
                   ] else if (regularPrice.isNotEmpty) ...[
                     Text(
                       formatPrice(regularPrice),
-                      style: TextStyle(
-                        color: txtC,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: TextStyle(color: txtC, fontSize: 14, fontWeight: FontWeight.bold),
                     ),
                   ] else ...[
                     Text(
@@ -1327,6 +1504,7 @@ Widget _product(BuildContext context, dynamic p) {
   );
 }
 
+/* ==================== CAT GRID ==================== */
 Widget _catGrid() {
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -1358,10 +1536,10 @@ Widget _catGrid() {
               Container(
                 width: 46, height: 46,
                 decoration: BoxDecoration(
-                  color: turquoise.withOpacity(0.12),
+                  color: accentGreen.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(cats[i].i, color: turquoise, size: 24),
+                child: Icon(cats[i].i, color: accentGreen, size: 24),
               ),
               const SizedBox(height: 10),
               Expanded(
@@ -1383,6 +1561,7 @@ Widget _catGrid() {
   );
 }
 
+/* ==================== SOCIAL ==================== */
 Widget _social() {
   final items = [
     ['تلگرام', Icons.send, 'https://t.me/itarbiatbadani'],
@@ -1416,7 +1595,7 @@ Widget _social() {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(items[i][1] as IconData, color: turquoise, size: 18),
+                  Icon(items[i][1] as IconData, color: accentBlue, size: 18),
                   const SizedBox(width: 8),
                   Text(
                     items[i][0] as String,
@@ -1432,6 +1611,7 @@ Widget _social() {
   );
 }
 
+/* ==================== SECTION TITLE ==================== */
 class _SectionTitle extends StatelessWidget {
   final String t;
   final IconData i;
@@ -1446,7 +1626,10 @@ class _SectionTitle extends StatelessWidget {
           children: [
             Container(
               width: 4, height: 25,
-              decoration: BoxDecoration(color: gold, borderRadius: BorderRadius.circular(5)),
+              decoration: BoxDecoration(
+                color: gold,
+                borderRadius: BorderRadius.circular(5),
+              ),
             ),
             const SizedBox(width: 9),
             Icon(i, color: gold, size: 22),
@@ -1465,12 +1648,143 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
+/* ==================== SKELETON LOADING ==================== */
+class _SkeletonBox extends StatefulWidget {
+  final double width;
+  final double height;
+  final double radius;
+  const _SkeletonBox({this.width = double.infinity, this.height = 16, this.radius = 8});
+  @override
+  State<_SkeletonBox> createState() => _SkeletonBoxState();
+}
+
+class _SkeletonBoxState extends State<_SkeletonBox>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+    _anim = Tween<double>(begin: 0.4, end: 1.0).animate(_ctrl);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _anim,
+      child: Container(
+        width: widget.width,
+        height: widget.height,
+        decoration: BoxDecoration(
+          color: skeletonC,
+          borderRadius: BorderRadius.circular(widget.radius),
+        ),
+      ),
+    );
+  }
+}
+
+class _PostSkeleton extends StatelessWidget {
+  const _PostSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: pnl,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: lineC),
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: const BorderRadius.only(
+              topRight: Radius.circular(15),
+              bottomRight: Radius.circular(15),
+            ),
+            child: const _SkeletonBox(width: 125, height: 110, radius: 0),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(13),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  _SkeletonBox(height: 14, width: double.infinity),
+                  SizedBox(height: 8),
+                  _SkeletonBox(height: 14, width: 200),
+                  SizedBox(height: 8),
+                  _SkeletonBox(height: 12, width: 80),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FeaturedSkeleton extends StatelessWidget {
+  const _FeaturedSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 18),
+      decoration: BoxDecoration(
+        color: pnl,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: lineC),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const ClipRRect(
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(18),
+              topRight: Radius.circular(18),
+            ),
+            child: _SkeletonBox(height: 200, radius: 0),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                _SkeletonBox(height: 16, width: double.infinity),
+                SizedBox(height: 8),
+                _SkeletonBox(height: 16, width: 220),
+                SizedBox(height: 10),
+                _SkeletonBox(height: 12, width: 90),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/* ==================== LOADING / EMPTY / ERROR ==================== */
 class _Loading extends StatelessWidget {
   const _Loading();
   @override
-  Widget build(BuildContext context) => const Padding(
-        padding: EdgeInsets.all(35),
-        child: Center(child: CircularProgressIndicator(color: turquoise)),
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.all(35),
+        child: Center(child: CircularProgressIndicator(color: accentGreen)),
       );
 }
 
