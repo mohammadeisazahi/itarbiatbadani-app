@@ -876,7 +876,7 @@ class _SearchPageState extends State<SearchPage> {
   }
 }
 
-/* ==================== ACCOUNT ==================== */
+/* ==================== ACCOUNT (Persistent Login + Download) ==================== */
 class AccountPage extends StatefulWidget {
   const AccountPage({super.key});
   @override
@@ -922,11 +922,17 @@ class _AccountPageState extends State<AccountPage> {
       final cookies = await CookieManager.instance().getCookies(
         url: WebUri(site),
       );
-      final hasLogin = cookies.any(
-        (c) => c.name.startsWith('wordpress_logged_in'),
-      );
-      if (hasLogin) {
-        final list = cookies
+      
+      // فقط کوکی‌های لاگین رو ذخیره کن (نه nonce و session)
+      final loginCookies = cookies.where(
+        (c) =>
+            c.name.startsWith('wordpress_logged_in') ||
+            c.name.startsWith('wordpress_sec'),
+      ).toList();
+      
+      if (loginCookies.isNotEmpty) {
+        // کاربر لاگین هست → کوکی‌های لاگین رو ذخیره کن
+        final list = loginCookies
             .map((c) => {
                   'name': c.name,
                   'value': c.value,
@@ -939,7 +945,9 @@ class _AccountPageState extends State<AccountPage> {
             .toList();
         await _storage.write(key: 'wc_cookies', value: json.encode(list));
       } else {
+        // کاربر خارج شده → همه چیز رو پاک کن
         await _storage.delete(key: 'wc_cookies');
+        await CookieManager.instance().deleteAllCookies();
       }
     } catch (_) {}
   }
